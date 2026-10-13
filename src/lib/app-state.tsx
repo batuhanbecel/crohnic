@@ -1,6 +1,6 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import type { AiConfig, Analysis } from './ai';
+import { DEFAULT_AI, type AiConfig, type Analysis } from './ai';
 import * as db from './db';
 import type { Phase } from './foods';
 
@@ -47,7 +47,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ]);
       setPhaseState(p.phase);
       setPhaseSince(p.since);
-      setAi(url ? { url, token: token ?? '' } : null);
+      // Built-in server wins when the build carries a token; manual entry is only a fallback (e.g. Expo Go).
+      setAi(DEFAULT_AI ?? (url ? { url, token: token ?? '' } : null));
       setName(n ?? '');
       setReady(true);
     })();
@@ -66,7 +67,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async (cfg: AiConfig | null) => {
       await db.setSetting(sql, 'ai_url', cfg?.url.trim() || null);
       await db.setSetting(sql, 'ai_token', cfg?.token.trim() || null);
-      setAi(cfg?.url.trim() ? { url: cfg.url.trim(), token: cfg.token.trim() } : null);
+      setAi(DEFAULT_AI ?? (cfg?.url.trim() ? { url: cfg.url.trim(), token: cfg.token.trim() } : null));
     },
     [sql],
   );

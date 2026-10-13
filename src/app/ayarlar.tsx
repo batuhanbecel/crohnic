@@ -4,7 +4,7 @@ import * as Updates from 'expo-updates';
 import { useState } from 'react';
 import { Alert, Share, TextInput } from 'react-native';
 import { Button, Card, Row, Screen, T, st } from '../components/ui';
-import { analyze } from '../lib/ai';
+import { DEFAULT_AI, analyze, type AiConfig } from '../lib/ai';
 import { useApp } from '../lib/app-state';
 import * as db from '../lib/db';
 import { palette } from '../lib/theme';
@@ -20,16 +20,16 @@ export default function Settings() {
 
   const saveAll = async () => {
     await app.saveName(name);
-    await app.saveAi(url.trim() ? { url, token } : null);
+    if (!DEFAULT_AI) await app.saveAi(url.trim() ? { url, token } : null);
     Alert.alert('Kaydedildi');
   };
 
-  const test = async () => {
-    if (!url.trim()) return;
+  const test = async (cfg: AiConfig) => {
+    if (!cfg.url) return;
     setTesting(true);
     try {
-      const r = await analyze({ url: url.trim(), token: token.trim() }, { mode: 'food', foodName: 'Haşlanmış yumurta', phase: 'remisyon', history: {} });
-      await app.saveAi({ url, token });
+      const r = await analyze(cfg, { mode: 'food', foodName: 'Haşlanmış yumurta', phase: 'remisyon', history: {} });
+      if (!DEFAULT_AI) await app.saveAi(cfg);
       Alert.alert('Bağlantı çalışıyor', r.kind === 'meal' ? r.headline || r.dish : undefined);
     } catch (e: any) {
       Alert.alert('Bağlanamadım', e?.message ?? '');
@@ -71,33 +71,43 @@ export default function Settings() {
         <TextInput value={name} onChangeText={setName} placeholder="Ana sayfada böyle selamlarım" placeholderTextColor={palette.inkFaint} style={st.input} />
       </Card>
 
-      <Card style={{ gap: 10 }}>
-        <T v="h3">Fotoğraf analizi</T>
-        <T v="small" color={palette.inkSoft}>
-          Vercel’deki Crohnic sunucusunun adresi ve şifresi. Claude API anahtarı telefonda değil, sunucuda durur.
-        </T>
-        <TextInput
-          value={url}
-          onChangeText={setUrl}
-          placeholder="https://crohnic-api.vercel.app"
-          placeholderTextColor={palette.inkFaint}
-          style={st.input}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="url"
-        />
-        <TextInput
-          value={token}
-          onChangeText={setToken}
-          placeholder="Sunucu şifresi (APP_TOKEN)"
-          placeholderTextColor={palette.inkFaint}
-          style={st.input}
-          autoCapitalize="none"
-          autoCorrect={false}
-          secureTextEntry
-        />
-        <Button title="Bağlantıyı test et" kind="glass" icon="bolt.fill" onPress={test} loading={testing} disabled={!url.trim()} />
-      </Card>
+      {DEFAULT_AI ? (
+        <Card style={{ gap: 10 }}>
+          <T v="h3">Fotoğraf analizi</T>
+          <T v="small" color={palette.inkSoft}>
+            Sunucu uygulamaya gömülü, ayar gerekmiyor. Çalıştığını görmek için test edebilirsin.
+          </T>
+          <Button title="Bağlantıyı test et" kind="glass" icon="bolt.fill" onPress={() => test(DEFAULT_AI!)} loading={testing} />
+        </Card>
+      ) : (
+        <Card style={{ gap: 10 }}>
+          <T v="h3">Fotoğraf analizi</T>
+          <T v="small" color={palette.inkSoft}>
+            Bu sürümde sunucu gömülü değil. Adres ve şifreyi elle gir.
+          </T>
+          <TextInput
+            value={url}
+            onChangeText={setUrl}
+            placeholder="https://crohnic.vercel.app"
+            placeholderTextColor={palette.inkFaint}
+            style={st.input}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="url"
+          />
+          <TextInput
+            value={token}
+            onChangeText={setToken}
+            placeholder="Sunucu şifresi (APP_TOKEN)"
+            placeholderTextColor={palette.inkFaint}
+            style={st.input}
+            autoCapitalize="none"
+            autoCorrect={false}
+            secureTextEntry
+          />
+          <Button title="Bağlantıyı test et" kind="glass" icon="bolt.fill" onPress={() => test({ url: url.trim(), token: token.trim() })} loading={testing} disabled={!url.trim()} />
+        </Card>
+      )}
 
       <Button title="Kaydet" icon="checkmark" onPress={saveAll} />
 

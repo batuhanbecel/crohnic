@@ -37,6 +37,11 @@ export type AnalyzeInput = {
 
 export type AiConfig = { url: string; token: string };
 
+/** Built-in server. The token comes from EAS environment variables at build/update time, never from the repo. */
+export const DEFAULT_AI: AiConfig | null = process.env.EXPO_PUBLIC_APP_TOKEN
+  ? { url: process.env.EXPO_PUBLIC_API_URL || 'https://crohnic.vercel.app', token: process.env.EXPO_PUBLIC_APP_TOKEN }
+  : null;
+
 /** Shrink the photo before upload: 1024px wide JPEG keeps it well under the server body limit. */
 export async function prepareImage(uri: string, width = 1024): Promise<{ uri: string; base64: string }> {
   const ctx = ImageManipulator.manipulate(uri);

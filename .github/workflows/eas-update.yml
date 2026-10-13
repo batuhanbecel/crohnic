@@ -75,4 +75,4 @@ jobs:
       - name: Publish update
         env:
           MESSAGE: ${{ github.event.head_commit.message || 'Elle tetiklenen güncelleme' }}
-        run: eas update --channel production --platform ios --non-interactive --message "$(echo "$MESSAGE" | head -n 1)"
+        run: eas update --channel production --environment production --platform ios --non-interactive --message "$(echo "$MESSAGE" | head -n 1)"
