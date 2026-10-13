@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import { MealRow } from '../../components/MealRow';
 import { BRISTOL, bristolTone } from '../../components/bristol';
-import { Button, Card, Chip, Empty, Row, Screen, T, Tap } from '../../components/ui';
+import { Button, Card, Empty, Row, Screen, Segmented, T, Tap } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
 import { dayKey, dayLabel, timeLabel } from '../../lib/dates';
 import * as db from '../../lib/db';
@@ -70,17 +70,21 @@ export default function Journal() {
       <T v="large" style={{ marginTop: 4 }}>
         Günlük
       </T>
-      <Row gap={8} style={{ flexWrap: 'wrap' }}>
-        <Chip label="Hepsi" active={filter === 'hepsi'} onPress={() => setFilter('hepsi')} />
-        <Chip label="Öğünler" active={filter === 'meal'} color={palette.lettuceDeep} onPress={() => setFilter('meal')} />
-        <Chip label="Semptomlar" active={filter === 'symptom'} color={palette.peri} onPress={() => setFilter('symptom')} />
-        <Chip label="Tuvalet" active={filter === 'bowel'} color={palette.sky} onPress={() => setFilter('bowel')} />
-      </Row>
+      <Segmented
+        value={filter}
+        onChange={setFilter}
+        items={[
+          { key: 'hepsi', label: 'Hepsi' },
+          { key: 'meal', label: 'Öğün', color: palette.lettuceDeep },
+          { key: 'symptom', label: 'Semptom', color: palette.peri },
+          { key: 'bowel', label: 'Tuvalet', color: palette.sky },
+        ]}
+      />
 
       <Row gap={8}>
-        <Button title="Öğün" kind="glass" icon="plus" style={{ flex: 1 }} onPress={() => router.push('/yemek-ekle')} />
-        <Button title="Semptom" kind="glass" icon="plus" style={{ flex: 1 }} onPress={() => router.push('/semptom')} />
-        <Button title="Tuvalet" kind="glass" icon="plus" style={{ flex: 1 }} onPress={() => router.push('/tuvalet')} />
+        <Button title="Öğün" kind="glass" compact icon="plus" style={{ flex: 1 }} onPress={() => router.push('/yemek-ekle')} />
+        <Button title="Semptom" kind="glass" compact icon="plus" style={{ flex: 1 }} onPress={() => router.push('/semptom')} />
+        <Button title="Tuvalet" kind="glass" compact icon="plus" style={{ flex: 1 }} onPress={() => router.push('/tuvalet')} />
       </Row>
 
       {days.length === 0 ? (

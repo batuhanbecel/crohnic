@@ -6,11 +6,11 @@ import { View } from 'react-native';
 import { MealRow, MealThumb } from '../../components/MealRow';
 import { Mascot, type Mood } from '../../components/Mascot';
 import { ReactionPicker } from '../../components/ReactionPicker';
-import { Card, Glass, Icon, Row, Screen, SectionTitle, Segmented, T, Tap } from '../../components/ui';
+import { Card, IconBubble, IconButton, Row, Screen, SectionTitle, Segmented, T, Tap } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
 import { dayKey, daysSince, now, relative, todayLabel } from '../../lib/dates';
 import * as db from '../../lib/db';
-import { palette, radius, type } from '../../lib/theme';
+import { palette, radius, size, type } from '../../lib/theme';
 
 const TIPS = [
   'Yeni bir yemeği küçük bir porsiyonla dene, birkaç saat sonra nasıl hissettiğini yaz.',
@@ -85,11 +85,7 @@ export default function Home() {
           </T>
           <T v="large">{app.name ? `Selam ${app.name}` : 'Crohnic'}</T>
         </View>
-        <Tap onPress={() => router.push('/ayarlar')} hitSlop={8}>
-          <Glass interactive style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}>
-            <Icon name="gearshape" color={palette.ink} fallback="⚙️" />
-          </Glass>
-        </Tap>
+        <IconButton name="gearshape" label="Ayarlar" fallback="⚙️" onPress={() => router.push('/ayarlar')} />
       </Row>
 
       <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingLeft: 8 }}>
@@ -104,8 +100,8 @@ export default function Home() {
           value={app.phase}
           onChange={(p) => p !== app.phase && app.changePhase(p)}
           items={[
-            { key: 'remisyon', label: 'Remisyon', color: palette.lettuceDeep },
-            { key: 'atak', label: 'Atak', color: palette.peri },
+            { key: 'remisyon', label: 'Remisyon', color: palette.lettuceDeep, icon: 'leaf.fill' },
+            { key: 'atak', label: 'Atak', color: palette.flare, icon: 'flame.fill' },
           ]}
         />
         <T v="small" color={palette.inkSoft} style={{ paddingHorizontal: 6 }}>
@@ -116,9 +112,9 @@ export default function Home() {
       </View>
 
       {redFlag ? (
-        <Card tint={palette.badSoft} style={{ gap: 6 }}>
-          <Row gap={8}>
-            <Icon name="exclamationmark.triangle.fill" color={palette.bad} fallback="⚠️" />
+        <Card tint={palette.badSoft} style={{ gap: 8 }}>
+          <Row gap={10}>
+            <IconBubble name="exclamationmark.triangle.fill" color={palette.bad} dim={32} fallback="⚠️" />
             <T v="h3" color={palette.bad}>
               Doktoruna haber ver
             </T>
@@ -135,7 +131,7 @@ export default function Home() {
           <Row gap={12}>
             <MealThumb meal={m} size={44} />
             <View style={{ flex: 1 }}>
-              <T v="caption" color={palette.peri}>
+              <T v="caption" color={palette.inkSoft}>
                 {relative(m.eaten_at)}
               </T>
               <T v="h3" numberOfLines={2}>
@@ -150,13 +146,13 @@ export default function Home() {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
         {ACTIONS.map((a) => (
           <Tap key={a.label} onPress={() => router.push(a.to as never)} style={{ width: '48.5%' }}>
-            <Card style={{ gap: 12, padding: 14 }}>
-              <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: a.color, alignItems: 'center', justifyContent: 'center' }}>
-                <Icon name={a.icon} color="#fff" size={18} fallback={a.fallback} />
-              </View>
+            <Card style={{ height: size.tile, justifyContent: 'space-between' }}>
+              <IconBubble name={a.icon} color={a.color} fallback={a.fallback} />
               <View>
-                <T v="h3">{a.label}</T>
-                <T v="small" color={palette.inkSoft}>
+                <T v="h3" numberOfLines={1}>
+                  {a.label}
+                </T>
+                <T v="small" color={palette.inkSoft} numberOfLines={1}>
                   {a.sub}
                 </T>
               </View>
@@ -167,8 +163,8 @@ export default function Home() {
 
       <SectionTitle title="Bugün" action={today.length ? 'Günlüğe git' : undefined} onAction={() => router.navigate('/gunluk')} />
       <Row gap={8}>
-        <Stat label="Öğün" value={String(today.length)} />
-        <Stat label="Tuvalet" value={String(bowelToday)} sub={lastBowel ? `son: ${relative(lastBowel.at)}` : undefined} />
+        <Stat label="Öğün" value={String(today.length)} sub={today[0] ? relative(today[0].eaten_at) : undefined} />
+        <Stat label="Tuvalet" value={String(bowelToday)} sub={lastBowel ? relative(lastBowel.at) : undefined} />
         <Stat label="Ağrı" value={lastSymptom ? `${lastSymptom.pain}/5` : '–'} sub={lastSymptom ? relative(lastSymptom.at) : undefined} />
       </Row>
       {today.length ? (
@@ -193,16 +189,16 @@ export default function Home() {
 
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <Card style={{ flex: 1, padding: 12, gap: 2, borderRadius: radius.md }}>
-      <T v="caption" color={palette.inkSoft}>
+    <Card style={{ flex: 1, height: size.stat, padding: 12, justifyContent: 'space-between', borderRadius: radius.lg }}>
+      <T v="caption" color={palette.inkSoft} numberOfLines={1}>
         {label}
       </T>
-      <T v="title">{value}</T>
-      {sub ? (
-        <T v="caption" color={palette.inkFaint} numberOfLines={1} style={{ fontWeight: '400' }}>
-          {sub}
-        </T>
-      ) : null}
+      <T v="title" numberOfLines={1} adjustsFontSizeToFit>
+        {value}
+      </T>
+      <T v="caption" color={palette.inkFaint} numberOfLines={1} style={{ fontWeight: '400' }}>
+        {sub ?? ' '}
+      </T>
     </Card>
   );
 }

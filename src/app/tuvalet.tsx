@@ -1,14 +1,14 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { Switch, Text, TextInput, View } from 'react-native';
+import { Switch, TextInput, View } from 'react-native';
 import { BRISTOL, bristolTone } from '../components/bristol';
 import { WhenField } from '../components/WhenField';
-import { Button, Card, Row, Screen, T, Tap, st } from '../components/ui';
+import { Button, Card, ChoiceRow, Row, Screen, T, st } from '../components/ui';
 import { useApp } from '../lib/app-state';
 import { now } from '../lib/dates';
 import * as db from '../lib/db';
-import { palette, radius } from '../lib/theme';
+import { palette } from '../lib/theme';
 
 export default function Bowel() {
   const sql = useSQLiteContext();
@@ -42,36 +42,19 @@ export default function Bowel() {
         <T v="small" color={palette.inkSoft} style={{ paddingHorizontal: 4, marginBottom: 4 }}>
           Bristol skalası. 3 ve 4 normal kabul edilir.
         </T>
-        {BRISTOL.map((b) => {
-          const active = kind === b.type;
-          const tone = bristolTone(b.type);
-          return (
-            <Tap key={b.type} onPress={() => setKind(b.type)}>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: 10,
-                  borderRadius: radius.md,
-                  backgroundColor: active ? tone : 'rgba(255,255,255,0.72)',
-                }}
-              >
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: active ? 'rgba(255,255,255,0.3)' : 'rgba(29,43,34,0.05)', alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 20 }}>{b.emoji}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <T v="h3" color={active ? '#fff' : palette.ink}>
-                    {b.type}. {b.short}
-                  </T>
-                  <T v="small" color={active ? '#fff' : palette.inkSoft}>
-                    {b.desc}
-                  </T>
-                </View>
-              </View>
-            </Tap>
-          );
-        })}
+        <View style={{ gap: 8 }}>
+          {BRISTOL.map((b) => (
+            <ChoiceRow
+              key={b.type}
+              title={`${b.type}. ${b.short}`}
+              subtitle={b.desc}
+              emoji={b.emoji}
+              color={bristolTone(b.type)}
+              active={kind === b.type}
+              onPress={() => setKind(b.type)}
+            />
+          ))}
+        </View>
       </View>
 
       <Card style={{ gap: 14 }}>

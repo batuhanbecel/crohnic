@@ -1,9 +1,11 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { useApp } from '../../lib/app-state';
 import { palette } from '../../lib/theme';
 
 export default function TabsLayout() {
+  const { phase } = useApp();
   return (
-    <NativeTabs tintColor={palette.ink} minimizeBehavior="onScrollDown">
+    <NativeTabs tintColor={phase === 'atak' ? palette.flareDeep : palette.ink} minimizeBehavior="onScrollDown">
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Icon sf={{ default: 'leaf', selected: 'leaf.fill' }} md="eco" />
         <NativeTabs.Trigger.Label>Bugün</NativeTabs.Trigger.Label>

@@ -21,10 +21,14 @@ export const palette = {
   sky: '#3E9BE0',
   skySoft: '#DDEEFB',
 
+  flare: '#F26B3A',
+  flareDeep: '#D9531F',
+  flareSoft: '#FFE6DA',
+
   good: '#2DB357',
   goodSoft: '#DDF4E3',
-  warn: '#E8890C',
-  warnSoft: '#FDEFD9',
+  warn: '#D99A00',
+  warnSoft: '#FDF3D3',
   bad: '#E5483D',
   badSoft: '#FCE3E0',
 };
@@ -37,7 +41,18 @@ export const surface = {
   well: 'rgba(29,43,34,0.05)',
 };
 
-export const radius = { sm: 12, md: 18, lg: 26, xl: 32, pill: 999 };
+export const radius = { sm: 12, md: 18, lg: 24, xl: 30, pill: 999 };
+
+/** One set of sizes for the whole app. */
+export const size = {
+  button: 50,
+  buttonSm: 40,
+  icon: 40,
+  tile: 128,
+  stat: 86,
+  gap: 12,
+  pad: 16,
+};
 
 const rounded = Platform.select({ ios: 'ui-rounded', default: undefined });
 

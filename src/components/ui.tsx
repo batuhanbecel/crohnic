@@ -19,7 +19,17 @@ import {
 } from 'react-native';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import type { Verdict } from '../lib/foods';
-import { palette, radius, shadow, surface, type } from '../lib/theme';
+import { palette, radius, shadow, size, surface, type } from '../lib/theme';
+
+/*
+ * Crohnic design system
+ * - Content sits on translucent white Cards (radius.lg, padding 16).
+ * - Everything you can press is liquid glass: Button, IconButton, Chip, Segmented, Scale, Reaction.
+ * - Coloured glass = selected / primary. Clear glass = secondary.
+ * - Labels inside controls never wrap: one line, shrink to fit.
+ */
+
+export type SymbolName = SymbolViewProps['name'];
 
 // ---------- liquid glass ----------
 let glassOk: boolean | null = null;
@@ -34,41 +44,79 @@ export function hasLiquidGlass() {
   return glassOk;
 }
 
-/** iOS 26 liquid glass, with a frosted blur fallback on older systems. */
+/** iOS 26 liquid glass. On older systems: frosted blur with the same tint. */
 export function Glass({
   children,
   style,
   tint,
   interactive,
-  clear,
 }: {
   children?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   tint?: string;
   interactive?: boolean;
-  clear?: boolean;
 }) {
   if (hasLiquidGlass()) {
     return (
-      <GlassView glassEffectStyle={clear ? 'clear' : 'regular'} tintColor={tint} isInteractive={interactive} style={[{ overflow: 'hidden' }, style]}>
+      <GlassView glassEffectStyle="regular" tintColor={tint} isInteractive={interactive} style={[{ overflow: 'hidden' }, style]}>
         {children}
       </GlassView>
     );
   }
   return (
-    <View style={[{ overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.8)' }, style]}>
+    <View style={[{ overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.85)' }, style]}>
       <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: tint ?? 'rgba(255,255,255,0.45)' }]} />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: tint ?? 'rgba(255,255,255,0.5)', opacity: tint ? 0.92 : 1 }]} />
       {children}
     </View>
   );
 }
 
+/** Pressable liquid glass with haptics. Base for every control. */
+export function GlassPress({
+  children,
+  onPress,
+  onLongPress,
+  tint,
+  style,
+  disabled,
+  haptic = 'select',
+  accessibilityLabel,
+}: {
+  children: React.ReactNode;
+  onPress?: () => void;
+  onLongPress?: () => void;
+  tint?: string;
+  style?: StyleProp<ViewStyle>;
+  disabled?: boolean;
+  haptic?: 'select' | 'impact' | 'none';
+  accessibilityLabel?: string;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      disabled={disabled}
+      onLongPress={onLongPress}
+      onPress={() => {
+        if (haptic === 'select') Haptics.selectionAsync().catch(() => {});
+        if (haptic === 'impact') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        onPress?.();
+      }}
+      style={({ pressed }) => ({ opacity: disabled ? 0.4 : 1, transform: [{ scale: pressed && !hasLiquidGlass() ? 0.97 : 1 }] })}
+    >
+      <Glass interactive tint={tint} style={style}>
+        {children}
+      </Glass>
+    </Pressable>
+  );
+}
+
 // ---------- background ----------
 export function Backdrop({ tone = 'calm' }: { tone?: 'calm' | 'flare' }) {
-  const a = tone === 'flare' ? '#C9C5FF' : '#C6E89B';
-  const b = tone === 'flare' ? '#BFE0F7' : '#FFD9B0';
-  const c = tone === 'flare' ? '#E7D7FF' : '#D9D7FF';
+  const a = tone === 'flare' ? '#FFC2A3' : '#C6E89B';
+  const b = tone === 'flare' ? '#FFDDB0' : '#FFD9B0';
+  const c = tone === 'flare' ? '#FFD0C6' : '#D9D7FF';
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       <Svg width="100%" height="100%">
@@ -112,16 +160,41 @@ export function T({ v = 'body', color = palette.ink, style, ...rest }: TextProps
   return <Text {...rest} style={[variantStyle[v], { color }, style]} />;
 }
 
-// ---------- icon ----------
-export function Icon({ name, size = 20, color = palette.ink, fallback }: { name: SymbolViewProps['name']; size?: number; color?: string; fallback?: string }) {
+/** Single-line label for controls: never wraps, shrinks a little if it must. */
+function Label({ children, color, small }: { children: string; color: string; small?: boolean }) {
   return (
-    <SymbolView
-      name={name}
-      size={size}
-      tintColor={color}
-      weight="semibold"
-      fallback={<Text style={{ fontSize: size * 0.9 }}>{fallback ?? '•'}</Text>}
-    />
+    <Text
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      minimumFontScale={0.75}
+      style={[type.semibold, { fontSize: small ? 14 : 16, lineHeight: small ? 18 : 20, color, flexShrink: 1 }]}
+    >
+      {children}
+    </Text>
+  );
+}
+
+// ---------- icon ----------
+export function Icon({ name, size: s = 20, color = palette.ink, fallback }: { name: SymbolName; size?: number; color?: string; fallback?: string }) {
+  return (
+    <SymbolView name={name} size={s} tintColor={color} weight="semibold" fallback={<Text style={{ fontSize: s * 0.9 }}>{fallback ?? '•'}</Text>} />
+  );
+}
+
+/** Glass bubble with a symbol. Tinted = filled colour glass with white glyph. */
+export function IconBubble({ name, color, dim = size.icon, fallback }: { name: SymbolName; color: string; dim?: number; fallback?: string }) {
+  return (
+    <Glass tint={color} style={{ width: dim, height: dim, borderRadius: dim / 2, alignItems: 'center', justifyContent: 'center' }}>
+      <Icon name={name} size={dim * 0.45} color="#fff" fallback={fallback} />
+    </Glass>
+  );
+}
+
+export function IconButton({ name, onPress, label, fallback }: { name: SymbolName; onPress: () => void; label: string; fallback?: string }) {
+  return (
+    <GlassPress onPress={onPress} accessibilityLabel={label} style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}>
+      <Icon name={name} color={palette.ink} fallback={fallback} />
+    </GlassPress>
   );
 }
 
@@ -144,7 +217,7 @@ export function Screen({
       <ScrollView
         style={{ flex: 1 }}
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={[{ paddingHorizontal: 18, paddingTop: header ? 8 : 12, paddingBottom: 40, gap: 14 }, contentStyle]}
+        contentContainerStyle={[{ paddingHorizontal: 18, paddingTop: header ? 8 : 12, paddingBottom: 40, gap: size.gap }, contentStyle]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         showsVerticalScrollIndicator={false}
@@ -163,7 +236,7 @@ export function Row({ children, gap = 10, style }: { children: React.ReactNode; 
   return <View style={[{ flexDirection: 'row', alignItems: 'center', gap }, style]}>{children}</View>;
 }
 
-// ---------- pressables ----------
+/** Plain press feedback for content (cards, rows). Controls use glass. */
 export function Tap({ children, style, onPress, haptic = true, ...rest }: PressableProps & { haptic?: boolean; style?: StyleProp<ViewStyle> }) {
   return (
     <Pressable
@@ -172,14 +245,15 @@ export function Tap({ children, style, onPress, haptic = true, ...rest }: Pressa
         if (haptic) Haptics.selectionAsync().catch(() => {});
         onPress?.(e);
       }}
-      style={({ pressed }) => [style, { opacity: pressed ? 0.75 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
+      style={({ pressed }) => [style, { opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.985 : 1 }] }]}
     >
       {children as React.ReactNode}
     </Pressable>
   );
 }
 
-type BtnKind = 'primary' | 'glass' | 'plain' | 'danger';
+// ---------- buttons ----------
+type BtnKind = 'primary' | 'glass' | 'danger' | 'plain';
 export function Button({
   title,
   onPress,
@@ -189,58 +263,53 @@ export function Button({
   disabled,
   style,
   color,
+  compact,
 }: {
   title: string;
   onPress?: () => void;
   kind?: BtnKind;
-  icon?: SymbolViewProps['name'];
+  icon?: SymbolName;
   loading?: boolean;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
+  /** tint for primary buttons */
   color?: string;
+  compact?: boolean;
 }) {
-  const fg = kind === 'primary' ? '#fff' : kind === 'danger' ? palette.bad : kind === 'plain' ? palette.inkSoft : palette.ink;
-  const inner = (
-    <>
-      {loading ? <ActivityIndicator color={fg} /> : icon ? <Icon name={icon} color={fg} size={17} /> : null}
-      <T v="h3" color={fg}>
+  const tint = kind === 'primary' ? color ?? palette.ink : kind === 'danger' ? palette.bad : undefined;
+  const fg = kind === 'primary' || kind === 'danger' ? '#fff' : kind === 'plain' ? palette.inkSoft : palette.ink;
+  const h = compact ? size.buttonSm : size.button;
+  const content = (
+    <View style={[st.btnInner, { height: h, paddingHorizontal: compact ? 12 : 18 }]}>
+      {loading ? <ActivityIndicator color={fg} /> : icon ? <Icon name={icon} color={fg} size={compact ? 15 : 17} /> : null}
+      <Label color={fg} small={compact}>
         {title}
-      </T>
-    </>
+      </Label>
+    </View>
   );
-  const press = () => {
-    if (disabled || loading) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    onPress?.();
-  };
-  if (kind === 'glass') {
+  if (kind === 'plain') {
     return (
-      <Pressable onPress={press} style={[{ opacity: disabled ? 0.4 : 1 }, style]}>
-        <Glass interactive style={st.btn}>
-          <View style={[st.btnInner, { flex: 1 }]}>{inner}</View>
-        </Glass>
-      </Pressable>
+      <Tap onPress={disabled || loading ? undefined : onPress} style={[{ opacity: disabled ? 0.4 : 1 }, style]}>
+        {content}
+      </Tap>
     );
   }
-  const bg = kind === 'primary' ? color ?? palette.ink : kind === 'danger' ? palette.badSoft : 'transparent';
   return (
-    <Pressable
-      onPress={press}
-      style={({ pressed }) => [st.btn, st.btnInner, { backgroundColor: bg, opacity: disabled ? 0.35 : pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }, style]}
-    >
-      {inner}
-    </Pressable>
+    <View style={style}>
+      <GlassPress tint={tint} disabled={disabled || loading} haptic="impact" onPress={onPress} style={{ borderRadius: radius.pill }}>
+        {content}
+      </GlassPress>
+    </View>
   );
 }
 
 export function Chip({ label, active, onPress, color = palette.ink, emoji }: { label: string; active?: boolean; onPress?: () => void; color?: string; emoji?: string }) {
   return (
-    <Tap onPress={onPress} style={[st.chip, active ? { backgroundColor: color, borderColor: color } : null]}>
-      <T v="small" color={active ? '#fff' : palette.ink} style={type.semibold}>
-        {emoji ? `${emoji}  ` : ''}
-        {label}
-      </T>
-    </Tap>
+    <GlassPress onPress={onPress} tint={active ? color : undefined} style={st.chip}>
+      <Label small color={active ? '#fff' : palette.ink}>
+        {`${emoji ? `${emoji}  ` : ''}${label}`}
+      </Label>
+    </GlassPress>
   );
 }
 
@@ -250,25 +319,32 @@ export function Segmented<K extends string>({
   value,
   onChange,
 }: {
-  items: { key: K; label: string; color?: string }[];
+  items: { key: K; label: string; color?: string; icon?: SymbolName }[];
   value: K;
   onChange: (k: K) => void;
 }) {
   return (
     <Glass style={{ borderRadius: radius.pill, padding: 4 }}>
-      <View style={{ flexDirection: 'row' }}>
+      <View style={{ flexDirection: 'row', gap: 4 }}>
         {items.map((it) => {
           const on = it.key === value;
+          const c = it.color ?? palette.ink;
           return (
-            <Tap
+            <Pressable
               key={it.key}
-              onPress={() => onChange(it.key)}
-              style={{ flex: 1, paddingVertical: 9, borderRadius: radius.pill, alignItems: 'center', backgroundColor: on ? it.color ?? palette.ink : 'transparent' }}
+              onPress={() => {
+                Haptics.selectionAsync().catch(() => {});
+                onChange(it.key);
+              }}
+              style={{ flex: 1 }}
             >
-              <T v="callout" color={on ? '#fff' : palette.inkSoft} style={type.semibold}>
-                {it.label}
-              </T>
-            </Tap>
+              <View style={[st.segment, on ? { backgroundColor: c, ...shadow, shadowColor: c, shadowOpacity: 0.3, shadowRadius: 8 } : null]}>
+                {it.icon ? <Icon name={it.icon} size={14} color={on ? '#fff' : palette.inkSoft} /> : null}
+                <Label small={items.length > 3} color={on ? '#fff' : palette.inkSoft}>
+                  {it.label}
+                </Label>
+              </View>
+            </Pressable>
           );
         })}
       </View>
@@ -276,38 +352,20 @@ export function Segmented<K extends string>({
   );
 }
 
-// ---------- verdict ----------
-export const VERDICT_UI: Record<Verdict, { label: string; short: string; icon: SymbolViewProps['name']; dot: string; fg: string; bg: string }> = {
-  iyi: { label: 'Rahat ye', short: 'İyi gelir', icon: 'checkmark.circle.fill', dot: '🟢', fg: palette.good, bg: palette.goodSoft },
-  dikkat: { label: 'Az ve dikkatli', short: 'Dikkat', icon: 'exclamationmark.circle.fill', dot: '🟠', fg: palette.warn, bg: palette.warnSoft },
-  riskli: { label: 'Bugün geç', short: 'Riskli', icon: 'xmark.circle.fill', dot: '🔴', fg: palette.bad, bg: palette.badSoft },
-};
-
-export function VerdictBadge({ verdict, size = 'md' }: { verdict: Verdict; size?: 'sm' | 'md' }) {
-  const u = VERDICT_UI[verdict];
-  return (
-    <View style={[st.badge, { backgroundColor: u.bg }, size === 'sm' && { paddingHorizontal: 8, paddingVertical: 3 }]}>
-      <Icon name={u.icon} size={size === 'sm' ? 12 : 14} color={u.fg} fallback={u.dot} />
-      <T v="caption" color={u.fg}>
-        {size === 'sm' ? u.short : u.label}
-      </T>
-    </View>
-  );
-}
-
-// ---------- inputs ----------
+/** 0–5 rating on glass dots. */
 export function Scale({ value, onChange, max = 5, color = palette.ink, labels }: { value: number; onChange: (v: number) => void; max?: number; color?: string; labels?: [string, string] }) {
   return (
     <View style={{ gap: 6 }}>
       <Row gap={6}>
         {Array.from({ length: max + 1 }, (_, i) => {
-          const on = i <= value && i > 0;
+          const on = i === 0 ? value === 0 : i <= value;
+          const tint = on ? (i === 0 ? palette.ink : color) : undefined;
           return (
-            <Tap key={i} onPress={() => onChange(i)} style={[st.scaleDot, on ? { backgroundColor: color } : null, i === value && i === 0 ? { backgroundColor: palette.ink } : null]}>
-              <T v="h3" color={on || (i === 0 && value === 0) ? '#fff' : palette.inkSoft}>
-                {i}
-              </T>
-            </Tap>
+            <View key={i} style={{ flex: 1 }}>
+              <GlassPress onPress={() => onChange(i)} tint={tint} style={st.scaleDot}>
+                <Label color={on ? '#fff' : palette.inkSoft}>{String(i)}</Label>
+              </GlassPress>
+            </View>
           );
         })}
       </Row>
@@ -325,17 +383,94 @@ export function Scale({ value, onChange, max = 5, color = palette.ink, labels }:
   );
 }
 
+/** Equal-width glass options with an emoji on top (used for reactions). */
+export function OptionTiles<K extends string | number>({
+  items,
+  value,
+  onChange,
+  compact,
+}: {
+  items: { key: K; emoji: string; label: string; color: string }[];
+  value?: K | null;
+  onChange: (k: K) => void;
+  compact?: boolean;
+}) {
+  return (
+    <Row gap={8}>
+      {items.map((it) => {
+        const on = value === it.key;
+        return (
+          <View key={String(it.key)} style={{ flex: 1 }}>
+            <GlassPress onPress={() => onChange(it.key)} tint={on ? it.color : undefined} style={[st.option, { height: compact ? 66 : 78 }]}>
+              <Text style={{ fontSize: compact ? 22 : 26 }}>{it.emoji}</Text>
+              <Label small color={on ? '#fff' : it.color}>
+                {it.label}
+              </Label>
+            </GlassPress>
+          </View>
+        );
+      })}
+    </Row>
+  );
+}
+
+/** Full-width selectable glass row (e.g. Bristol types). */
+export function ChoiceRow({
+  title,
+  subtitle,
+  emoji,
+  active,
+  color,
+  onPress,
+}: {
+  title: string;
+  subtitle?: string;
+  emoji: string;
+  active?: boolean;
+  color: string;
+  onPress: () => void;
+}) {
+  return (
+    <GlassPress onPress={onPress} tint={active ? color : undefined} style={st.choice}>
+      <View style={[st.choiceIcon, { backgroundColor: active ? 'rgba(255,255,255,0.25)' : surface.well }]}>
+        <Text style={{ fontSize: 20 }}>{emoji}</Text>
+      </View>
+      <View style={{ flex: 1 }}>
+        <Label color={active ? '#fff' : palette.ink}>{title}</Label>
+        {subtitle ? (
+          <Text numberOfLines={1} style={{ fontSize: 14, lineHeight: 19, color: active ? 'rgba(255,255,255,0.9)' : palette.inkSoft }}>
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+    </GlassPress>
+  );
+}
+
+// ---------- verdict ----------
+export const VERDICT_UI: Record<Verdict, { label: string; short: string; icon: SymbolName; dot: string; fg: string; bg: string }> = {
+  iyi: { label: 'Rahat ye', short: 'İyi gelir', icon: 'checkmark.circle.fill', dot: '🟢', fg: palette.good, bg: palette.goodSoft },
+  dikkat: { label: 'Az ve dikkatli', short: 'Dikkat', icon: 'exclamationmark.circle.fill', dot: '🟡', fg: palette.warn, bg: palette.warnSoft },
+  riskli: { label: 'Bugün geç', short: 'Riskli', icon: 'xmark.circle.fill', dot: '🔴', fg: palette.bad, bg: palette.badSoft },
+};
+
+export function VerdictBadge({ verdict, size: sz = 'md' }: { verdict: Verdict; size?: 'sm' | 'md' }) {
+  const u = VERDICT_UI[verdict];
+  return (
+    <View style={[st.badge, { backgroundColor: u.bg }, sz === 'sm' && { paddingHorizontal: 8, paddingVertical: 3 }]}>
+      <Icon name={u.icon} size={sz === 'sm' ? 12 : 14} color={u.fg} fallback={u.dot} />
+      <Text numberOfLines={1} style={[type.semibold, { fontSize: 12, color: u.fg }]}>
+        {sz === 'sm' ? u.short : u.label}
+      </Text>
+    </View>
+  );
+}
+
 export function SectionTitle({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
   return (
     <Row style={{ justifyContent: 'space-between', marginTop: 8, paddingHorizontal: 2 }}>
       <T v="h2">{title}</T>
-      {action ? (
-        <Tap onPress={onAction} hitSlop={10}>
-          <T v="callout" color={palette.peri} style={type.semibold}>
-            {action}
-          </T>
-        </Tap>
-      ) : null}
+      {action && onAction ? <Button title={action} kind="glass" compact onPress={onAction} /> : null}
     </Row>
   );
 }
@@ -358,23 +493,19 @@ export const st = StyleSheet.create({
   card: {
     backgroundColor: surface.card,
     borderRadius: radius.lg,
-    padding: 16,
+    padding: size.pad,
     borderWidth: 1,
     borderColor: surface.cardBorder,
     ...shadow,
   },
-  btn: { height: 52, borderRadius: radius.pill },
-  btnInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 22 },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.9)',
-    backgroundColor: surface.card,
-  },
+  btnInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 18 },
+  chip: { height: 36, paddingHorizontal: 12, borderRadius: radius.pill, justifyContent: 'center', flexDirection: 'row', alignItems: 'center' },
+  segment: { height: 40, borderRadius: radius.pill, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 4 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
-  scaleDot: { flex: 1, height: 44, borderRadius: 14, backgroundColor: surface.well, alignItems: 'center', justifyContent: 'center' },
+  scaleDot: { height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  choice: { height: 64, borderRadius: radius.md, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12 },
+  choiceIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  option: { borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 6 },
   input: {
     backgroundColor: surface.cardStrong,
     borderRadius: radius.md,

@@ -145,7 +145,7 @@ export default function Insights() {
       ) : null}
 
       {foods.bad.length || foods.good.length ? (
-        <Row gap={10} style={{ alignItems: 'flex-start' }}>
+        <Row gap={10} style={{ alignItems: 'stretch' }}>
           <FoodList title="Dokunanlar" items={foods.bad.map((x) => `${x.name} (${x.bad + x.mild}/${x.n})`)} color={palette.bad} />
           <FoodList title="İyi gelenler" items={foods.good.map((x) => `${x.name} (${x.n})`)} color={palette.good} />
         </Row>

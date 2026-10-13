@@ -6,9 +6,9 @@ import { Chip, Row, T } from './ui';
 
 const QUICK: { label: string; minutes: number }[] = [
   { label: 'Şimdi', minutes: 0 },
-  { label: '30 dk önce', minutes: 30 },
-  { label: '1 saat önce', minutes: 60 },
-  { label: '2 saat önce', minutes: 120 },
+  { label: '30 dk', minutes: 30 },
+  { label: '1 saat', minutes: 60 },
+  { label: '2 saat', minutes: 120 },
 ];
 
 /** Date + time picker with quick presets. Value is epoch ms. */
@@ -24,16 +24,18 @@ export function WhenField({ value, onChange, label = 'Ne zaman?' }: { value: num
           display={Platform.OS === 'ios' ? 'compact' : 'default'}
           maximumDate={new Date()}
           locale="tr-TR"
-          accentColor={palette.peri}
+          accentColor={palette.ink}
           themeVariant="light"
           onChange={(_, d) => d && onChange(d.getTime())}
         />
       </Row>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      <Row gap={6}>
         {QUICK.map((q) => (
-          <Chip key={q.label} label={q.label} active={Math.abs(diff - q.minutes) <= 2} onPress={() => onChange(now() - q.minutes * 60000)} />
+          <View key={q.label} style={{ flex: 1 }}>
+            <Chip label={q.label} active={Math.abs(diff - q.minutes) <= 2} onPress={() => onChange(now() - q.minutes * 60000)} />
+          </View>
         ))}
-      </View>
+      </Row>
       {diff > 2 && !QUICK.some((q) => Math.abs(diff - q.minutes) <= 2) ? (
         <T v="small" color={palette.inkSoft} style={type.medium}>
           {new Date(value).toLocaleString('tr-TR', { weekday: 'long', hour: '2-digit', minute: '2-digit' })}

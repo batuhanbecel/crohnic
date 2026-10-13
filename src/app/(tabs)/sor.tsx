@@ -1,13 +1,12 @@
 import { router } from 'expo-router';
-import type { SymbolViewProps } from 'expo-symbols';
 import { useMemo, useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import { TextInput, View } from 'react-native';
 import { Mascot } from '../../components/Mascot';
 import { ThinkingOverlay } from '../../components/ThinkingOverlay';
-import { Button, Card, Chip, Icon, Row, Screen, T, Tap, st } from '../../components/ui';
+import { Button, Card, Chip, IconBubble, Row, Screen, T, Tap, st, type SymbolName } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
 import { findFoodByName, searchFoods } from '../../lib/foods';
-import { palette, radius, type } from '../../lib/theme';
+import { palette } from '../../lib/theme';
 import { useAnalyze } from '../../lib/use-analyze';
 
 export default function Ask() {
@@ -32,7 +31,7 @@ export default function Ask() {
       <ThinkingOverlay mode={busy} />
       <Row gap={4} style={{ alignItems: 'flex-end', marginTop: 4 }}>
         <View style={{ flex: 1 }}>
-          <T v="caption" color={palette.inkSoft} style={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
+          <T v="caption" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft} style={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
             {app.phase === 'atak' ? 'Atak modunda bakıyorum' : 'Remisyon modunda bakıyorum'}
           </T>
           <T v="large">Bu bana iyi gelir mi?</T>
@@ -100,7 +99,7 @@ function PhotoCard({
 }: {
   title: string;
   sub: string;
-  icon: SymbolViewProps['name'];
+  icon: SymbolName;
   color: string;
   onCamera: () => void;
   onLibrary: () => void;
@@ -108,9 +107,7 @@ function PhotoCard({
   return (
     <Card style={{ gap: 14 }}>
       <Row gap={14} style={{ alignItems: 'flex-start' }}>
-        <View style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name={icon} color="#fff" size={20} fallback="📷" />
-        </View>
+        <IconBubble name={icon} color={color} dim={44} fallback="📷" />
         <View style={{ flex: 1, gap: 2 }}>
           <T v="h2">{title}</T>
           <T v="small" color={palette.inkSoft}>
@@ -119,18 +116,8 @@ function PhotoCard({
         </View>
       </Row>
       <Row gap={8}>
-        <Tap onPress={onCamera} style={{ flex: 1 }}>
-          <View style={{ height: 46, borderRadius: radius.pill, backgroundColor: palette.ink, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <Icon name="camera.fill" color="#fff" size={16} fallback="📷" />
-            <Text style={[{ color: '#fff', fontSize: 16 }, type.semibold]}>Çek</Text>
-          </View>
-        </Tap>
-        <Tap onPress={onLibrary} style={{ flex: 1 }}>
-          <View style={{ height: 46, borderRadius: radius.pill, backgroundColor: 'rgba(29,43,34,0.06)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <Icon name="photo.on.rectangle" color={palette.ink} size={16} fallback="🖼️" />
-            <Text style={[{ color: palette.ink, fontSize: 16 }, type.semibold]}>Galeriden</Text>
-          </View>
-        </Tap>
+        <Button title="Çek" icon="camera.fill" color={color} onPress={onCamera} style={{ flex: 1 }} />
+        <Button title="Galeriden" kind="glass" icon="photo.on.rectangle" onPress={onLibrary} style={{ flex: 1 }} />
       </Row>
     </Card>
   );

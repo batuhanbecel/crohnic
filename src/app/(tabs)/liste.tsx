@@ -59,7 +59,7 @@ export default function FoodList() {
   const header = (
     <View style={{ gap: 12, marginBottom: 12 }}>
       <View style={{ marginTop: 4 }}>
-        <T v="caption" color={palette.inkSoft} style={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
+        <T v="caption" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft} style={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
           {FOODS.length} yemek · {app.phase === 'atak' ? 'atak' : 'remisyon'} dönemine göre
         </T>
         <T v="large">Yemekler</T>
@@ -118,7 +118,7 @@ export default function FoodList() {
           return (
             <Tap onPress={() => router.push(`/besin/${f.id}`)}>
               <Card style={{ padding: 10, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: surface.well, alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: 50, height: 50, borderRadius: radius.sm, backgroundColor: surface.well, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ fontSize: 24 }}>{f.emoji}</Text>
                 </View>
                 <View style={{ flex: 1, gap: 2 }}>
