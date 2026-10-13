@@ -3,7 +3,7 @@
     "name": "Crohnic",
     "slug": "crohnic",
     "scheme": "crohnic",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -16,7 +16,8 @@
         "NSPhotoLibraryUsageDescription": "Crohnic, galerinden seçtiğin yemek ve menü fotoğraflarını analiz etmek için fotoğraflarına erişir.",
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleDevelopmentRegion": "tr"
-      }
+      },
+      "icon": "./assets/app.icon"
     },
     "android": {
       "package": "tr.com.f28.crohnic",
@@ -27,7 +28,6 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "permissions": [
-        "android.permission.RECORD_AUDIO",
         "android.permission.RECORD_AUDIO"
       ]
     },
