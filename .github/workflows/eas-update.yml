@@ -1,0 +1,55 @@
+# master'a her push'ta uygulamaya uzaktan güncelleme gönderir (EAS Update).
+# Gerekli: repo Settings > Secrets and variables > Actions > EXPO_TOKEN
+name: eas-update
+
+on:
+  push:
+    branches: [master]
+    paths-ignore:
+      - 'server/**'
+      - '**.md'
+  workflow_dispatch:
+
+concurrency:
+  group: eas-update
+  cancel-in-progress: true
+
+jobs:
+  update:
+    name: EAS Update (production)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check for EXPO_TOKEN
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "EXPO_TOKEN secret eksik. expo.dev > Account settings > Access tokens'dan oluşturup repo secret olarak ekle."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Publish update
+        env:
+          MESSAGE: ${{ github.event.head_commit.message || 'Elle tetiklenen güncelleme' }}
+        run: eas update --channel production --platform ios --non-interactive --message "$(echo "$MESSAGE" | head -n 1)"

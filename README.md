@@ -33,15 +33,19 @@ npx eas-cli@latest submit -p ios --latest
 
 ### Güncellemeler
 
-Kodda değişiklik yaptığında yeniden build almana gerek yok:
+`master`'a her push'ta GitHub Actions uygulamaya uzaktan güncelleme gönderir (`.github/workflows/eas-update.yml`). Uygulama bir sonraki açılışta yeni sürümü indirir; Ayarlar → "Güncelleme var mı?" ile elle de kontrol edilebilir.
+
+Bir kerelik kurulum: expo.dev → Account settings → **Access tokens** → token oluştur → GitHub repo → Settings → Secrets and variables → Actions → **New repository secret**, adı `EXPO_TOKEN`.
+
+Elle göndermek için: `npx eas-cli@latest update --channel production --message "ne değişti"`
+
+**Yeni build gereken durumlar** (OTA ile gitmez): yeni native paket eklemek, `app.json`'da ikon, izin, isim veya `version` değişikliği. O zaman `version`'ı artır (ör. 1.2.0) ve:
 
 ```bash
-npx eas-cli@latest update --channel production --message "ne değişti"
+npx eas-cli@latest build -p ios --profile production --auto-submit
 ```
 
-Uygulama bir sonraki açılışta yeni sürümü indirir. Ayarlar → "Güncelleme var mı?" ile elle de kontrol edebilirsin.
-
-Yeni bir native paket eklendiğinde ya da `app.json`'daki sürüm değiştiğinde yeniden `build` + `submit` gerekir.
+TestFlight build'leri 90 gün geçerli; süre dolmadan bir build almak yeterli.
 
 ## 3. AI sunucusu (Vercel)
 
