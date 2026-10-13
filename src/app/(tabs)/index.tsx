@@ -2,6 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, View } from 'react-native';
+import { AddMenu } from '../../components/AddMenu';
 import { BRISTOL } from '../../components/bristol';
 import { SLEEP, STRESS } from '../../components/checkin';
 import { GroupThumb } from '../../components/MealRow';
@@ -51,6 +52,7 @@ export default function Home() {
   const [perm, setPerm] = useState<PermissionState>('granted');
   const [promptSeen, setPromptSeen] = useState(true);
   const [backupDue, setBackupDue] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     if (app.ready && !app.onboarded) router.push('/hosgeldin');
@@ -310,7 +312,8 @@ export default function Home() {
         </Tap>
       </Card>
 
-      <Button title="Kayıt ekle" icon="plus" color={flare ? palette.flareDeep : undefined} onPress={() => router.push('/ekle')} />
+      <Button title="Kayıt ekle" icon="plus" color={flare ? palette.flareDeep : undefined} onPress={() => setAdding(true)} />
+      <AddMenu visible={adding} onClose={() => setAdding(false)} />
 
       {redFlag ? (
         <Card tint={palette.badSoft} style={{ gap: 8 }}>

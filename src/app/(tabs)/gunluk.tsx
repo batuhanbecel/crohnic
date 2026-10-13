@@ -1,7 +1,8 @@
-import { router, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
+import { AddMenu } from '../../components/AddMenu';
 import { MealRow } from '../../components/MealRow';
 import { BRISTOL, bristolTone } from '../../components/bristol';
 import { Card, Empty, IconButton, Row, Screen, Segmented, T, Tap } from '../../components/ui';
@@ -21,6 +22,7 @@ export default function Journal() {
   const sql = useSQLiteContext();
   const app = useApp();
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [adding, setAdding] = useState(false);
   const [filter, setFilter] = useState<Filter>('hepsi');
 
   const load = useCallback(async () => {
@@ -69,8 +71,9 @@ export default function Journal() {
     <Screen tone={app.phase === 'atak' ? 'flare' : 'calm'}>
       <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4 }}>
         <T v="large">Günlük</T>
-        <IconButton name="plus" label="Kayıt ekle" fallback="+" onPress={() => router.push('/ekle')} />
+        <IconButton name="plus" label="Kayıt ekle" fallback="+" onPress={() => setAdding(true)} />
       </Row>
+      <AddMenu visible={adding} onClose={() => setAdding(false)} />
       <Segmented
         value={filter}
         onChange={setFilter}

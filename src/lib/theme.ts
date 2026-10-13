@@ -77,6 +77,8 @@ const SURFACE_LIGHT = {
   glassFill: 'rgba(255,255,255,0.5)',
   glassBorder: 'rgba(255,255,255,0.85)',
   scrim: 'rgba(244,246,238,0.55)',
+  /** solid panel that slides over content (bottom menus) */
+  sheet: '#FBFCF7',
   /** radial glows behind the content: calm / flare */
   glow: { calm: ['#C6E89B', '#FFD9B0', '#D9D7FF'], flare: ['#FFC2A3', '#FFDDB0', '#FFD0C6'] },
   glowOpacity: 1,
@@ -90,6 +92,7 @@ const SURFACE_DARK: typeof SURFACE_LIGHT = {
   glassFill: 'rgba(40,52,45,0.55)',
   glassBorder: 'rgba(255,255,255,0.12)',
   scrim: 'rgba(14,20,16,0.6)',
+  sheet: '#1A241E',
   glow: { calm: ['#2C5A1C', '#5A3A1C', '#2E2C66'], flare: ['#6A2A12', '#5A3A14', '#5A2420'] },
   glowOpacity: 0.55,
 };
