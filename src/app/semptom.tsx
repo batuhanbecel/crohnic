@@ -3,6 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { TextInput } from 'react-native';
 import { Mascot } from '../components/Mascot';
+import { Suspects } from '../components/Suspects';
 import { WhenField } from '../components/WhenField';
 import { Button, Card, Row, Scale, Screen, T, st } from '../components/ui';
 import { useApp } from '../lib/app-state';
@@ -26,6 +27,7 @@ export default function Symptom() {
   const [v, setV] = useState<Record<Key, number>>({ pain: 0, bloating: 0, gas: 0, fatigue: 0 });
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [asking, setAsking] = useState(false);
 
   const total = v.pain + v.bloating + v.gas + v.fatigue;
   const mood = total === 0 ? 'cheer' : v.pain >= 4 || total >= 12 ? 'worried' : total >= 6 ? 'ok' : 'happy';
@@ -35,8 +37,17 @@ export default function Symptom() {
     await db.addSymptom(sql, { at, ...v, note: note.trim() || null });
     app.bump();
     setSaving(false);
-    router.back();
+    // a rough day: ask which recent meal might be behind it
+    if (v.pain >= 2 || v.bloating >= 3 || v.gas >= 3) setAsking(true);
+    else router.back();
   };
+
+  if (asking)
+    return (
+      <Screen header={false}>
+        <Suspects at={at} onDone={() => router.back()} />
+      </Screen>
+    );
 
   return (
     <Screen header={false}>

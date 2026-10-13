@@ -3,10 +3,10 @@
     "name": "Crohnic",
     "slug": "crohnic",
     "scheme": "crohnic",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "backgroundColor": "#F4F6EE",
     "ios": {
       "supportsTablet": false,
@@ -49,7 +49,8 @@
           "photosPermission": "Crohnic, galerinden seçtiğin yemek ve menü fotoğraflarını analiz etmek için fotoğraflarına erişir."
         }
       ],
-      "expo-updates"
+      "expo-updates",
+      "./plugins/local-notifications-only.js"
     ],
     "experiments": {
       "typedRoutes": false

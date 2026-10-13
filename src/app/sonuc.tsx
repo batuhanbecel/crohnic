@@ -7,6 +7,7 @@ import { Button, Card, Icon, Row, Screen, T, Tap, VERDICT_UI, VerdictBadge } fro
 import type { MealAnalysis, MenuAnalysis } from '../lib/ai';
 import { useApp } from '../lib/app-state';
 import * as db from '../lib/db';
+import { afterMealSaved } from '../lib/reminders';
 import { TAGS, findFoodByName, normalizeName, type Tag, type Verdict } from '../lib/foods';
 import { savePhoto } from '../lib/photos';
 import { palette, radius, surface, type } from '../lib/theme';
@@ -59,6 +60,7 @@ function useSaveMeal() {
       ai_verdict: o.verdict,
       phase: app.phase,
     });
+    await afterMealSaved(sql, [id]);
     app.bump();
     return id;
   };
@@ -219,7 +221,7 @@ function MenuResult({ a }: { a: MenuAnalysis }) {
     if (!dishes.length) return;
     setSaving(true);
     try {
-      await db.addMealGroup(
+      const saved = await db.addMealGroup(
         sql,
         dishes.map((d) => ({
           name: d.name,
@@ -230,6 +232,7 @@ function MenuResult({ a }: { a: MenuAnalysis }) {
         })),
         { eaten_at: Date.now(), phase: app.phase },
       );
+      await afterMealSaved(sql, saved.ids);
       app.bump();
       router.back();
       setTimeout(() => Alert.alert('Kaydedildi', 'Afiyet olsun. Birkaç saat sonra nasıl geçtiğini soracağım.'), 350);

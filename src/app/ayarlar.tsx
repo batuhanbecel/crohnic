@@ -1,12 +1,16 @@
 import Constants from 'expo-constants';
+import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import * as Updates from 'expo-updates';
-import { useState } from 'react';
-import { Alert, Share, TextInput } from 'react-native';
-import { Button, Card, Row, Screen, T, st } from '../components/ui';
+import { useCallback, useState } from 'react';
+import { Alert, Linking, Switch, TextInput, View } from 'react-native';
+import { Button, Card, Icon, Row, Screen, T, Tap, st } from '../components/ui';
 import { DEFAULT_AI, analyze, type AiConfig } from '../lib/ai';
 import { useApp } from '../lib/app-state';
+import { applyBackup, lastBackup, pickBackup, shareBackup } from '../lib/backup';
+import { daysSince, relative } from '../lib/dates';
 import * as db from '../lib/db';
+import { SETTINGS, askPermission, isOn, permission, syncReminders, type PermissionState } from '../lib/reminders';
 import { palette } from '../lib/theme';
 
 export default function Settings() {
@@ -17,6 +21,82 @@ export default function Settings() {
   const [token, setToken] = useState(app.ai?.token ?? '');
   const [testing, setTesting] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [perm, setPerm] = useState<PermissionState>('undetermined');
+  const [remindMeals, setRemindMeals] = useState(true);
+  const [remindDaily, setRemindDaily] = useState(true);
+  const [backupAt, setBackupAt] = useState<number | null>(null);
+  const [backingUp, setBackingUp] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+        setPerm(await permission());
+        setRemindMeals(await isOn(sql, SETTINGS.meals));
+        setRemindDaily(await isOn(sql, SETTINGS.daily));
+        setBackupAt(await lastBackup(sql));
+      })();
+    }, [sql]),
+  );
+
+  const toggle = async (key: string, on: boolean, set: (v: boolean) => void) => {
+    set(on);
+    await db.setSetting(sql, key, on ? '1' : '0');
+    if (on && perm !== 'granted') {
+      const ok = await askPermission();
+      setPerm(ok ? 'granted' : await permission());
+      if (!ok && (await permission()) === 'denied') {
+        Alert.alert('Bildirimler kapalı', 'iPhone Ayarlar > Crohnic > Bildirimler’den açabilirsin.', [
+          { text: 'Vazgeç', style: 'cancel' },
+          { text: 'Ayarları aç', onPress: () => Linking.openSettings() },
+        ]);
+      }
+    }
+    syncReminders(sql);
+  };
+
+  const backup = async () => {
+    setBackingUp(true);
+    try {
+      await shareBackup(sql);
+      setBackupAt(await lastBackup(sql));
+    } catch (e: any) {
+      Alert.alert('Yedeklenemedi', e?.message ?? '');
+    } finally {
+      setBackingUp(false);
+    }
+  };
+
+  const restore = async () => {
+    try {
+      const picked = await pickBackup();
+      if (!picked) return;
+      const { summary } = picked;
+      const when = summary.exported_at ? new Date(summary.exported_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'tarihi bilinmeyen';
+      Alert.alert(
+        'Yedek yüklensin mi?',
+        `${when} yedeği: ${summary.meals} öğün, ${summary.symptoms} semptom, ${summary.bowel} tuvalet, ${summary.meds} ilaç. Bu telefondaki mevcut kayıtların yerini alacak.`,
+        [
+          { text: 'Vazgeç', style: 'cancel' },
+          {
+            text: 'Yükle',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await applyBackup(sql, picked.data);
+                Alert.alert('Yedek yüklendi', 'Uygulama yeniden başlayacak.', [
+                  { text: 'Tamam', onPress: () => (Updates.isEnabled && !__DEV__ ? Updates.reloadAsync() : app.bump()) },
+                ]);
+              } catch (e: any) {
+                Alert.alert('Yüklenemedi', e?.message ?? '');
+              }
+            },
+          },
+        ],
+      );
+    } catch (e: any) {
+      Alert.alert('Açılamadı', e?.message ?? '');
+    }
+  };
 
   const saveAll = async () => {
     await app.saveName(name);
@@ -59,10 +139,6 @@ export default function Settings() {
     }
   };
 
-  const exportData = async () => {
-    const data = await db.exportAll(sql);
-    await Share.share({ title: 'Crohnic verilerim', message: JSON.stringify(data, null, 2) });
-  };
 
   return (
     <Screen header={false}>
@@ -111,12 +187,51 @@ export default function Settings() {
 
       <Button title="Kaydet" icon="checkmark" onPress={saveAll} />
 
-      <Card style={{ gap: 10 }}>
-        <T v="h3">Verilerin</T>
-        <T v="small" color={palette.inkSoft}>
-          Kayıtların sadece bu telefonda. Yedeklemek ya da doktoruna göndermek için dışa aktarabilirsin.
+      <Card style={{ gap: 4, paddingVertical: 6 }}>
+        <LinkRow icon="pills.fill" title="İlaçlarım" onPress={() => router.push('/ilaclar')} />
+        <View style={{ height: 1, backgroundColor: palette.hairline }} />
+        <LinkRow icon="doc.text.fill" title="Doktor raporu (PDF)" onPress={() => router.push('/rapor')} />
+      </Card>
+
+      <Card style={{ gap: 14 }}>
+        <T v="h3">Hatırlatmalar</T>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <View style={{ flex: 1 }}>
+            <T v="callout">Öğünden sonra sor</T>
+            <T v="small" color={palette.inkSoft}>
+              Yedikten 3 saat sonra nasıl geçti diye sorar
+            </T>
+          </View>
+          <Switch value={remindMeals && perm === 'granted'} onValueChange={(v) => toggle(SETTINGS.meals, v, setRemindMeals)} trackColor={{ true: palette.lettuce }} />
+        </Row>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <View style={{ flex: 1 }}>
+            <T v="callout">Akşam kontrolü</T>
+            <T v="small" color={palette.inkSoft}>
+              21:30’da stres ve uykunu sorar
+            </T>
+          </View>
+          <Switch value={remindDaily && perm === 'granted'} onValueChange={(v) => toggle(SETTINGS.daily, v, setRemindDaily)} trackColor={{ true: palette.lettuce }} />
+        </Row>
+        <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
+          {perm === 'denied'
+            ? 'Bildirim izni kapalı. iPhone Ayarlar > Crohnic > Bildirimler’den açabilirsin.'
+            : 'İlaç hatırlatmaları her ilacın kendi ayarında.'}
         </T>
-        <Button title="Dışa aktar" kind="glass" icon="square.and.arrow.up" onPress={exportData} />
+      </Card>
+
+      <Card style={{ gap: 10 }}>
+        <T v="h3">Yedek</T>
+        <T v="small" color={palette.inkSoft}>
+          Kayıtların sadece bu telefonda. Yedeği “Dosyalar’a Kaydet” ile iCloud Drive’a koy; telefon değişirse buradan geri yüklersin. Yemek fotoğrafları yedeğe girmez.
+        </T>
+        <T v="small" color={backupAt && daysSince(backupAt) < 30 ? palette.good : palette.warn}>
+          {backupAt ? `Son yedek: ${relative(backupAt)}` : 'Henüz yedek almadın'}
+        </T>
+        <Row gap={8}>
+          <Button title="Yedekle" icon="icloud.and.arrow.up" onPress={backup} loading={backingUp} style={{ flex: 1 }} />
+          <Button title="Geri yükle" kind="glass" icon="icloud.and.arrow.down" onPress={restore} style={{ flex: 1 }} />
+        </Row>
       </Card>
 
       <Card style={{ gap: 10 }}>
@@ -134,5 +249,19 @@ export default function Settings() {
         Crohnic tıbbi tavsiye vermez. Acil durumda 112.
       </T>
     </Screen>
+  );
+}
+
+function LinkRow({ icon, title, onPress }: { icon: 'pills.fill' | 'doc.text.fill'; title: string; onPress: () => void }) {
+  return (
+    <Tap onPress={onPress}>
+      <Row gap={12} style={{ paddingVertical: 10 }}>
+        <Icon name={icon} color={palette.peri} />
+        <T v="callout" style={{ flex: 1 }}>
+          {title}
+        </T>
+        <Icon name="chevron.right" size={14} color={palette.inkFaint} fallback="›" />
+      </Row>
+    </Tap>
   );
 }

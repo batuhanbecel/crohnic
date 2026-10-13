@@ -8,6 +8,7 @@ import { Button, Card, Row, Screen, T, VERDICT_UI, VerdictBadge } from '../../co
 import { useApp } from '../../lib/app-state';
 import { now } from '../../lib/dates';
 import * as db from '../../lib/db';
+import { afterMealSaved } from '../../lib/reminders';
 import { FOOD_BY_ID, FOODS, TAGS } from '../../lib/foods';
 import { palette, radius, surface, type } from '../../lib/theme';
 import { assessFood, generalVerdict } from '../../lib/tolerance';
@@ -38,7 +39,7 @@ export default function FoodDetail() {
   const flare = generalVerdict(food.tags, 'atak').verdict;
 
   const ate = async () => {
-    await db.addMeal(sql, {
+    const id = await db.addMeal(sql, {
       name: food.name,
       food_id: food.id,
       tags: food.tags.join(','),
@@ -47,6 +48,7 @@ export default function FoodDetail() {
       ai_verdict: a.verdict,
       phase: app.phase,
     });
+    await afterMealSaved(sql, [id]);
     app.bump();
     router.back();
     setTimeout(() => Alert.alert('Kaydedildi', 'Birkaç saat sonra nasıl geçtiğini soracağım.'), 350);

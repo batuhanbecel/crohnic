@@ -1,7 +1,7 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Platform, View } from 'react-native';
 import { now } from '../lib/dates';
-import { palette, type } from '../lib/theme';
+import { isDark, palette, type } from '../lib/theme';
 import { Chip, Row, T } from './ui';
 
 const QUICK: { label: string; minutes: number }[] = [
@@ -25,7 +25,7 @@ export function WhenField({ value, onChange, label = 'Ne zaman?' }: { value: num
           maximumDate={new Date()}
           locale="tr-TR"
           accentColor={palette.ink}
-          themeVariant="light"
+          themeVariant={isDark ? "dark" : "light"}
           onChange={(_, d) => d && onChange(d.getTime())}
         />
       </Row>

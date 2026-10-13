@@ -10,6 +10,7 @@ import { Button, Card, Icon, Row, Screen, Segmented, T, Tap } from '../component
 import { useApp } from '../lib/app-state';
 import { now } from '../lib/dates';
 import * as db from '../lib/db';
+import { afterMealSaved } from '../lib/reminders';
 import { findFoodByName, type Food, type Phase } from '../lib/foods';
 import { savePhoto } from '../lib/photos';
 import { palette, radius, surface } from '../lib/theme';
@@ -56,7 +57,7 @@ export default function AddMeal() {
           file = null;
         }
       }
-      await db.addMealGroup(
+      const saved = await db.addMealGroup(
         sql,
         all.map((it, i) => ({
           name: it.food?.name ?? it.name,
@@ -67,6 +68,7 @@ export default function AddMeal() {
         })),
         { eaten_at: at, phase, reaction },
       );
+      await afterMealSaved(sql, saved.ids, reaction);
       app.bump();
       router.back();
     } catch (e: any) {

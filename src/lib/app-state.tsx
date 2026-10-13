@@ -16,6 +16,9 @@ type AppState = {
   phase: Phase;
   phaseSince: number | null;
   ai: AiConfig | null;
+  /** false only for a fresh install that hasn't seen the intro */
+  onboarded: boolean;
+  finishOnboarding: () => Promise<void>;
   dataVersion: number;
   pending: PendingResult | null;
   setPending: (p: PendingResult | null) => void;
@@ -34,17 +37,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [phase, setPhaseState] = useState<Phase>('remisyon');
   const [phaseSince, setPhaseSince] = useState<number | null>(null);
   const [ai, setAi] = useState<AiConfig | null>(null);
+  const [onboarded, setOnboarded] = useState(true);
   const [dataVersion, setDataVersion] = useState(0);
   const [pending, setPending] = useState<PendingResult | null>(null);
 
   useEffect(() => {
     (async () => {
-      const [p, url, token, n] = await Promise.all([
+      const [p, url, token, n, seen, mealCount] = await Promise.all([
         db.getPhase(sql),
         db.getSetting(sql, 'ai_url'),
         db.getSetting(sql, 'ai_token'),
         db.getSetting(sql, 'name'),
+        db.getSetting(sql, 'onboarded'),
+        db.countMeals(sql),
       ]);
+      // people who already use the app skip the intro
+      if (!seen && mealCount > 0) await db.setSetting(sql, 'onboarded', '1');
+      setOnboarded(!!seen || mealCount > 0);
       setPhaseState(p.phase);
       setPhaseSince(p.since);
       // Built-in server wins when the build carries a token; manual entry is only a fallback (e.g. Expo Go).
@@ -82,9 +91,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const bump = useCallback(() => setDataVersion((v) => v + 1), []);
 
+  const finishOnboarding = useCallback(async () => {
+    await db.setSetting(sql, 'onboarded', '1');
+    const [p, n] = await Promise.all([db.getPhase(sql), db.getSetting(sql, 'name')]);
+    setPhaseState(p.phase);
+    setPhaseSince(p.since);
+    setName(n ?? '');
+    setOnboarded(true);
+  }, [sql]);
+
   const value = useMemo(
-    () => ({ ready, name, phase, phaseSince, ai, dataVersion, pending, setPending, changePhase, saveAi, saveName, bump }),
-    [ready, name, phase, phaseSince, ai, dataVersion, pending, changePhase, saveAi, saveName, bump],
+    () => ({ ready, name, phase, phaseSince, ai, onboarded, finishOnboarding, dataVersion, pending, setPending, changePhase, saveAi, saveName, bump }),
+    [ready, name, phase, phaseSince, ai, onboarded, finishOnboarding, dataVersion, pending, changePhase, saveAi, saveName, bump],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

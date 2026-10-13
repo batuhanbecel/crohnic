@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import type { Verdict } from '../lib/foods';
-import { palette, radius, shadow, size, surface, type } from '../lib/theme';
+import { isDark, onTint, palette, radius, shadow, size, surface, type } from '../lib/theme';
 
 /*
  * Crohnic design system
@@ -64,9 +64,9 @@ export function Glass({
     );
   }
   return (
-    <View style={[{ overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.85)' }, style]}>
-      <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: tint ?? 'rgba(255,255,255,0.5)', opacity: tint ? 0.92 : 1 }]} />
+    <View style={[{ overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: surface.glassBorder }, style]}>
+      <BlurView intensity={40} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: tint ?? surface.glassFill, opacity: tint ? 0.92 : 1 }]} />
       {children}
     </View>
   );
@@ -114,23 +114,21 @@ export function GlassPress({
 
 // ---------- background ----------
 export function Backdrop({ tone = 'calm' }: { tone?: 'calm' | 'flare' }) {
-  const a = tone === 'flare' ? '#FFC2A3' : '#C6E89B';
-  const b = tone === 'flare' ? '#FFDDB0' : '#FFD9B0';
-  const c = tone === 'flare' ? '#FFD0C6' : '#D9D7FF';
+  const [a, b, c] = surface.glow[tone];
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       <Svg width="100%" height="100%">
         <Defs>
           <RadialGradient id="a" cx="10%" cy="0%" r="70%">
-            <Stop offset="0" stopColor={a} stopOpacity={0.9} />
+            <Stop offset="0" stopColor={a} stopOpacity={0.9 * surface.glowOpacity} />
             <Stop offset="1" stopColor={a} stopOpacity={0} />
           </RadialGradient>
           <RadialGradient id="b" cx="100%" cy="30%" r="60%">
-            <Stop offset="0" stopColor={b} stopOpacity={0.75} />
+            <Stop offset="0" stopColor={b} stopOpacity={0.75 * surface.glowOpacity} />
             <Stop offset="1" stopColor={b} stopOpacity={0} />
           </RadialGradient>
           <RadialGradient id="c" cx="20%" cy="100%" r="70%">
-            <Stop offset="0" stopColor={c} stopOpacity={0.7} />
+            <Stop offset="0" stopColor={c} stopOpacity={0.7 * surface.glowOpacity} />
             <Stop offset="1" stopColor={c} stopOpacity={0} />
           </RadialGradient>
         </Defs>
@@ -277,7 +275,7 @@ export function Button({
   compact?: boolean;
 }) {
   const tint = kind === 'primary' ? color ?? palette.ink : kind === 'danger' ? palette.bad : undefined;
-  const fg = kind === 'primary' || kind === 'danger' ? '#fff' : kind === 'plain' ? palette.inkSoft : palette.ink;
+  const fg = kind === 'primary' || kind === 'danger' ? onTint(tint) : kind === 'plain' ? palette.inkSoft : palette.ink;
   const h = compact ? size.buttonSm : size.button;
   const content = (
     <View style={[st.btnInner, { height: h, paddingHorizontal: compact ? 12 : 18 }]}>
@@ -306,7 +304,7 @@ export function Button({
 export function Chip({ label, active, onPress, color = palette.ink, emoji }: { label: string; active?: boolean; onPress?: () => void; color?: string; emoji?: string }) {
   return (
     <GlassPress onPress={onPress} tint={active ? color : undefined} style={st.chip}>
-      <Label small color={active ? '#fff' : palette.ink}>
+      <Label small color={active ? onTint(color) : palette.ink}>
         {`${emoji ? `${emoji}  ` : ''}${label}`}
       </Label>
     </GlassPress>
@@ -339,8 +337,8 @@ export function Segmented<K extends string>({
               style={{ flex: 1 }}
             >
               <View style={[st.segment, on ? { backgroundColor: c, ...shadow, shadowColor: c, shadowOpacity: 0.3, shadowRadius: 8 } : null]}>
-                {it.icon ? <Icon name={it.icon} size={14} color={on ? '#fff' : palette.inkSoft} /> : null}
-                <Label small={items.length > 3} color={on ? '#fff' : palette.inkSoft}>
+                {it.icon ? <Icon name={it.icon} size={14} color={on ? onTint(c) : palette.inkSoft} /> : null}
+                <Label small={items.length > 3} color={on ? onTint(c) : palette.inkSoft}>
                   {it.label}
                 </Label>
               </View>
@@ -363,7 +361,7 @@ export function Scale({ value, onChange, max = 5, color = palette.ink, labels }:
           return (
             <View key={i} style={{ flex: 1 }}>
               <GlassPress onPress={() => onChange(i)} tint={tint} style={st.scaleDot}>
-                <Label color={on ? '#fff' : palette.inkSoft}>{String(i)}</Label>
+                <Label color={on ? onTint(tint) : palette.inkSoft}>{String(i)}</Label>
               </GlassPress>
             </View>
           );

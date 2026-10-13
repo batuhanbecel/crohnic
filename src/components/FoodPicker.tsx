@@ -71,7 +71,7 @@ export function FoodPicker({
           accessibilityLabel="Ekle"
           style={{ width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' }}
         >
-          <Icon name="plus" size={20} color={ready ? '#fff' : palette.inkFaint} fallback="+" />
+          <Icon name="plus" size={20} color={ready ? palette.onInk : palette.inkFaint} fallback="+" />
         </GlassPress>
       </Row>
       {suggestions.length ? (

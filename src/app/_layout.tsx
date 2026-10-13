@@ -4,6 +4,7 @@ import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Bootstrap } from '../components/Bootstrap';
 import { hasLiquidGlass } from '../components/ui';
 import { AppProvider } from '../lib/app-state';
 import { migrate } from '../lib/db';
@@ -21,18 +22,19 @@ export default function RootLayout() {
     presentation: 'modal' as const,
     headerShown: true,
     headerTransparent: true,
-    headerBlurEffect: glass ? undefined : ('systemUltraThinMaterialLight' as const),
+    headerBlurEffect: glass ? undefined : ('systemUltraThinMaterial' as const),
   };
   const pushed = {
     headerTransparent: true,
-    headerBlurEffect: glass ? undefined : ('systemUltraThinMaterialLight' as const),
+    headerBlurEffect: glass ? undefined : ('systemUltraThinMaterial' as const),
   };
 
   return (
     <SafeAreaProvider>
       <SQLiteProvider databaseName="crohnic.db" onInit={migrate}>
         <AppProvider>
-          <StatusBar style="dark" />
+          <StatusBar style="auto" />
+          <Bootstrap />
           <Stack
             screenOptions={{
               contentStyle: { backgroundColor: palette.paper },
@@ -50,6 +52,11 @@ export default function RootLayout() {
             <Stack.Screen name="sonuc" options={{ ...pushed, title: '' }} />
             <Stack.Screen name="besin/[id]" options={{ ...pushed, title: '' }} />
             <Stack.Screen name="ayarlar" options={{ ...pushed, title: 'Ayarlar' }} />
+            <Stack.Screen name="ilaclar" options={{ ...pushed, title: 'İlaçlarım' }} />
+            <Stack.Screen name="rapor" options={{ ...pushed, title: 'Doktor raporu' }} />
+            <Stack.Screen name="ilac" options={{ ...sheet, title: 'İlaç' }} />
+            <Stack.Screen name="gun" options={{ ...sheet, title: 'Bugün nasıldı' }} />
+            <Stack.Screen name="hosgeldin" options={{ presentation: 'fullScreenModal', headerShown: false, gestureEnabled: false }} />
           </Stack>
         </AppProvider>
       </SQLiteProvider>

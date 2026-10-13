@@ -1,15 +1,18 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import type { SymbolViewProps } from 'expo-symbols';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
+import { Doses } from '../../components/Doses';
 import { GroupThumb, MealRow } from '../../components/MealRow';
 import { Mascot, type Mood } from '../../components/Mascot';
 import { ReactionPicker } from '../../components/ReactionPicker';
-import { Card, IconBubble, IconButton, Row, Screen, SectionTitle, Segmented, T, Tap } from '../../components/ui';
+import { Button, Card, IconBubble, IconButton, Row, Screen, SectionTitle, Segmented, T, Tap } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
-import { dayKey, daysSince, now, relative, todayLabel } from '../../lib/dates';
+import { dayKey, daysSince, isoDay, now, relative, todayLabel } from '../../lib/dates';
 import * as db from '../../lib/db';
+import { lastBackup } from '../../lib/backup';
+import { askPermission, cancelMealReminder, permission, syncReminders, type PermissionState } from '../../lib/reminders';
 import { palette, radius, size, type } from '../../lib/theme';
 
 const TIPS = [
@@ -26,6 +29,8 @@ const ACTIONS: { label: string; sub: string; icon: SymbolViewProps['name']; fall
   { label: 'Öğün ekle', sub: 'Ne yedin?', icon: 'fork.knife', fallback: '🍽️', color: palette.lettuce, to: '/yemek-ekle' },
   { label: 'Semptom', sub: 'Ağrı, şişkinlik', icon: 'waveform.path.ecg', fallback: '🌡️', color: palette.apricot, to: '/semptom' },
   { label: 'Tuvalet', sub: 'Saat ve kıvam', icon: 'drop.fill', fallback: '💧', color: palette.sky, to: '/tuvalet' },
+  { label: 'İlaç', sub: 'Doz ve hatırlatma', icon: 'pills.fill', fallback: '💊', color: palette.lettuceDeep, to: '/ilaclar' },
+  { label: 'Gün nasıldı', sub: 'Stres ve uyku', icon: 'moon.stars.fill', fallback: '🌙', color: palette.flare, to: '/gun' },
 ];
 
 export default function Home() {
@@ -38,6 +43,14 @@ export default function Home() {
   const [lastSymptom, setLastSymptom] = useState<db.SymptomLog | null>(null);
   const [redFlag, setRedFlag] = useState(false);
   const [loadedAt, setLoadedAt] = useState(0);
+  const [checkedIn, setCheckedIn] = useState(true);
+  const [perm, setPerm] = useState<PermissionState>('granted');
+  const [promptSeen, setPromptSeen] = useState(true);
+  const [backupDue, setBackupDue] = useState(false);
+
+  useEffect(() => {
+    if (app.ready && !app.onboarded) router.push('/hosgeldin');
+  }, [app.ready, app.onboarded]);
 
   const load = useCallback(async () => {
     const [p, meals, bowel, symptoms] = await Promise.all([db.pendingReactions(sql), db.listMeals(sql, 40), db.listBowel(sql, 40), db.listSymptoms(sql, 5)]);
@@ -53,6 +66,17 @@ export default function Home() {
     const severePain = symptoms.some((s) => s.at >= t - 2 * 86400000 && s.pain >= 5);
     setRedFlag(recent.some((b) => b.blood) || recent.filter((b) => b.bristol === 7).length >= 6 || severePain);
     setLoadedAt(t);
+    const [daily, p2, seen, last, count] = await Promise.all([
+      db.getDaily(sql, isoDay(t)),
+      permission(),
+      db.getSetting(sql, 'notif_prompt_seen'),
+      lastBackup(sql),
+      db.countMeals(sql),
+    ]);
+    setCheckedIn(!!daily);
+    setPerm(p2);
+    setPromptSeen(!!seen);
+    setBackupDue(count >= 20 && (!last || t - last > 30 * 86400000));
   }, [sql]);
 
   useFocusEffect(
@@ -70,8 +94,21 @@ export default function Home() {
     return { mood: 'happy', line: TIPS[new Date(loadedAt || 0).getDate() % TIPS.length] };
   }, [today, app.phase, loadedAt]);
 
+  const dismissPrompt = async () => {
+    setPromptSeen(true);
+    await db.setSetting(sql, 'notif_prompt_seen', '1');
+  };
+
+  const enableNotifs = async () => {
+    await askPermission();
+    await dismissPrompt();
+    setPerm(await permission());
+    syncReminders(sql);
+  };
+
   const react = async (group: db.MealGroup, r: db.Reaction) => {
     await db.setGroupReaction(sql, group.ids, r, null);
+    cancelMealReminder(group.ids);
     app.bump();
     load();
   };
@@ -126,6 +163,40 @@ export default function Home() {
         </Card>
       ) : null}
 
+      {perm === 'undetermined' && !promptSeen ? (
+        <Card style={{ gap: 12 }}>
+          <Row gap={10}>
+            <IconBubble name="bell.fill" color={palette.peri} dim={32} fallback="🔔" />
+            <T v="h3" style={{ flex: 1 }}>
+              Hatırlatayım mı?
+            </T>
+          </Row>
+          <T v="small" color={palette.inkSoft}>
+            Yedikten birkaç saat sonra nasıl geçtiğini, ilaç saatini ve akşam gününü sorarım. Kayıtlar böyle çok daha işe yarar.
+          </T>
+          <Row gap={8}>
+            <Button title="Şimdi değil" kind="glass" compact onPress={dismissPrompt} style={{ flex: 1 }} />
+            <Button title="Bildirimleri aç" compact color={palette.peri} onPress={enableNotifs} style={{ flex: 1 }} />
+          </Row>
+        </Card>
+      ) : null}
+
+      <Doses />
+
+      {!checkedIn && new Date(loadedAt || 0).getHours() >= 18 ? (
+        <Tap onPress={() => router.push('/gun')}>
+          <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <IconBubble name="moon.stars.fill" color={palette.flare} fallback="🌙" />
+            <View style={{ flex: 1 }}>
+              <T v="h3">Bugün nasıldı?</T>
+              <T v="small" color={palette.inkSoft}>
+                Stres ve uyku, 10 saniye
+              </T>
+            </View>
+          </Card>
+        </Tap>
+      ) : null}
+
       {pending.slice(0, 2).map((m) => (
         <Card key={m.key} style={{ gap: 12 }}>
           <Row gap={12}>
@@ -160,6 +231,17 @@ export default function Home() {
           </Tap>
         ))}
       </View>
+
+      {backupDue ? (
+        <Tap onPress={() => router.push('/ayarlar')}>
+          <Card tint={palette.warnSoft} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <IconBubble name="icloud.and.arrow.up" color={palette.warn} dim={32} fallback="☁️" />
+            <T v="small" style={{ flex: 1 }}>
+              Bir aydır yedek almadın. Telefon kaybolursa kayıtların da gider. Ayarlar’dan bir dokunuşla yedekle.
+            </T>
+          </Card>
+        </Tap>
+      ) : null}
 
       <SectionTitle title="Bugün" action={today.length ? 'Günlüğe git' : undefined} onAction={() => router.navigate('/gunluk')} />
       <Row gap={8}>

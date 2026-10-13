@@ -51,3 +51,25 @@ export function now() {
 export function todayLabel() {
   return new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
 }
+
+/** Local calendar day as YYYY-MM-DD. */
+export function isoDay(ms: number) {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Local midnight of the given time. */
+export function startOfDay(ms: number) {
+  const d = new Date(ms);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
+/** Midnight of a YYYY-MM-DD string in local time. */
+export function fromIsoDay(day: string) {
+  const [y, m, d] = day.split('-').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1).getTime();
+}
+
+export function dateLabel(ms: number) {
+  return new Date(ms).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+}

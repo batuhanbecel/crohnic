@@ -1,14 +1,15 @@
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { bristolTone } from '../../components/bristol';
 import { Mascot } from '../../components/Mascot';
-import { Card, Empty, Row, Screen, SectionTitle, T } from '../../components/ui';
+import { Button, Card, Empty, Row, Screen, SectionTitle, T } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
 import { dayKey, now } from '../../lib/dates';
 import * as db from '../../lib/db';
 import { TAGS } from '../../lib/foods';
+import { lifestyleEffects, suspectFoods } from '../../lib/insights';
 import { palette, radius, surface, type } from '../../lib/theme';
 import { personalVerdict, statsByName, triggerInsights } from '../../lib/tolerance';
 
@@ -26,21 +27,25 @@ export default function Insights() {
   const [allMeals, setAllMeals] = useState<db.Meal[]>([]);
   const [bowel, setBowel] = useState<db.BowelLog[]>([]);
   const [symptoms, setSymptoms] = useState<db.SymptomLog[]>([]);
+  const [daily, setDaily] = useState<db.Daily[]>([]);
   const [loadedAt, setLoadedAt] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
-      Promise.all([db.allRatedMeals(sql), db.listMeals(sql, 600), db.listBowel(sql, 600), db.listSymptoms(sql, 600)]).then(([r, m, b, s]) => {
+      Promise.all([db.allRatedMeals(sql), db.listMeals(sql, 600), db.listBowel(sql, 600), db.listSymptoms(sql, 600), db.listDaily(sql, 120)]).then(([r, m, b, s, d]) => {
         setRated(r);
         setAllMeals(m);
         setBowel(b);
         setSymptoms(s);
+        setDaily(d);
         setLoadedAt(now());
       });
     }, [sql]),
   );
 
   const { triggers, safe } = useMemo(() => triggerInsights(rated), [rated]);
+  const suspects = useMemo(() => suspectFoods(allMeals, symptoms, bowel), [allMeals, symptoms, bowel]);
+  const lifestyle = useMemo(() => lifestyleEffects(daily, symptoms, bowel, allMeals), [daily, symptoms, bowel, allMeals]);
   const foods = useMemo(() => {
     const list = [...statsByName(rated).values()];
     return {
@@ -87,9 +92,10 @@ export default function Insights() {
 
   return (
     <Screen tone={app.phase === 'atak' ? 'flare' : 'calm'}>
-      <T v="large" style={{ marginTop: 4 }}>
-        Örüntüler
-      </T>
+      <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4 }}>
+        <T v="large">Örüntüler</T>
+        <Button title="Doktor raporu" kind="glass" compact icon="doc.text" onPress={() => router.push('/rapor')} />
+      </Row>
 
       <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
         <Mascot mood={enough ? 'happy' : 'sleepy'} size={84} />
@@ -143,6 +149,70 @@ export default function Insights() {
           </Card>
         </>
       ) : null}
+
+      {suspects.foods.length ? (
+        <>
+          <SectionTitle title="Şikayetten önce sık yenenler" />
+          <Card style={{ gap: 14 }}>
+            {suspects.foods.map((f) => (
+              <View key={f.name} style={{ gap: 6 }}>
+                <Row style={{ justifyContent: 'space-between' }}>
+                  <T v="h3" numberOfLines={1} style={{ flex: 1 }}>
+                    {f.name}
+                  </T>
+                  <T v="small" color={palette.inkSoft}>
+                    {f.hit}/{f.n} kez
+                  </T>
+                </Row>
+                <Bar pct={f.rate} color={f.rate >= 0.75 ? palette.bad : palette.warn} />
+              </View>
+            ))}
+            <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
+              Yedikten 2–24 saat sonra ağrı, şişkinlik ya da sulu dışkı kaydettiğin öğünler. Genel ortalaman %{Math.round(suspects.baseline * 100)}.
+            </T>
+          </Card>
+        </>
+      ) : null}
+
+      {lifestyle.length ? (
+        <>
+          <SectionTitle title="Stres ve uyku" />
+          <Card style={{ gap: 16 }}>
+            {lifestyle.map((e) => (
+              <View key={e.key} style={{ gap: 8 }}>
+                <T v="h3">{e.label}</T>
+                <Row gap={10}>
+                  <T v="small" style={{ width: 150 }} numberOfLines={1}>
+                    {e.highLabel}
+                  </T>
+                  <View style={{ flex: 1 }}>
+                    <Bar pct={e.high} color={palette.bad} />
+                  </View>
+                  <T v="small" color={palette.inkSoft} style={{ width: 40, textAlign: 'right' }}>
+                    %{Math.round(e.high * 100)}
+                  </T>
+                </Row>
+                <Row gap={10}>
+                  <T v="small" style={{ width: 150 }} numberOfLines={1}>
+                    {e.lowLabel}
+                  </T>
+                  <View style={{ flex: 1 }}>
+                    <Bar pct={e.low} color={palette.good} />
+                  </View>
+                  <T v="small" color={palette.inkSoft} style={{ width: 40, textAlign: 'right' }}>
+                    %{Math.round(e.low * 100)}
+                  </T>
+                </Row>
+              </View>
+            ))}
+            <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
+              O gün ya da ertesi gün şikayet kaydettiğin günlerin oranı.
+            </T>
+          </Card>
+        </>
+      ) : daily.length ? null : (
+        <Empty emoji="🌙" title="Stres ve uyku" text="Akşamları “Bugün nasıldı” kaydını doldurursan, stres ve uykunun şikayetlerinle ilişkisini burada gösteririm." />
+      )}
 
       {foods.bad.length || foods.good.length ? (
         <Row gap={10} style={{ alignItems: 'stretch' }}>
@@ -248,7 +318,7 @@ export default function Insights() {
       ) : null}
 
       <T v="caption" color={palette.inkFaint} style={{ textAlign: 'center', lineHeight: 17, fontWeight: '400' }}>
-        Kontrole giderken bu ekranı doktoruna gösterebilirsin.{'\n'}Tüm verini Ayarlar’dan dışa aktarabilirsin.
+        Kontrole giderken Doktor raporu’nu PDF olarak paylaşabilirsin.{'\n'}Yedeklerin Ayarlar’da.
       </T>
     </Screen>
   );

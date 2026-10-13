@@ -2,7 +2,7 @@ import { BlurView } from 'expo-blur';
 import { useEffect, useState } from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
 import type { Mode } from '../lib/ai';
-import { palette } from '../lib/theme';
+import { isDark, palette, surface } from '../lib/theme';
 import { Mascot } from './Mascot';
 import { T } from './ui';
 
@@ -23,8 +23,8 @@ export function ThinkingOverlay({ mode }: { mode: Mode | null }) {
   const lines = mode ? LINES[mode] : LINES.food;
   return (
     <Modal visible={!!mode} transparent animationType="fade">
-      <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 30, backgroundColor: 'rgba(244,246,238,0.55)' }}>
+      <BlurView intensity={60} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 30, backgroundColor: surface.scrim }}>
         <Mascot mood="ok" size={140} />
         <T v="h2" style={{ textAlign: 'center' }}>
           {lines[i % lines.length]}…

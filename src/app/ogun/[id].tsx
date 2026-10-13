@@ -9,6 +9,7 @@ import { WhenField } from '../../components/WhenField';
 import { Button, Card, Icon, Row, Screen, Segmented, T, Tap, VerdictBadge, st } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
 import * as db from '../../lib/db';
+import { cancelMealReminder } from '../../lib/reminders';
 import { FOOD_BY_ID, TAGS, type Food, type Phase } from '../../lib/foods';
 import { deletePhoto, photoUri } from '../../lib/photos';
 import { palette, radius, surface } from '../../lib/theme';
@@ -48,6 +49,7 @@ export default function MealDetail() {
 
   const save = async () => {
     await db.setGroupReaction(sql, group.ids, reaction, note.trim() || null);
+    if (reaction != null) cancelMealReminder(group.ids);
     if (at && at !== group.eaten_at) await db.setGroupTime(sql, group.ids, at);
     if (phase !== group.phase) {
       await db.setGroupPhase(

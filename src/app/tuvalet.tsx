@@ -3,6 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { Switch, TextInput, View } from 'react-native';
 import { BRISTOL, bristolTone } from '../components/bristol';
+import { Suspects } from '../components/Suspects';
 import { WhenField } from '../components/WhenField';
 import { Button, Card, ChoiceRow, Row, Screen, T, st } from '../components/ui';
 import { useApp } from '../lib/app-state';
@@ -19,6 +20,7 @@ export default function Bowel() {
   const [urgency, setUrgency] = useState(false);
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [asking, setAsking] = useState(false);
 
   const save = async () => {
     if (!kind) return;
@@ -26,8 +28,16 @@ export default function Bowel() {
     await db.addBowel(sql, { at, bristol: kind, blood: blood ? 1 : 0, urgency: urgency ? 1 : 0, note: note.trim() || null });
     app.bump();
     setSaving(false);
-    router.back();
+    if (kind >= 6 || blood) setAsking(true);
+    else router.back();
   };
+
+  if (asking)
+    return (
+      <Screen header={false}>
+        <Suspects at={at} onDone={() => router.back()} />
+      </Screen>
+    );
 
   return (
     <Screen header={false}>
