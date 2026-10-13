@@ -186,6 +186,36 @@ export async function setGroupTime(db: SQLiteDatabase, ids: number[], at: number
   });
 }
 
+/** Add one food to an existing sitting; a single meal becomes a group on the first addition. */
+export async function addToMeal(
+  db: SQLiteDatabase,
+  baseId: number,
+  item: Pick<Meal, 'name' | 'food_id' | 'tags' | 'ai_verdict'>,
+) {
+  const base = await getMeal(db, baseId);
+  if (!base) return;
+  let gid = base.group_id;
+  if (!gid) {
+    gid = newGroupId();
+    await db.runAsync('UPDATE meals SET group_id = ? WHERE id = ?', gid, base.id);
+  }
+  await addMeal(db, {
+    ...item,
+    photo: null,
+    eaten_at: base.eaten_at,
+    phase: base.phase,
+    reaction: base.reaction,
+    reaction_note: base.reaction_note,
+    group_id: gid,
+  });
+}
+
+export async function setGroupPhase(db: SQLiteDatabase, items: { id: number; verdict: Verdict | null }[], phase: Phase) {
+  await db.withTransactionAsync(async () => {
+    for (const it of items) await db.runAsync('UPDATE meals SET phase = ?, ai_verdict = ? WHERE id = ?', phase, it.verdict, it.id);
+  });
+}
+
 export type MealGroup = {
   key: string;
   ids: number[];

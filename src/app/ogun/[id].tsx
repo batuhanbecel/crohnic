@@ -2,16 +2,17 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Image, Text, TextInput, View } from 'react-native';
+import { FoodPicker } from '../../components/FoodPicker';
 import { GroupThumb, emojiOf } from '../../components/MealRow';
 import { ReactionPicker } from '../../components/ReactionPicker';
 import { WhenField } from '../../components/WhenField';
-import { Button, Card, Icon, Row, Screen, T, Tap, VerdictBadge, st } from '../../components/ui';
+import { Button, Card, Icon, Row, Screen, Segmented, T, Tap, VerdictBadge, st } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
 import * as db from '../../lib/db';
-import { TAGS } from '../../lib/foods';
+import { FOOD_BY_ID, TAGS, type Food, type Phase } from '../../lib/foods';
 import { deletePhoto, photoUri } from '../../lib/photos';
 import { palette, radius, surface } from '../../lib/theme';
-import { tagsOf } from '../../lib/tolerance';
+import { generalVerdict, tagsOf } from '../../lib/tolerance';
 
 export default function MealDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -21,6 +22,7 @@ export default function MealDetail() {
   const [reaction, setReaction] = useState<db.Reaction | null>(null);
   const [note, setNote] = useState('');
   const [at, setAt] = useState(0);
+  const [phase, setPhase] = useState<Phase>('remisyon');
 
   const load = useCallback(async () => {
     const list = await db.getMealGroup(sql, Number(id));
@@ -35,6 +37,7 @@ export default function MealDetail() {
       setReaction(first?.reaction ?? null);
       setNote(first?.reaction_note ?? '');
       setAt(first?.eaten_at ?? 0);
+      setPhase(first?.phase ?? 'remisyon');
     });
   }, [sql, id]);
 
@@ -46,8 +49,30 @@ export default function MealDetail() {
   const save = async () => {
     await db.setGroupReaction(sql, group.ids, reaction, note.trim() || null);
     if (at && at !== group.eaten_at) await db.setGroupTime(sql, group.ids, at);
+    if (phase !== group.phase) {
+      await db.setGroupPhase(
+        sql,
+        items.map((m) => {
+          const food = m.food_id ? FOOD_BY_ID[m.food_id] : undefined;
+          // List foods get re-scored for the new phase; AI verdicts are kept as they were.
+          return { id: m.id, verdict: food ? generalVerdict(food.tags, phase).verdict : m.ai_verdict };
+        }),
+        phase,
+      );
+    }
     app.bump();
     router.back();
+  };
+
+  const addItem = async (name: string, food: Food | null) => {
+    await db.addToMeal(sql, items[0].id, {
+      name,
+      food_id: food?.id ?? null,
+      tags: food?.tags.join(',') ?? '',
+      ai_verdict: food ? generalVerdict(food.tags, phase).verdict : null,
+    });
+    app.bump();
+    await load();
   };
 
   const removeItem = (m: db.Meal) =>
@@ -94,9 +119,6 @@ export default function MealDetail() {
       )}
       <View style={{ gap: 6, paddingHorizontal: 2 }}>
         <T v="title">{items.length > 1 ? `${items.length} yemekli öğün` : items[0].name}</T>
-        <T v="small" color={palette.inkSoft}>
-          {group.phase === 'atak' ? 'Atak döneminde yendi' : 'Remisyonda yendi'}
-        </T>
       </View>
 
       <Card style={{ gap: 8 }}>
@@ -115,6 +137,7 @@ export default function MealDetail() {
             ) : null}
           </Row>
         ))}
+        <FoodPicker onAdd={addItem} exclude={items.map((m) => m.food_id)} placeholder="Tabağa yemek ekle" />
         {tags.length ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
             {tags.map((t) => (
@@ -128,7 +151,20 @@ export default function MealDetail() {
         ) : null}
       </Card>
 
-      <Card>{at ? <WhenField value={at} onChange={setAt} /> : null}</Card>
+      <Card style={{ gap: 14 }}>
+        {at ? <WhenField value={at} onChange={setAt} /> : null}
+        <View style={{ gap: 8 }}>
+          <T v="h3">Dönem</T>
+          <Segmented
+            value={phase}
+            onChange={setPhase}
+            items={[
+              { key: 'remisyon', label: 'Remisyon', color: palette.lettuceDeep, icon: 'leaf.fill' },
+              { key: 'atak', label: 'Atak', color: palette.flare, icon: 'flame.fill' },
+            ]}
+          />
+        </View>
+      </Card>
 
       <Card style={{ gap: 12 }}>
         <T v="h3">Nasıl geçti?</T>

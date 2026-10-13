@@ -1,15 +1,16 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useMemo, useRef, useState } from 'react';
-import { Alert, Image, Text, TextInput, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Alert, Image, Text, View } from 'react-native';
+import { FoodPicker } from '../components/FoodPicker';
 import { ReactionPicker } from '../components/ReactionPicker';
 import { WhenField } from '../components/WhenField';
-import { Button, Card, Chip, GlassPress, Icon, Row, Screen, T, Tap, st } from '../components/ui';
+import { Button, Card, Icon, Row, Screen, Segmented, T, Tap } from '../components/ui';
 import { useApp } from '../lib/app-state';
 import { now } from '../lib/dates';
 import * as db from '../lib/db';
-import { findFoodByName, searchFoods, type Food } from '../lib/foods';
+import { findFoodByName, type Food, type Phase } from '../lib/foods';
 import { savePhoto } from '../lib/photos';
 import { palette, radius, surface } from '../lib/theme';
 import { generalVerdict } from '../lib/tolerance';
@@ -19,30 +20,16 @@ type Item = { key: string; name: string; food: Food | null };
 export default function AddMeal() {
   const sql = useSQLiteContext();
   const app = useApp();
-  const input = useRef<TextInput>(null);
   const [text, setText] = useState('');
+  const [phase, setPhase] = useState<Phase>(app.phase);
   const [items, setItems] = useState<Item[]>([]);
   const [photo, setPhoto] = useState<string | null>(null);
   const [at, setAt] = useState(() => now());
   const [reaction, setReaction] = useState<db.Reaction | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const suggestions = useMemo(() => {
-    if (text.trim().length < 2) return [];
-    const taken = new Set(items.map((i) => i.food?.id));
-    return searchFoods(text)
-      .filter((f) => !taken.has(f.id))
-      .slice(0, 8);
-  }, [text, items]);
-
-  const add = (name: string, food: Food | null) => {
-    const n = name.trim();
-    if (!n) return;
-    const f = food ?? findFoodByName(n) ?? null;
-    setItems((prev) => [...prev, { key: `${Date.now()}-${prev.length}`, name: f?.name ?? n, food: f }]);
-    setText('');
-    input.current?.focus();
-  };
+  const add = (name: string, food: Food | null) =>
+    setItems((prev) => [...prev, { key: `${Date.now()}-${prev.length}`, name: food?.name ?? name, food }]);
 
   const remove = (key: string) => setItems((prev) => prev.filter((i) => i.key !== key));
 
@@ -76,9 +63,9 @@ export default function AddMeal() {
           food_id: it.food?.id ?? null,
           tags: it.food?.tags.join(',') ?? '',
           photo: i === 0 ? file : null,
-          ai_verdict: it.food ? generalVerdict(it.food.tags, app.phase).verdict : null,
+          ai_verdict: it.food ? generalVerdict(it.food.tags, phase).verdict : null,
         })),
-        { eaten_at: at, phase: app.phase, reaction },
+        { eaten_at: at, phase, reaction },
       );
       app.bump();
       router.back();
@@ -117,45 +104,29 @@ export default function AddMeal() {
           </View>
         ) : null}
 
-        <Row gap={8}>
-          <TextInput
-            ref={input}
-            value={text}
-            onChangeText={setText}
-            placeholder={items.length ? 'Bir şey daha ekle' : 'ör. mercimek çorbası'}
-            placeholderTextColor={palette.inkFaint}
-            style={[st.input, { flex: 1, minWidth: 0 }]}
-            autoFocus
-            returnKeyType="done"
-            blurOnSubmit={false}
-            onSubmitEditing={() => add(text, null)}
-          />
-          <GlassPress
-            onPress={() => add(text, null)}
-            disabled={!text.trim()}
-            tint={text.trim() ? palette.ink : undefined}
-            accessibilityLabel="Ekle"
-            style={{ width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Icon name="plus" size={20} color={text.trim() ? '#fff' : palette.inkFaint} fallback="+" />
-          </GlassPress>
-        </Row>
-
-        {suggestions.length ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {suggestions.map((f) => (
-              <Chip key={f.id} label={f.name} emoji={f.emoji} onPress={() => add(f.name, f)} />
-            ))}
-          </View>
-        ) : (
-          <T v="small" color={palette.inkSoft}>
-            Her yemeği ayrı ekle. Hangisinin dokunduğunu zamanla ayırt etmek kolaylaşır.
-          </T>
-        )}
+        <FoodPicker
+          onAdd={add}
+          onTextChange={setText}
+          exclude={items.map((i) => i.food?.id)}
+          placeholder={items.length ? 'Bir şey daha ekle' : 'ör. mercimek çorbası'}
+          hint="Her yemeği ayrı ekle. Hangisinin dokunduğunu zamanla ayırt etmek kolaylaşır."
+          autoFocus
+        />
       </Card>
 
-      <Card>
+      <Card style={{ gap: 14 }}>
         <WhenField value={at} onChange={setAt} />
+        <View style={{ gap: 8 }}>
+          <T v="h3">Dönem</T>
+          <Segmented
+            value={phase}
+            onChange={setPhase}
+            items={[
+              { key: 'remisyon', label: 'Remisyon', color: palette.lettuceDeep, icon: 'leaf.fill' },
+              { key: 'atak', label: 'Atak', color: palette.flare, icon: 'flame.fill' },
+            ]}
+          />
+        </View>
       </Card>
 
       <Card style={{ gap: 12 }}>
