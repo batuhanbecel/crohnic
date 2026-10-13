@@ -56,6 +56,17 @@ export default function RootLayout() {
             <Stack.Screen name="rapor" options={{ ...pushed, title: 'Doktor raporu' }} />
             <Stack.Screen name="ilac" options={{ ...sheet, title: 'İlaç' }} />
             <Stack.Screen name="gun" options={{ ...sheet, title: 'Bugün nasıldı' }} />
+            <Stack.Screen
+              name="ekle"
+              options={{
+                presentation: 'formSheet',
+                headerShown: false,
+                sheetAllowedDetents: 'fitToContents',
+                sheetGrabberVisible: true,
+                sheetCornerRadius: 28,
+                contentStyle: { backgroundColor: glass ? 'transparent' : palette.paper },
+              }}
+            />
             <Stack.Screen name="hosgeldin" options={{ presentation: 'fullScreenModal', headerShown: false, gestureEnabled: false }} />
           </Stack>
         </AppProvider>

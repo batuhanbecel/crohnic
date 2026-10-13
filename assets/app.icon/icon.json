@@ -3,8 +3,8 @@
     {
       "value": {
         "linear-gradient": [
-          "srgb:0.94510,0.97255,0.89412,1.00000",
-          "srgb:1.00000,0.89020,0.78039,1.00000"
+          "srgb:1.00000,0.96078,0.90196,1.00000",
+          "srgb:1.00000,0.84314,0.69020,1.00000"
         ],
         "orientation": {
           "start": {
@@ -40,7 +40,7 @@
   ],
   "groups": [
     {
-      "name": "Yüz",
+      "name": "Y\u00fcz",
       "layers": [
         {
           "image-name": "features.svg",
@@ -59,7 +59,7 @@
       }
     },
     {
-      "name": "Yüz zemini",
+      "name": "Y\u00fcz zemini",
       "layers": [
         {
           "image-name": "face.svg",
@@ -78,7 +78,7 @@
       }
     },
     {
-      "name": "İç yapraklar",
+      "name": "\u0130\u00e7 yapraklar",
       "layers": [
         {
           "image-name": "mid.svg",
@@ -97,7 +97,7 @@
       }
     },
     {
-      "name": "Dış yapraklar",
+      "name": "D\u0131\u015f yapraklar",
       "layers": [
         {
           "image-name": "back.svg",

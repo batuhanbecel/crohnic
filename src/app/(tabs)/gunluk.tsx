@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import { MealRow } from '../../components/MealRow';
 import { BRISTOL, bristolTone } from '../../components/bristol';
-import { Button, Card, Empty, Row, Screen, Segmented, T, Tap } from '../../components/ui';
+import { Card, Empty, IconButton, Row, Screen, Segmented, T, Tap } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
 import { dayKey, dayLabel, timeLabel } from '../../lib/dates';
 import * as db from '../../lib/db';
@@ -67,9 +67,10 @@ export default function Journal() {
 
   return (
     <Screen tone={app.phase === 'atak' ? 'flare' : 'calm'}>
-      <T v="large" style={{ marginTop: 4 }}>
-        Günlük
-      </T>
+      <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4 }}>
+        <T v="large">Günlük</T>
+        <IconButton name="plus" label="Kayıt ekle" fallback="+" onPress={() => router.push('/ekle')} />
+      </Row>
       <Segmented
         value={filter}
         onChange={setFilter}
@@ -80,12 +81,6 @@ export default function Journal() {
           { key: 'bowel', label: 'Tuvalet', color: palette.sky },
         ]}
       />
-
-      <Row gap={8}>
-        <Button title="Öğün" kind="glass" compact icon="plus" style={{ flex: 1 }} onPress={() => router.push('/yemek-ekle')} />
-        <Button title="Semptom" kind="glass" compact icon="plus" style={{ flex: 1 }} onPress={() => router.push('/semptom')} />
-        <Button title="Tuvalet" kind="glass" compact icon="plus" style={{ flex: 1 }} onPress={() => router.push('/tuvalet')} />
-      </Row>
 
       {days.length === 0 ? (
         <Empty emoji="📖" title="Henüz kayıt yok" text="Yediklerini, nasıl hissettiğini ve tuvalet kayıtlarını yazdıkça örüntüler burada birikir." />

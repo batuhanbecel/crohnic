@@ -4,6 +4,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import * as Updates from 'expo-updates';
 import { useCallback, useState } from 'react';
 import { Alert, Linking, Switch, TextInput, View } from 'react-native';
+import { Logo } from '../components/Mascot';
 import { Button, Card, Icon, Row, Screen, T, Tap, st } from '../components/ui';
 import { DEFAULT_AI, analyze, type AiConfig } from '../lib/ai';
 import { useApp } from '../lib/app-state';
@@ -245,6 +246,9 @@ export default function Settings() {
         <Button title="Güncelleme var mı?" kind="glass" icon="arrow.down.circle" onPress={checkUpdate} loading={checking} />
       </Card>
 
+      <View style={{ alignItems: 'center', marginTop: 12 }}>
+        <Logo size={24} color={palette.lettuceDeep} />
+      </View>
       <T v="caption" color={palette.inkFaint} style={{ textAlign: 'center', lineHeight: 17, fontWeight: '400' }}>
         Crohnic tıbbi tavsiye vermez. Acil durumda 112.
       </T>

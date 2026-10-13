@@ -1,19 +1,20 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import type { SymbolViewProps } from 'expo-symbols';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { View } from 'react-native';
-import { Doses } from '../../components/Doses';
-import { GroupThumb, MealRow } from '../../components/MealRow';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, View } from 'react-native';
+import { BRISTOL } from '../../components/bristol';
+import { SLEEP, STRESS } from '../../components/checkin';
+import { GroupThumb } from '../../components/MealRow';
 import { Mascot, type Mood } from '../../components/Mascot';
-import { ReactionPicker } from '../../components/ReactionPicker';
-import { Button, Card, IconBubble, IconButton, Row, Screen, SectionTitle, Segmented, T, Tap } from '../../components/ui';
+import { REACTIONS, ReactionPicker } from '../../components/ReactionPicker';
+import { Button, Card, Icon, IconBubble, IconButton, Row, Screen, T, Tap, type SymbolName } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
-import { dayKey, daysSince, isoDay, now, relative, todayLabel } from '../../lib/dates';
-import * as db from '../../lib/db';
 import { lastBackup } from '../../lib/backup';
+import { dayKey, daysSince, isoDay, now, relative, startOfDay, timeLabel, todayLabel } from '../../lib/dates';
+import * as db from '../../lib/db';
+import { dosesForToday, type Dose } from '../../lib/meds';
 import { askPermission, cancelMealReminder, permission, syncReminders, type PermissionState } from '../../lib/reminders';
-import { palette, radius, size, type } from '../../lib/theme';
+import { palette, radius, type } from '../../lib/theme';
 
 const TIPS = [
   'Yeni bir yemeği küçük bir porsiyonla dene, birkaç saat sonra nasıl hissettiğini yaz.',
@@ -24,26 +25,29 @@ const TIPS = [
   'Bir yemek bir kere dokundu diye listeden çıkarma. İki üç kayıt sonra daha net görürüz.',
 ];
 
-const ACTIONS: { label: string; sub: string; icon: SymbolViewProps['name']; fallback: string; color: string; to: string }[] = [
-  { label: 'Sor', sub: 'Tabak ya da menü', icon: 'camera.fill', fallback: '📷', color: palette.peri, to: '/sor' },
-  { label: 'Öğün ekle', sub: 'Ne yedin?', icon: 'fork.knife', fallback: '🍽️', color: palette.lettuce, to: '/yemek-ekle' },
-  { label: 'Semptom', sub: 'Ağrı, şişkinlik', icon: 'waveform.path.ecg', fallback: '🌡️', color: palette.apricot, to: '/semptom' },
-  { label: 'Tuvalet', sub: 'Saat ve kıvam', icon: 'drop.fill', fallback: '💧', color: palette.sky, to: '/tuvalet' },
-  { label: 'İlaç', sub: 'Doz ve hatırlatma', icon: 'pills.fill', fallback: '💊', color: palette.lettuceDeep, to: '/ilaclar' },
-  { label: 'Gün nasıldı', sub: 'Stres ve uyku', icon: 'moon.stars.fill', fallback: '🌙', color: palette.flare, to: '/gun' },
-];
+type Entry = {
+  key: string;
+  at: number;
+  icon: SymbolName;
+  fallback: string;
+  color: string;
+  title: string;
+  sub: string;
+  onPress?: () => void;
+  group?: db.MealGroup;
+};
 
 export default function Home() {
   const sql = useSQLiteContext();
   const app = useApp();
   const [pending, setPendingMeals] = useState<db.MealGroup[]>([]);
-  const [today, setToday] = useState<db.MealGroup[]>([]);
-  const [lastBowel, setLastBowel] = useState<db.BowelLog | null>(null);
-  const [bowelToday, setBowelToday] = useState(0);
-  const [lastSymptom, setLastSymptom] = useState<db.SymptomLog | null>(null);
+  const [meals, setMeals] = useState<db.MealGroup[]>([]);
+  const [bowel, setBowel] = useState<db.BowelLog[]>([]);
+  const [symptoms, setSymptoms] = useState<db.SymptomLog[]>([]);
+  const [doses, setDoses] = useState<Dose[]>([]);
+  const [daily, setDaily] = useState<db.Daily | null>(null);
   const [redFlag, setRedFlag] = useState(false);
   const [loadedAt, setLoadedAt] = useState(0);
-  const [checkedIn, setCheckedIn] = useState(true);
   const [perm, setPerm] = useState<PermissionState>('granted');
   const [promptSeen, setPromptSeen] = useState(true);
   const [backupDue, setBackupDue] = useState(false);
@@ -53,100 +57,260 @@ export default function Home() {
   }, [app.ready, app.onboarded]);
 
   const load = useCallback(async () => {
-    const [p, meals, bowel, symptoms] = await Promise.all([db.pendingReactions(sql), db.listMeals(sql, 40), db.listBowel(sql, 40), db.listSymptoms(sql, 5)]);
     const t = now();
-    const k = dayKey(t);
-    setPendingMeals(db.groupMeals(p));
-    setToday(db.groupMeals(meals.filter((m) => dayKey(m.eaten_at) === k)));
-    setLastBowel(bowel[0] ?? null);
-    setBowelToday(bowel.filter((b) => dayKey(b.at) === k).length);
-    setLastSymptom(symptoms[0] ?? null);
-    const week = t - 7 * 86400000;
-    const recent = bowel.filter((b) => b.at >= week);
-    const severePain = symptoms.some((s) => s.at >= t - 2 * 86400000 && s.pain >= 5);
-    setRedFlag(recent.some((b) => b.blood) || recent.filter((b) => b.bristol === 7).length >= 6 || severePain);
-    setLoadedAt(t);
-    const [daily, p2, seen, last, count] = await Promise.all([
+    const today = startOfDay(t);
+    const [p, mealRows, bowelRows, symptomRows, meds, logs, d, p2, seen, last, count] = await Promise.all([
+      db.pendingReactions(sql),
+      db.listMeals(sql, 60),
+      db.listBowel(sql, 60),
+      db.listSymptoms(sql, 30),
+      db.listMeds(sql),
+      db.medLogsBetween(sql, today - 4 * 86400000, today + 86400000),
       db.getDaily(sql, isoDay(t)),
       permission(),
       db.getSetting(sql, 'notif_prompt_seen'),
       lastBackup(sql),
       db.countMeals(sql),
     ]);
-    setCheckedIn(!!daily);
+    const k = dayKey(t);
+    setPendingMeals(db.groupMeals(p));
+    setMeals(db.groupMeals(mealRows.filter((m) => dayKey(m.eaten_at) === k)));
+    setBowel(bowelRows.filter((b) => dayKey(b.at) === k));
+    setSymptoms(symptomRows.filter((s) => dayKey(s.at) === k));
+    setDoses(dosesForToday(meds, logs, t));
+    setDaily(d);
     setPerm(p2);
     setPromptSeen(!!seen);
     setBackupDue(count >= 20 && (!last || t - last > 30 * 86400000));
+    const week = t - 7 * 86400000;
+    const recent = bowelRows.filter((b) => b.at >= week);
+    const severePain = symptomRows.some((s) => s.at >= t - 2 * 86400000 && s.pain >= 5);
+    setRedFlag(recent.some((b) => b.blood) || recent.filter((b) => b.bristol === 7).length >= 6 || severePain);
+    setLoadedAt(t);
   }, [sql]);
 
   useFocusEffect(
     useCallback(() => {
       load();
-    }, [load]),
+    }, [load, app.dataVersion]), // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const { mood, line } = useMemo((): { mood: Mood; line: string } => {
     const hour = new Date(loadedAt || 0).getHours();
-    if (today.some((m) => m.reaction === 2)) return { mood: 'worried', line: 'Bugün bir şey dokunmuş. Akşamı hafif geçirmek iyi olabilir: çorba, pilav, haşlama.' };
+    if (redFlag) return { mood: 'worried', line: 'Son günlerin zor geçmiş görünüyor. Aşağıdaki notu oku, doktorunla paylaşmanı isterim.' };
+    if (meals.some((m) => m.reaction === 2)) return { mood: 'worried', line: 'Bugün bir şey dokunmuş. Akşamı hafif geçir: çorba, pilav, haşlama.' };
     if (app.phase === 'atak') return { mood: 'ok', line: 'Atak dönemindesin. Bu günlerde püre, haşlama ve az yağlı yemekleri öne çıkarıyorum.' };
-    if (today.length >= 2 && today.every((m) => m.reaction === 0)) return { mood: 'cheer', line: 'Bugün yediklerin iyi gelmiş görünüyor.' };
-    if (!today.length && hour < 11) return { mood: 'sleepy', line: 'Günaydın. Kahvaltıda ne var?' };
+    if (meals.length >= 2 && meals.every((m) => m.reaction === 0)) return { mood: 'cheer', line: 'Bugün yediklerin iyi gelmiş görünüyor.' };
+    if (!meals.length && hour < 11) return { mood: 'sleepy', line: 'Günaydın. Kahvaltıda ne var?' };
     return { mood: 'happy', line: TIPS[new Date(loadedAt || 0).getDate() % TIPS.length] };
-  }, [today, app.phase, loadedAt]);
+  }, [meals, app.phase, loadedAt, redFlag]);
 
-  const dismissPrompt = async () => {
-    setPromptSeen(true);
-    await db.setSetting(sql, 'notif_prompt_seen', '1');
-  };
-
-  const enableNotifs = async () => {
-    await askPermission();
-    await dismissPrompt();
-    setPerm(await permission());
-    syncReminders(sql);
-  };
+  const changePhase = () =>
+    Alert.alert('Hangi dönemdesin?', 'Önerilerim ve yemek değerlendirmeleri buna göre değişir.', [
+      { text: 'Remisyon', onPress: () => app.phase !== 'remisyon' && app.changePhase('remisyon') },
+      { text: 'Atak', onPress: () => app.phase !== 'atak' && app.changePhase('atak') },
+      { text: 'Vazgeç', style: 'cancel' },
+    ]);
 
   const react = async (group: db.MealGroup, r: db.Reaction) => {
     await db.setGroupReaction(sql, group.ids, r, null);
     cancelMealReminder(group.ids);
     app.bump();
-    load();
   };
 
+  const take = async (d: Dose) => {
+    await db.logDose(sql, d.med.id, d.due, true);
+    app.bump();
+  };
+
+  const enableNotifs = async () => {
+    await askPermission();
+    await db.setSetting(sql, 'notif_prompt_seen', '1');
+    setPromptSeen(true);
+    setPerm(await permission());
+    syncReminders(sql);
+  };
+
+  // ----- what needs an answer now -----
+  const dayStart = startOfDay(loadedAt || 0);
+  const dueDoses = doses.filter((d) => !d.log && d.due <= (loadedAt || 0) + 2 * 3600000);
+  const askCheckIn = !daily && new Date(loadedAt || 0).getHours() >= 18;
+  const askNotifs = perm === 'undetermined' && !promptSeen;
+  const next = pending.slice(0, 2);
+
+  const nextItems = [
+    ...next.map((m) => (
+      <View key={`p${m.key}`} style={{ gap: 12, paddingVertical: 12 }}>
+        <Row gap={12}>
+          <GroupThumb group={m} size={40} />
+          <View style={{ flex: 1 }}>
+            <T v="h3" numberOfLines={2}>
+              {m.name} nasıl geçti?
+            </T>
+            <T v="small" color={palette.inkSoft}>
+              {relative(m.eaten_at)}
+            </T>
+          </View>
+        </Row>
+        <ReactionPicker compact onChange={(r) => react(m, r)} />
+      </View>
+    )),
+    ...dueDoses.map((d) => (
+      <Row key={`d${d.med.id}:${d.due}`} gap={12} style={{ paddingVertical: 12 }}>
+        <IconBubble name="pills.fill" color={palette.peri} dim={40} fallback="💊" />
+        <View style={{ flex: 1 }}>
+          <T v="h3" numberOfLines={1}>
+            {d.med.name}
+          </T>
+          <T v="small" color={d.due < dayStart ? palette.bad : palette.inkSoft}>
+            {d.due < dayStart ? 'Kaçırılmış doz' : `${timeLabel(d.due)}${d.med.dose ? `, ${d.med.dose}` : ''}`}
+          </T>
+        </View>
+        <Button title="Aldım" compact color={palette.peri} onPress={() => take(d)} />
+      </Row>
+    )),
+    ...(askCheckIn
+      ? [
+          <Tap key="checkin" onPress={() => router.push('/gun')}>
+            <Row gap={12} style={{ paddingVertical: 12 }}>
+              <IconBubble name="moon.stars.fill" color={palette.flare} dim={40} fallback="🌙" />
+              <View style={{ flex: 1 }}>
+                <T v="h3">Bugün nasıldı?</T>
+                <T v="small" color={palette.inkSoft}>
+                  Stres ve uyku, 10 saniye
+                </T>
+              </View>
+              <Icon name="chevron.right" size={14} color={palette.inkFaint} fallback="›" />
+            </Row>
+          </Tap>,
+        ]
+      : []),
+    ...(askNotifs
+      ? [
+          <Row key="notif" gap={12} style={{ paddingVertical: 12 }}>
+            <IconBubble name="bell.fill" color={palette.sky} dim={40} fallback="🔔" />
+            <View style={{ flex: 1 }}>
+              <T v="h3">Hatırlatmaları aç</T>
+              <T v="small" color={palette.inkSoft}>
+                Öğün sonrası, ilaç ve akşam soruları
+              </T>
+            </View>
+            <Button title="Aç" compact color={palette.sky} onPress={enableNotifs} />
+          </Row>,
+        ]
+      : []),
+  ];
+
+  // ----- today's timeline -----
+  const entries: Entry[] = [
+    ...meals.map((g) => ({
+      key: `m${g.key}`,
+      at: g.eaten_at,
+      icon: 'fork.knife' as SymbolName,
+      fallback: '🍽️',
+      color: palette.lettuce,
+      title: g.name,
+      sub: g.reaction != null ? REACTIONS[g.reaction].label : 'Nasıl geçtiği bekleniyor',
+      onPress: () => router.push(`/ogun/${g.ids[0]}`),
+      group: g,
+    })),
+    ...bowel.map((b) => ({
+      key: `b${b.id}`,
+      at: b.at,
+      icon: 'drop.fill' as SymbolName,
+      fallback: '💧',
+      color: b.blood ? palette.bad : palette.sky,
+      title: `Tuvalet, ${(BRISTOL[b.bristol - 1]?.short ?? `tip ${b.bristol}`).toLocaleLowerCase('tr')}`,
+      sub: [`Bristol ${b.bristol}`, b.blood ? 'kan vardı' : null, b.urgency ? 'acil' : null].filter(Boolean).join(', '),
+    })),
+    ...symptoms.map((s) => ({
+      key: `s${s.id}`,
+      at: s.at,
+      icon: 'waveform.path.ecg' as SymbolName,
+      fallback: '🌡️',
+      color: s.pain >= 4 ? palette.bad : palette.apricot,
+      title: s.pain + s.bloating + s.gas + s.fatigue === 0 ? 'Şikayet yok' : 'Semptom',
+      sub:
+        [s.pain ? `ağrı ${s.pain}` : null, s.bloating ? `şişkinlik ${s.bloating}` : null, s.gas ? `gaz ${s.gas}` : null, s.fatigue ? `yorgunluk ${s.fatigue}` : null]
+          .filter(Boolean)
+          .join(', ') || 'Her şey yolunda',
+    })),
+    ...doses
+      .filter((d) => d.log?.taken_at && d.log.taken_at >= dayStart)
+      .map((d) => ({
+        key: `d${d.med.id}:${d.due}`,
+        at: d.log!.taken_at!,
+        icon: 'pills.fill' as SymbolName,
+        fallback: '💊',
+        color: palette.peri,
+        title: d.med.name,
+        sub: d.med.dose ? `${d.med.dose} alındı` : 'Alındı',
+        onPress: () => router.push('/ilaclar'),
+      })),
+    ...(daily
+      ? [
+          {
+            key: 'daily',
+            at: daily.at,
+            icon: 'moon.stars.fill' as SymbolName,
+            fallback: '🌙',
+            color: palette.flare,
+            title: 'Gün nasıldı',
+            sub: [
+              daily.stress != null ? `stres: ${STRESS[daily.stress]?.label.toLocaleLowerCase('tr')}` : null,
+              daily.sleep_q != null ? `uyku: ${SLEEP[daily.sleep_q]?.label.toLocaleLowerCase('tr')}` : null,
+            ]
+              .filter(Boolean)
+              .join(', '),
+            onPress: () => router.push('/gun'),
+          },
+        ]
+      : []),
+  ].sort((a, b) => a.at - b.at);
+
+  const maxPain = symptoms.length ? Math.max(...symptoms.map((s) => s.pain)) : null;
+  const summary = [`${meals.length} öğün`, `${bowel.length} tuvalet`, maxPain == null ? null : maxPain === 0 ? 'ağrı yok' : `ağrı ${maxPain}/5`]
+    .filter(Boolean)
+    .join(', ');
+
+  const flare = app.phase === 'atak';
+  const phaseTone = flare ? palette.flareDeep : palette.lettuceDeep;
+  const phaseDays = app.phaseSince ? daysSince(app.phaseSince) + 1 : null;
+
   return (
-    <Screen tone={app.phase === 'atak' ? 'flare' : 'calm'}>
+    <Screen tone={flare ? 'flare' : 'calm'}>
       <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4 }}>
-        <View>
-          <T v="caption" color={palette.inkSoft} style={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
+        <View style={{ flex: 1 }}>
+          <T v="small" color={palette.inkSoft}>
             {todayLabel()}
           </T>
-          <T v="large">{app.name ? `Selam ${app.name}` : 'Crohnic'}</T>
+          <T v="large" numberOfLines={1} adjustsFontSizeToFit>
+            {app.name ? `Selam ${app.name}` : 'Selam'}
+          </T>
         </View>
         <IconButton name="gearshape" label="Ayarlar" fallback="⚙️" onPress={() => router.push('/ayarlar')} />
       </Row>
 
-      <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingLeft: 8 }}>
-        <Mascot mood={mood} size={96} />
-        <T v="callout" style={[{ flex: 1 }, type.medium]}>
-          {line}
-        </T>
+      <Card style={{ gap: 10, paddingLeft: 10 }}>
+        <Row gap={8}>
+          <Mascot mood={mood} size={92} />
+          <T v="callout" style={[{ flex: 1 }, type.medium]}>
+            {line}
+          </T>
+        </Row>
+        <Tap onPress={changePhase} accessibilityRole="button" accessibilityLabel="Dönemi değiştir" style={{ alignSelf: 'flex-start', marginLeft: 6 }}>
+          <Row gap={7} style={{ backgroundColor: flare ? palette.flareSoft : palette.lettuceSoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 7 }}>
+            <Icon name={flare ? 'flame.fill' : 'leaf.fill'} size={13} color={phaseTone} fallback={flare ? '🔥' : '🌿'} />
+            <T v="small" color={phaseTone} style={type.semibold}>
+              {flare ? 'Atak' : 'Remisyon'}
+              {phaseDays ? `, ${phaseDays}. gün` : ''}
+            </T>
+            <Icon name="chevron.down" size={10} color={phaseTone} fallback="▾" />
+          </Row>
+        </Tap>
       </Card>
 
-      <View style={{ gap: 8 }}>
-        <Segmented
-          value={app.phase}
-          onChange={(p) => p !== app.phase && app.changePhase(p)}
-          items={[
-            { key: 'remisyon', label: 'Remisyon', color: palette.lettuceDeep, icon: 'leaf.fill' },
-            { key: 'atak', label: 'Atak', color: palette.flare, icon: 'flame.fill' },
-          ]}
-        />
-        <T v="small" color={palette.inkSoft} style={{ paddingHorizontal: 6 }}>
-          {app.phaseSince
-            ? `${daysSince(app.phaseSince) === 0 ? 'Bugün' : `${daysSince(app.phaseSince)} gündür`} ${app.phase === 'atak' ? 'atak' : 'remisyon'} modundasın.`
-            : 'Şu an hangi dönemdeysen onu seç, önerilerim buna göre değişir.'}
-        </T>
-      </View>
+      <Button title="Kayıt ekle" icon="plus" color={flare ? palette.flareDeep : undefined} onPress={() => router.push('/ekle')} />
 
       {redFlag ? (
         <Card tint={palette.badSoft} style={{ gap: 8 }}>
@@ -163,124 +327,73 @@ export default function Home() {
         </Card>
       ) : null}
 
-      {perm === 'undetermined' && !promptSeen ? (
-        <Card style={{ gap: 12 }}>
-          <Row gap={10}>
-            <IconBubble name="bell.fill" color={palette.peri} dim={32} fallback="🔔" />
-            <T v="h3" style={{ flex: 1 }}>
-              Hatırlatayım mı?
-            </T>
-          </Row>
-          <T v="small" color={palette.inkSoft}>
-            Yedikten birkaç saat sonra nasıl geçtiğini, ilaç saatini ve akşam gününü sorarım. Kayıtlar böyle çok daha işe yarar.
+      {nextItems.length ? (
+        <>
+          <T v="h2" style={{ marginTop: 8, paddingHorizontal: 2 }}>
+            Sıradaki
           </T>
-          <Row gap={8}>
-            <Button title="Şimdi değil" kind="glass" compact onPress={dismissPrompt} style={{ flex: 1 }} />
-            <Button title="Bildirimleri aç" compact color={palette.peri} onPress={enableNotifs} style={{ flex: 1 }} />
-          </Row>
-        </Card>
-      ) : null}
-
-      <Doses />
-
-      {!checkedIn && new Date(loadedAt || 0).getHours() >= 18 ? (
-        <Tap onPress={() => router.push('/gun')}>
-          <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <IconBubble name="moon.stars.fill" color={palette.flare} fallback="🌙" />
-            <View style={{ flex: 1 }}>
-              <T v="h3">Bugün nasıldı?</T>
-              <T v="small" color={palette.inkSoft}>
-                Stres ve uyku, 10 saniye
-              </T>
-            </View>
+          <Card style={{ paddingVertical: 4 }}>
+            {nextItems.map((el, i) => (
+              <Fragment key={i}>
+                {i > 0 ? <View style={{ height: 1, backgroundColor: palette.hairline }} /> : null}
+                {el}
+              </Fragment>
+            ))}
           </Card>
-        </Tap>
+        </>
       ) : null}
 
-      {pending.slice(0, 2).map((m) => (
-        <Card key={m.key} style={{ gap: 12 }}>
-          <Row gap={12}>
-            <GroupThumb group={m} size={44} />
-            <View style={{ flex: 1 }}>
-              <T v="caption" color={palette.inkSoft}>
-                {relative(m.eaten_at)}
-              </T>
-              <T v="h3" numberOfLines={2}>
-                {m.name} nasıl geçti?
-              </T>
-            </View>
-          </Row>
-          <ReactionPicker compact onChange={(r) => react(m, r)} />
+      <Row style={{ justifyContent: 'space-between', alignItems: 'baseline', marginTop: 8, paddingHorizontal: 2 }}>
+        <T v="h2">Bugün</T>
+        <T v="small" color={palette.inkSoft}>
+          {summary}
+        </T>
+      </Row>
+      {entries.length ? (
+        <Card style={{ paddingVertical: 6 }}>
+          {entries.map((e, i) => (
+            <Tap key={e.key} onPress={e.onPress ?? (() => router.navigate('/gunluk'))} haptic={false}>
+              <Row gap={12} style={{ paddingVertical: 10 }}>
+                <T v="small" color={palette.inkFaint} style={{ width: 42 }}>
+                  {timeLabel(e.at)}
+                </T>
+                {e.group ? <GroupThumb group={e.group} size={34} /> : <IconBubble name={e.icon} color={e.color} dim={34} fallback={e.fallback} />}
+                <View style={{ flex: 1 }}>
+                  <T v="callout" numberOfLines={1} style={type.medium}>
+                    {e.title}
+                  </T>
+                  <T v="small" color={palette.inkSoft} numberOfLines={1}>
+                    {e.sub}
+                  </T>
+                </View>
+              </Row>
+              {i < entries.length - 1 ? <View style={{ height: 1, backgroundColor: palette.hairline, marginLeft: 100 }} /> : null}
+            </Tap>
+          ))}
         </Card>
-      ))}
-
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-        {ACTIONS.map((a) => (
-          <Tap key={a.label} onPress={() => router.push(a.to as never)} style={{ width: '48.5%' }}>
-            <Card style={{ height: size.tile, justifyContent: 'space-between' }}>
-              <IconBubble name={a.icon} color={a.color} fallback={a.fallback} />
-              <View>
-                <T v="h3" numberOfLines={1}>
-                  {a.label}
-                </T>
-                <T v="small" color={palette.inkSoft} numberOfLines={1}>
-                  {a.sub}
-                </T>
-              </View>
-            </Card>
-          </Tap>
-        ))}
-      </View>
+      ) : (
+        <Card style={{ alignItems: 'center', gap: 4, paddingVertical: 22 }}>
+          <T v="h3">Bugün henüz kayıt yok</T>
+          <T v="small" color={palette.inkSoft} style={{ textAlign: 'center' }}>
+            Yediğin ilk şeyi “Kayıt ekle”den yaz.
+          </T>
+        </Card>
+      )}
 
       {backupDue ? (
         <Tap onPress={() => router.push('/ayarlar')}>
-          <Card tint={palette.warnSoft} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <IconBubble name="icloud.and.arrow.up" color={palette.warn} dim={32} fallback="☁️" />
-            <T v="small" style={{ flex: 1 }}>
-              Bir aydır yedek almadın. Telefon kaybolursa kayıtların da gider. Ayarlar’dan bir dokunuşla yedekle.
+          <Row gap={10} style={{ paddingHorizontal: 6, paddingVertical: 4 }}>
+            <Icon name="icloud.and.arrow.up" size={16} color={palette.warn} fallback="☁️" />
+            <T v="small" color={palette.inkSoft} style={{ flex: 1 }}>
+              Bir aydır yedek almadın. Ayarlar’dan bir dokunuşla yedekle.
             </T>
-          </Card>
+          </Row>
         </Tap>
       ) : null}
 
-      <SectionTitle title="Bugün" action={today.length ? 'Günlüğe git' : undefined} onAction={() => router.navigate('/gunluk')} />
-      <Row gap={8}>
-        <Stat label="Öğün" value={String(today.length)} sub={today[0] ? relative(today[0].eaten_at) : undefined} />
-        <Stat label="Tuvalet" value={String(bowelToday)} sub={lastBowel ? relative(lastBowel.at) : undefined} />
-        <Stat label="Ağrı" value={lastSymptom ? `${lastSymptom.pain}/5` : '–'} sub={lastSymptom ? relative(lastSymptom.at) : undefined} />
-      </Row>
-      {today.length ? (
-        today.map((m) => <MealRow key={m.key} group={m} />)
-      ) : (
-        <Tap onPress={() => router.push('/yemek-ekle')}>
-          <Card style={{ alignItems: 'center', gap: 4, paddingVertical: 22 }}>
-            <T v="h3">Bugün henüz bir şey yazmadın</T>
-            <T v="small" color={palette.inkSoft}>
-              Dokun, ilk öğünü ekle
-            </T>
-          </Card>
-        </Tap>
-      )}
-
       <T v="caption" color={palette.inkFaint} style={{ textAlign: 'center', marginTop: 10, lineHeight: 17, fontWeight: '400' }}>
-        Crohnic bir takip aracıdır, tıbbi tavsiye vermez.{'\n'}Tedavi ve diyet kararlarını doktorunla birlikte al.
+        Crohnic bir takip aracıdır, tıbbi tavsiye vermez. Tedavi ve diyet kararlarını doktorunla birlikte al.
       </T>
     </Screen>
-  );
-}
-
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <Card style={{ flex: 1, height: size.stat, padding: 12, justifyContent: 'space-between', borderRadius: radius.lg }}>
-      <T v="caption" color={palette.inkSoft} numberOfLines={1}>
-        {label}
-      </T>
-      <T v="title" numberOfLines={1} adjustsFontSizeToFit>
-        {value}
-      </T>
-      <T v="caption" color={palette.inkFaint} numberOfLines={1} style={{ fontWeight: '400' }}>
-        {sub ?? ' '}
-      </T>
-    </Card>
   );
 }
