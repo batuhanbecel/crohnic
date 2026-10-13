@@ -4,5 +4,6 @@
     "api/analyze.ts": {
       "maxDuration": 60
     }
-  }
+  },
+  "cleanUrls": true
 }
