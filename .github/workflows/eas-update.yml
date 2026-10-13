@@ -1,6 +1,9 @@
-# master'a her push'ta uygulamaya uzaktan güncelleme gönderir (EAS Update).
+# master'a her push'ta:
+#  1. Native parmak izi (fingerprint) hesaplanır.
+#  2. Bu parmak izine ait bir iOS build yoksa EAS build alınır ve TestFlight'a otomatik gönderilir.
+#  3. Her durumda uzaktan güncelleme (EAS Update) yayınlanır; uyumlu build'e sahip telefonlara gider.
 # Gerekli: repo Settings > Secrets and variables > Actions > EXPO_TOKEN
-name: eas-update
+name: deploy
 
 on:
   push:
@@ -11,20 +14,22 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: eas-update
-  cancel-in-progress: true
+  group: deploy
+  cancel-in-progress: false
 
 jobs:
-  update:
-    name: EAS Update (production)
+  deploy:
+    name: iOS build (gerekirse) + update
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     steps:
       - name: Check for EXPO_TOKEN
         run: |
-          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
-            echo "EXPO_TOKEN secret eksik. expo.dev > Account settings > Access tokens'dan oluşturup repo secret olarak ekle."
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "EXPO_TOKEN secret eksik. https://expo.dev/settings/access-tokens adresinden oluşturup repo secret olarak ekle."
             exit 1
           fi
 
@@ -48,6 +53,24 @@ jobs:
 
       - name: Typecheck
         run: npx tsc --noEmit
+
+      - name: Resolve native fingerprint
+        id: fp
+        run: |
+          RV=$(npx expo-updates runtimeversion:resolve --platform ios | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).runtimeVersion))')
+          echo "runtime=$RV" >> "$GITHUB_OUTPUT"
+          echo "Fingerprint: $RV"
+
+      - name: Build + TestFlight if native code changed
+        run: |
+          COUNT=$(eas build:list --platform ios --runtime-version "${{ steps.fp.outputs.runtime }}" --limit 5 --json --non-interactive \
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s||"[]");console.log(l.filter(b=>!["ERRORED","CANCELED"].includes(b.status)).length)})')
+          if [ "$COUNT" = "0" ]; then
+            echo "Native değişiklik var, yeni build başlatılıyor."
+            eas build --platform ios --profile production --auto-submit --non-interactive --no-wait
+          else
+            echo "Bu parmak izi için build zaten var, sadece güncelleme yayınlanacak."
+          fi
 
       - name: Publish update
         env:

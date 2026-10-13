@@ -31,21 +31,19 @@ npx eas-cli@latest submit -p ios --latest
 
 `build` sırasında Apple hesabınla giriş ister ve sertifikaları kendisi oluşturur. Mac'te Xcode gerekmez. `submit` bittikten 10-20 dakika sonra build App Store Connect → TestFlight'ta görünür. iPhone'a **TestFlight** uygulamasını kur, oradan Crohnic'i yükle.
 
-### Güncellemeler
+### Güncellemeler (otomatik)
 
-`master`'a her push'ta GitHub Actions uygulamaya uzaktan güncelleme gönderir (`.github/workflows/eas-update.yml`). Uygulama bir sonraki açılışta yeni sürümü indirir; Ayarlar → "Güncelleme var mı?" ile elle de kontrol edilebilir.
+`master`'a her push'ta GitHub Actions (`.github/workflows/eas-update.yml`) şunu yapar:
 
-Bir kerelik kurulum: expo.dev → Account settings → **Access tokens** → token oluştur → GitHub repo → Settings → Secrets and variables → Actions → **New repository secret**, adı `EXPO_TOKEN`.
+1. Uygulamanın native parmak izini (fingerprint) hesaplar.
+2. Bu parmak izine ait iOS build yoksa (yeni native paket, ikon, izin değişikliği vb.) EAS'te build alır ve TestFlight'a otomatik gönderir. TestFlight'tan **Update** demek yeterli.
+3. Her durumda uzaktan güncelleme yayınlar. Ekran, metin, renk, yemek listesi gibi değişiklikler build'siz, uygulamayı kapatıp açınca gelir.
 
-Elle göndermek için: `npx eas-cli@latest update --channel production --message "ne değişti"`
+Bir kerelik kurulum: https://expo.dev/settings/access-tokens → token oluştur → GitHub repo → Settings → Secrets and variables → Actions → **New repository secret**, adı `EXPO_TOKEN`.
 
-**Yeni build gereken durumlar** (OTA ile gitmez): yeni native paket eklemek, `app.json`'da ikon, izin, isim veya `version` değişikliği. O zaman `version`'ı artır (ör. 1.2.0) ve:
+Elle tetiklemek için: GitHub → Actions → **deploy** → **Run workflow**.
 
-```bash
-npx eas-cli@latest build -p ios --profile production --auto-submit
-```
-
-TestFlight build'leri 90 gün geçerli; süre dolmadan bir build almak yeterli.
+TestFlight build'leri 90 gün geçerli; süre dolmadan Actions'tan bir kez çalıştırıp build almak yeterli (gerekirse `eas.json`'a dokunmak yeni build tetikler).
 
 ## 3. AI sunucusu (Vercel)
 

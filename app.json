@@ -55,7 +55,7 @@
       "typedRoutes": false
     },
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "fingerprint"
     },
     "web": {
       "favicon": "./assets/favicon.png"
