@@ -192,7 +192,23 @@ export async function POST(request: Request) {
   if (!res.ok) {
     const detail = await res.text().catch(() => '');
     console.error('Anthropic error', res.status, detail.slice(0, 500));
-    return json({ error: `AI servisi hata verdi (${res.status}). Biraz sonra tekrar dene.` }, 502);
+    let reason = '';
+    try {
+      reason = JSON.parse(detail)?.error?.message ?? '';
+    } catch {
+      reason = '';
+    }
+    const hint =
+      /credit balance/i.test(reason)
+        ? 'Claude API kredisi yetersiz: console.anthropic.com → Billing.'
+        : /model/i.test(reason)
+          ? `Model bulunamadı (${MODEL}). Vercel'de CLAUDE_MODEL'i kontrol et.`
+          : res.status === 401
+            ? 'ANTHROPIC_API_KEY geçersiz.'
+            : res.status === 429 || res.status === 529
+              ? 'Claude şu an yoğun, biraz sonra tekrar dene.'
+              : '';
+    return json({ error: `AI servisi hata verdi (${res.status}). ${hint || reason.slice(0, 200) || 'Biraz sonra tekrar dene.'}` }, 502);
   }
 
   const data: any = await res.json();
