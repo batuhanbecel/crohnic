@@ -3,20 +3,8 @@ import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import React from 'react';
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  type PressableProps,
-  type StyleProp,
-  type TextProps,
-  type TextStyle,
-  type ViewStyle,
-} from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View, type PressableProps, type StyleProp, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
+import { Text } from './text';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import type { Verdict } from '../lib/foods';
 import { isDark, onTint, palette, radius, shadow, size, surface, type } from '../lib/theme';
@@ -183,7 +171,7 @@ export function Icon({ name, size: s = 20, color = palette.ink, fallback }: { na
 export function IconBubble({ name, color, dim = size.icon, fallback }: { name: SymbolName; color: string; dim?: number; fallback?: string }) {
   return (
     <Glass tint={color} style={{ width: dim, height: dim, borderRadius: dim / 2, alignItems: 'center', justifyContent: 'center' }}>
-      <Icon name={name} size={dim * 0.45} color="#fff" fallback={fallback} />
+      <Icon name={name} size={dim * 0.45} color={onTint(color)} fallback={fallback} />
     </Glass>
   );
 }
@@ -211,10 +199,12 @@ export function Screen({
 }) {
   return (
     <View style={{ flex: 1, backgroundColor: palette.paper }}>
-      <Backdrop tone={tone} />
+      {/* under a native header the glow would meet the flat bar in a hard line, so forms stay plain */}
+      {header ? <Backdrop tone={tone} /> : null}
       <ScrollView
         style={{ flex: 1 }}
         contentInsetAdjustmentBehavior="automatic"
+        automaticallyAdjustKeyboardInsets
         contentContainerStyle={[{ paddingHorizontal: 18, paddingTop: header ? 8 : 12, paddingBottom: 40, gap: size.gap }, contentStyle]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
@@ -401,7 +391,7 @@ export function OptionTiles<K extends string | number>({
           <View key={String(it.key)} style={{ flex: 1 }}>
             <GlassPress onPress={() => onChange(it.key)} tint={on ? it.color : undefined} style={[st.option, { height: compact ? 66 : 78 }]}>
               <Text style={{ fontSize: compact ? 22 : 26 }}>{it.emoji}</Text>
-              <Label small color={on ? '#fff' : it.color}>
+              <Label small color={on ? onTint(it.color) : it.color}>
                 {it.label}
               </Label>
             </GlassPress>
@@ -434,9 +424,9 @@ export function ChoiceRow({
         <Text style={{ fontSize: 20 }}>{emoji}</Text>
       </View>
       <View style={{ flex: 1 }}>
-        <Label color={active ? '#fff' : palette.ink}>{title}</Label>
+        <Label color={active ? onTint(color) : palette.ink}>{title}</Label>
         {subtitle ? (
-          <Text numberOfLines={1} style={{ fontSize: 14, lineHeight: 19, color: active ? 'rgba(255,255,255,0.9)' : palette.inkSoft }}>
+          <Text numberOfLines={1} style={{ fontSize: 14, lineHeight: 19, color: active ? onTint(color) : palette.inkSoft, opacity: active ? 0.85 : 1 }}>
             {subtitle}
           </Text>
         ) : null}

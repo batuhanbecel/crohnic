@@ -93,3 +93,33 @@ export function lifestyleEffects(daily: Daily[], symptoms: SymptomLog[], bowel: 
   }
   return out;
 }
+
+export type PhasePeriod = { phase: 'remisyon' | 'atak'; from: number; to: number | null; days: number };
+
+/** Collapse the phase-change log into periods (repeated same-phase entries merge). Newest first. */
+export function phasePeriods(changes: { phase: 'remisyon' | 'atak'; started_at: number }[], at = Date.now()): PhasePeriod[] {
+  const merged: { phase: 'remisyon' | 'atak'; from: number }[] = [];
+  for (const c of [...changes].sort((a, b) => a.started_at - b.started_at)) {
+    if (merged.length && merged[merged.length - 1].phase === c.phase) continue;
+    merged.push({ phase: c.phase, from: c.started_at });
+  }
+  return merged
+    .map((p, i) => {
+      const to = merged[i + 1]?.from ?? null;
+      const end = to ?? at;
+      return { phase: p.phase, from: p.from, to, days: Math.max(1, Math.round((end - p.from) / 86400000)) };
+    })
+    .reverse();
+}
+
+/** Days spent in flare inside [from, to). */
+export function flareDaysBetween(periods: PhasePeriod[], from: number, to: number) {
+  let ms = 0;
+  for (const p of periods) {
+    if (p.phase !== 'atak') continue;
+    const a = Math.max(p.from, from);
+    const b = Math.min(p.to ?? to, to);
+    if (b > a) ms += b - a;
+  }
+  return Math.ceil(ms / 86400000); // a started day counts
+}

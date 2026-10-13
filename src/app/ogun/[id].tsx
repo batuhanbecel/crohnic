@@ -1,7 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, Text, TextInput, View } from 'react-native';
+import { Alert, Image, View } from 'react-native';
+import { Text, TextInput } from '../../components/text';
 import { FoodPicker } from '../../components/FoodPicker';
 import { GroupThumb, emojiOf } from '../../components/MealRow';
 import { ReactionPicker } from '../../components/ReactionPicker';

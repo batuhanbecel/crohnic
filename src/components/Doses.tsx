@@ -6,11 +6,11 @@ import { useApp } from '../lib/app-state';
 import { dayLabel, now, startOfDay, timeLabel } from '../lib/dates';
 import * as db from '../lib/db';
 import { dosesForToday, type Dose } from '../lib/meds';
-import { palette } from '../lib/theme';
+import { onTint, palette } from '../lib/theme';
 import { Button, Card, GlassPress, Icon, IconBubble, Row, T } from './ui';
 
 /** Today's medication doses with one-tap "Aldım". Renders nothing when there are no meds. */
-export function Doses({ showEmpty, title = 'İlaçlar' }: { showEmpty?: boolean; title?: string }) {
+export function Doses({ showEmpty, title = 'İlaçlar', link = true }: { showEmpty?: boolean; title?: string; link?: boolean }) {
   const sql = useSQLiteContext();
   const app = useApp();
   const [doses, setDoses] = useState<Dose[] | null>(null);
@@ -86,7 +86,7 @@ export function Doses({ showEmpty, title = 'İlaçlar' }: { showEmpty?: boolean;
                 accessibilityLabel="Geri al"
                 style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
               >
-                <Icon name={taken ? 'checkmark' : 'arrow.uturn.backward'} size={16} color={taken ? '#fff' : palette.inkSoft} fallback={taken ? '✓' : '↺'} />
+                <Icon name={taken ? 'checkmark' : 'arrow.uturn.backward'} size={16} color={taken ? onTint(palette.good) : palette.inkSoft} fallback={taken ? '✓' : '↺'} />
               </GlassPress>
             ) : (
               <Row gap={6}>
@@ -97,7 +97,7 @@ export function Doses({ showEmpty, title = 'İlaçlar' }: { showEmpty?: boolean;
           </Row>
         );
       })}
-      <Button title="İlaçlarım" kind="plain" compact onPress={() => router.push('/ilaclar')} />
+      {link ? <Button title="İlaçlarım" kind="plain" compact onPress={() => router.push('/ilaclar')} /> : null}
     </Card>
   );
 }

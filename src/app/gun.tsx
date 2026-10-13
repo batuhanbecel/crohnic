@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { View } from 'react-native';
+import { TextInput } from '../components/text';
 import { Mascot } from '../components/Mascot';
 import { Button, Card, Chip, OptionTiles, Row, Screen, Segmented, T, st } from '../components/ui';
 import { useApp } from '../lib/app-state';

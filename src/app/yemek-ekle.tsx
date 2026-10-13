@@ -2,7 +2,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useMemo, useState } from 'react';
-import { Alert, Image, Text, View } from 'react-native';
+import { Alert, Image, View } from 'react-native';
+import { Text } from '../components/text';
 import { FoodPicker } from '../components/FoodPicker';
 import { ReactionPicker } from '../components/ReactionPicker';
 import { WhenField } from '../components/WhenField';
@@ -22,7 +23,9 @@ export default function AddMeal() {
   const sql = useSQLiteContext();
   const app = useApp();
   const [text, setText] = useState('');
-  const [phase, setPhase] = useState<Phase>(app.phase);
+  // follows the app's phase until the user picks one here (app state may still be loading)
+  const [picked, setPhase] = useState<Phase | null>(null);
+  const phase = picked ?? app.phase;
   const [items, setItems] = useState<Item[]>([]);
   const [photo, setPhoto] = useState<string | null>(null);
   const [at, setAt] = useState(() => now());

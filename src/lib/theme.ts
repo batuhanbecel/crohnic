@@ -30,6 +30,8 @@ const LIGHT = {
   flare: '#F26B3A',
   flareDeep: '#D9531F',
   flareSoft: '#FFE6DA',
+  /** filled flare buttons (white text on top) */
+  flareStrong: '#D9531F',
 
   good: '#2DB357',
   goodSoft: '#DDF4E3',
@@ -60,6 +62,7 @@ const DARK: typeof LIGHT = {
   flare: '#FF7442',
   flareDeep: '#FF8656',
   flareSoft: '#3B2015',
+  flareStrong: '#C9501F',
 
   good: '#3AC968',
   goodSoft: '#12301F',
@@ -106,9 +109,23 @@ export const palette = isDark ? DARK : LIGHT;
 /** Translucent surfaces that sit on the gradient background. */
 export const surface = isDark ? SURFACE_DARK : SURFACE_LIGHT;
 
-/** Foreground for a filled/tinted control: dark text on the light `ink` tint in dark mode, white otherwise. */
+/** Relative luminance of a #RRGGBB colour (0 dark … 1 light). */
+function luminance(hex: string) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return 0;
+  const n = parseInt(m[1], 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+}
+
+/** Foreground for a filled/tinted control: white on dark/saturated fills, deep ink on light ones. */
 export function onTint(tint: string | undefined) {
-  return tint === palette.ink ? palette.onInk : '#FFFFFF';
+  if (!tint) return '#FFFFFF';
+  if (tint === palette.ink) return palette.onInk;
+  return luminance(tint) > 0.36 ? '#13201A' : '#FFFFFF';
 }
 
 export const radius = { sm: 12, md: 18, lg: 24, xl: 30, pill: 999 };

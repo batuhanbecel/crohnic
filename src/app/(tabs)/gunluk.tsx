@@ -1,7 +1,8 @@
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Alert, View } from 'react-native';
+import { Text } from '../../components/text';
 import { AddMenu } from '../../components/AddMenu';
 import { MealRow } from '../../components/MealRow';
 import { BRISTOL, bristolTone } from '../../components/bristol';

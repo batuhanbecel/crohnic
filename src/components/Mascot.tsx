@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Animated, Easing, Platform, Text, View, type ViewStyle } from 'react-native';
+import { Animated, Easing, Platform, View, type ViewStyle } from 'react-native';
+import { Text } from './text';
 import Svg, { Circle, Ellipse, G, Path } from 'react-native-svg';
 
 export type Mood = 'happy' | 'ok' | 'worried' | 'cheer' | 'sleepy';

@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { TextInput } from 'react-native';
+import { TextInput } from '../components/text';
 import { Mascot } from '../components/Mascot';
 import { Suspects } from '../components/Suspects';
 import { WhenField } from '../components/WhenField';
@@ -38,7 +38,7 @@ export default function Symptom() {
     app.bump();
     setSaving(false);
     // a rough day: ask which recent meal might be behind it
-    if (v.pain >= 2 || v.bloating >= 3 || v.gas >= 3) setAsking(true);
+    if ((v.pain >= 2 || v.bloating >= 3 || v.gas >= 3) && (await db.mealsBefore(sql, at)).length) setAsking(true);
     else router.back();
   };
 

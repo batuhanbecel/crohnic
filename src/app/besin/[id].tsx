@@ -1,7 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Alert, View } from 'react-native';
+import { Text } from '../../components/text';
 import { Mascot } from '../../components/Mascot';
 import { ThinkingOverlay } from '../../components/ThinkingOverlay';
 import { Button, Card, Row, Screen, T, VERDICT_UI, VerdictBadge } from '../../components/ui';

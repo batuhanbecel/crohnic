@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { View } from 'react-native';
+import { TextInput } from './text';
 import { findFoodByName, searchFoods, type Food } from '../lib/foods';
 import { palette } from '../lib/theme';
 import { Chip, GlassPress, Icon, Row, T, st } from './ui';

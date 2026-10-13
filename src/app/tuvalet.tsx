@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { Switch, TextInput, View } from 'react-native';
+import { Switch, View } from 'react-native';
+import { TextInput } from '../components/text';
 import { BRISTOL, bristolTone } from '../components/bristol';
 import { Suspects } from '../components/Suspects';
 import { WhenField } from '../components/WhenField';
@@ -28,7 +29,7 @@ export default function Bowel() {
     await db.addBowel(sql, { at, bristol: kind, blood: blood ? 1 : 0, urgency: urgency ? 1 : 0, note: note.trim() || null });
     app.bump();
     setSaving(false);
-    if (kind >= 6 || blood) setAsking(true);
+    if ((kind >= 6 || blood) && (await db.mealsBefore(sql, at)).length) setAsking(true);
     else router.back();
   };
 

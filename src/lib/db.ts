@@ -169,6 +169,10 @@ export async function getPhase(db: SQLiteDatabase): Promise<{ phase: Phase; sinc
   return r ? { phase: r.phase, since: r.started_at } : { phase: 'remisyon', since: null };
 }
 
+export async function listPhases(db: SQLiteDatabase) {
+  return db.getAllAsync<{ phase: Phase; started_at: number }>('SELECT phase, started_at FROM phases ORDER BY started_at');
+}
+
 export async function setPhase(db: SQLiteDatabase, phase: Phase) {
   await db.runAsync('INSERT INTO phases (phase, started_at) VALUES (?, ?)', phase, Date.now());
 }

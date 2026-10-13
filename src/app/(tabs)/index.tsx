@@ -312,7 +312,7 @@ export default function Home() {
         </Tap>
       </Card>
 
-      <Button title="Kayıt ekle" icon="plus" color={flare ? palette.flareDeep : undefined} onPress={() => setAdding(true)} />
+      <Button title="Kayıt ekle" icon="plus" color={flare ? palette.flareStrong : undefined} onPress={() => setAdding(true)} />
       <AddMenu visible={adding} onClose={() => setAdding(false)} />
 
       {redFlag ? (

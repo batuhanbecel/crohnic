@@ -31,7 +31,7 @@ export default function Meds() {
 
   return (
     <Screen header={false}>
-      <Doses showEmpty title="Bugün" />
+      <Doses showEmpty title="Bugün" link={false} />
 
       <SectionTitle title="Kullandıkların" action="Ekle" onAction={() => router.push('/ilac')} />
       {meds.length ? (

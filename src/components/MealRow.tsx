@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
-import { Image, Text, View } from 'react-native';
+import { Image, View } from 'react-native';
+import { Text } from './text';
 import { timeLabel } from '../lib/dates';
 import type { Meal, MealGroup } from '../lib/db';
 import { FOOD_BY_ID, findFoodByName } from '../lib/foods';

@@ -55,7 +55,7 @@ export function summarize(r: ReportInput) {
   const perDay = bowelDays.size ? r.bowel.length / bowelDays.size : 0;
   const flareDays = days.filter((d) => phaseAt(r.phases, d + DAY - 1) === 'atak').length;
   const pains = r.symptoms.map((s) => s.pain);
-  const adh = adherence(r.meds, r.logs, r.from, r.to);
+  const adh = adherence(r.meds, r.logs, r.from, Math.min(r.to, Date.now())); // future doses aren't missed yet
   const due = adh.reduce((a, x) => a + x.due, 0);
   const taken = adh.reduce((a, x) => a + x.taken, 0);
   return {

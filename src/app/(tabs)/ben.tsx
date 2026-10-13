@@ -4,13 +4,13 @@ import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { bristolTone } from '../../components/bristol';
 import { Mascot } from '../../components/Mascot';
-import { Button, Card, Empty, Row, Screen, SectionTitle, T } from '../../components/ui';
+import { Button, Card, Empty, Icon, Row, Screen, SectionTitle, T } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
 import { dayKey, now } from '../../lib/dates';
 import * as db from '../../lib/db';
 import { TAGS } from '../../lib/foods';
-import { lifestyleEffects, suspectFoods } from '../../lib/insights';
-import { palette, radius, surface, type } from '../../lib/theme';
+import { flareDaysBetween, lifestyleEffects, phasePeriods, suspectFoods, type PhasePeriod } from '../../lib/insights';
+import { onTint, palette, radius, surface, type } from '../../lib/theme';
 import { personalVerdict, statsByName, triggerInsights } from '../../lib/tolerance';
 
 const SLOTS = [
@@ -28,11 +28,13 @@ export default function Insights() {
   const [bowel, setBowel] = useState<db.BowelLog[]>([]);
   const [symptoms, setSymptoms] = useState<db.SymptomLog[]>([]);
   const [daily, setDaily] = useState<db.Daily[]>([]);
+  const [phaseLog, setPhaseLog] = useState<{ phase: 'remisyon' | 'atak'; started_at: number }[]>([]);
   const [loadedAt, setLoadedAt] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
-      Promise.all([db.allRatedMeals(sql), db.listMeals(sql, 600), db.listBowel(sql, 600), db.listSymptoms(sql, 600), db.listDaily(sql, 120)]).then(([r, m, b, s, d]) => {
+      Promise.all([db.allRatedMeals(sql), db.listMeals(sql, 600), db.listBowel(sql, 600), db.listSymptoms(sql, 600), db.listDaily(sql, 120), db.listPhases(sql)]).then(([r, m, b, s, d, ph]) => {
+        setPhaseLog(ph);
         setRated(r);
         setAllMeals(m);
         setBowel(b);
@@ -45,6 +47,7 @@ export default function Insights() {
 
   const { triggers, safe } = useMemo(() => triggerInsights(rated), [rated]);
   const suspects = useMemo(() => suspectFoods(allMeals, symptoms, bowel), [allMeals, symptoms, bowel]);
+  const periods = useMemo(() => phasePeriods(phaseLog, loadedAt || 0), [phaseLog, loadedAt]);
   const lifestyle = useMemo(() => lifestyleEffects(daily, symptoms, bowel, allMeals), [daily, symptoms, bowel, allMeals]);
   const foods = useMemo(() => {
     const list = [...statsByName(rated).values()];
@@ -108,6 +111,8 @@ export default function Insights() {
           </T>
         </View>
       </Card>
+
+      {periods.length ? <PhaseHistory periods={periods} at={loadedAt} /> : null}
 
       {!enough ? (
         <Empty emoji="🔍" title="Biraz daha kayıt lazım" text={`4 öğünün nasıl geçtiğini yazınca tetikleyicilerini göstermeye başlarım. Şu an ${rated.length} tane var.`} />
@@ -307,7 +312,7 @@ export default function Insights() {
                 }}
               >
                 {d.pain != null ? (
-                  <T v="caption" color={d.pain >= 2 ? '#fff' : palette.peri} style={{ fontSize: 10 }}>
+                  <T v="caption" color={d.pain >= 2 ? onTint(d.pain >= 4 ? palette.bad : palette.peri) : palette.peri} style={{ fontSize: 10 }}>
                     {d.pain}
                   </T>
                 ) : null}
@@ -362,5 +367,58 @@ function FoodList({ title, items, color }: { title: string; items: string[]; col
         </T>
       )}
     </Card>
+  );
+}
+
+const fmtDay = (ms: number) => new Date(ms).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+
+function PhaseHistory({ periods, at }: { periods: PhasePeriod[]; at: number }) {
+  const flares = periods.filter((p) => p.phase === 'atak');
+  const last90 = flareDaysBetween(periods, at - 90 * 86400000, at);
+  return (
+    <>
+      <SectionTitle title="Dönemler" />
+      <Card style={{ gap: 4, paddingVertical: 12 }}>
+        <T v="small" color={palette.inkSoft} style={{ marginBottom: 6 }}>
+          {flares.length
+            ? `Son 90 günde ${last90} gün atak. Toplam ${flares.length} atak dönemi kaydettin.`
+            : 'Henüz atak dönemi kaydetmedin. Ana sayfadaki dönem etiketinden değiştirebilirsin.'}
+        </T>
+        {periods.slice(0, 8).map((p, i) => {
+          const flare = p.phase === 'atak';
+          const tone = flare ? palette.flareDeep : palette.lettuceDeep;
+          return (
+            <View key={p.from}>
+              {i > 0 ? <View style={{ height: 1, backgroundColor: palette.hairline, marginLeft: 38 }} /> : null}
+              <Row gap={12} style={{ paddingVertical: 9 }}>
+                <View
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: 13,
+                    backgroundColor: flare ? palette.flareSoft : palette.lettuceSoft,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Icon name={flare ? 'flame.fill' : 'leaf.fill'} size={12} color={tone} fallback={flare ? '🔥' : '🌿'} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <T v="callout" style={type.medium} color={tone}>
+                    {flare ? 'Atak' : 'Remisyon'}
+                  </T>
+                  <T v="small" color={palette.inkSoft}>
+                    {fmtDay(p.from)} – {p.to ? fmtDay(p.to) : 'devam ediyor'}
+                  </T>
+                </View>
+                <T v="callout" style={type.semibold}>
+                  {p.days} gün
+                </T>
+              </Row>
+            </View>
+          );
+        })}
+      </Card>
+    </>
   );
 }

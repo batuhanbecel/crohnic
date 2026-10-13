@@ -5,7 +5,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Bootstrap } from '../components/Bootstrap';
-import { hasLiquidGlass } from '../components/ui';
 import { AppProvider } from '../lib/app-state';
 import { migrate } from '../lib/db';
 import { palette } from '../lib/theme';
@@ -17,17 +16,15 @@ export default function RootLayout() {
     SplashScreen.hideAsync().catch(() => {});
   }, []);
 
-  const glass = hasLiquidGlass();
-  const sheet = {
-    presentation: 'modal' as const,
-    headerShown: true,
-    headerTransparent: true,
-    headerBlurEffect: glass ? undefined : ('systemUltraThinMaterial' as const),
+  // Solid headers on every stacked screen: transparent ones let titles overlap
+  // scrolled content on iOS 26, where the scroll-edge blur isn't applied to RN scroll views.
+  const solid = {
+    headerTransparent: false,
+    headerStyle: { backgroundColor: palette.paper },
+    headerShadowVisible: false,
   };
-  const pushed = {
-    headerTransparent: true,
-    headerBlurEffect: glass ? undefined : ('systemUltraThinMaterial' as const),
-  };
+  const sheet = { presentation: 'modal' as const, headerShown: true, ...solid };
+  const pushed = { ...solid };
 
   return (
     <SafeAreaProvider>
@@ -46,7 +43,7 @@ export default function RootLayout() {
           >
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="yemek-ekle" options={{ ...sheet, title: 'Öğün ekle' }} />
-            <Stack.Screen name="semptom" options={{ ...sheet, title: 'Bugün nasılsın' }} />
+            <Stack.Screen name="semptom" options={{ ...sheet, title: 'Semptom' }} />
             <Stack.Screen name="tuvalet" options={{ ...sheet, title: 'Tuvalet' }} />
             <Stack.Screen name="ogun/[id]" options={{ ...sheet, title: 'Öğün' }} />
             <Stack.Screen name="sonuc" options={{ ...pushed, title: '' }} />
@@ -55,7 +52,7 @@ export default function RootLayout() {
             <Stack.Screen name="ilaclar" options={{ ...pushed, title: 'İlaçlarım' }} />
             <Stack.Screen name="rapor" options={{ ...pushed, title: 'Doktor raporu' }} />
             <Stack.Screen name="ilac" options={{ ...sheet, title: 'İlaç' }} />
-            <Stack.Screen name="gun" options={{ ...sheet, title: 'Bugün nasıldı' }} />
+            <Stack.Screen name="gun" options={{ ...sheet, title: 'Gün nasıldı' }} />
             <Stack.Screen name="hosgeldin" options={{ presentation: 'fullScreenModal', headerShown: false, gestureEnabled: false }} />
           </Stack>
         </AppProvider>

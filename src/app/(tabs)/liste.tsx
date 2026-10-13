@@ -1,7 +1,8 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, ScrollView, Text, TextInput, View } from 'react-native';
+import { FlatList, ScrollView, View } from 'react-native';
+import { Text, TextInput } from '../../components/text';
 import { Backdrop, Card, Chip, Icon, Row, T, Tap, VERDICT_UI, st } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
 import * as db from '../../lib/db';
@@ -59,8 +60,8 @@ export default function FoodList() {
   const header = (
     <View style={{ gap: 12, marginBottom: 12 }}>
       <View style={{ marginTop: 4 }}>
-        <T v="caption" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft} style={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
-          {FOODS.length} yemek · {app.phase === 'atak' ? 'atak' : 'remisyon'} dönemine göre
+        <T v="small" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft}>
+          {FOODS.length} yemek, {app.phase === 'atak' ? 'atak' : 'remisyon'} dönemine göre
         </T>
         <T v="large">Yemekler</T>
       </View>

@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { View } from 'react-native';
+import { TextInput } from '../../components/text';
 import { Mascot } from '../../components/Mascot';
 import { ThinkingOverlay } from '../../components/ThinkingOverlay';
 import { Button, Card, Chip, IconBubble, Row, Screen, T, Tap, st, type SymbolName } from '../../components/ui';
@@ -31,7 +32,7 @@ export default function Ask() {
       <ThinkingOverlay mode={busy} />
       <Row gap={4} style={{ alignItems: 'flex-end', marginTop: 4 }}>
         <View style={{ flex: 1 }}>
-          <T v="caption" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft} style={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
+          <T v="small" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft}>
             {app.phase === 'atak' ? 'Atak modunda bakıyorum' : 'Remisyon modunda bakıyorum'}
           </T>
           <T v="large">Bu bana iyi gelir mi?</T>
