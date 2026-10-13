@@ -1,25 +1,53 @@
 {
   "expo": {
-    "name": "crohnic",
+    "name": "Crohnic",
     "slug": "crohnic",
+    "scheme": "crohnic",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "backgroundColor": "#FFF7EF",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "tr.com.f28.crohnic",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Crohnic, yemeğinin ya da menünün fotoğrafını çekip sana uygun olup olmadığını söylemek için kamerayı kullanır.",
+        "NSPhotoLibraryUsageDescription": "Crohnic, galerinden seçtiğin yemek ve menü fotoğraflarını analiz etmek için fotoğraflarına erişir.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "tr.com.f28.crohnic",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FFF7EF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      },
-      "predictiveBackGestureEnabled": false
+      }
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "backgroundColor": "#FFF7EF"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Crohnic, yemeğinin ya da menünün fotoğrafını çekip sana uygun olup olmadığını söylemek için kamerayı kullanır.",
+          "photosPermission": "Crohnic, galerinden seçtiğin yemek ve menü fotoğraflarını analiz etmek için fotoğraflarına erişir."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
     }
   }
 }
