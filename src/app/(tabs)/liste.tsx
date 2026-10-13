@@ -2,11 +2,12 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, ScrollView, Text, TextInput, View } from 'react-native';
+import { FoodImage } from '../../components/FoodImage';
 import { Backdrop, Card, Chip, Icon, Row, T, Tap, VERDICT_UI, st } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
 import * as db from '../../lib/db';
 import { CATEGORIES, FOODS, searchFoods, type Category, type Verdict } from '../../lib/foods';
-import { palette, radius, surface, type } from '../../lib/theme';
+import { palette, radius, type } from '../../lib/theme';
 import { assessFood, statsByName } from '../../lib/tolerance';
 
 type VF = Verdict | 'hepsi' | 'denedim';
@@ -118,9 +119,7 @@ export default function FoodList() {
           return (
             <Tap onPress={() => router.push(`/besin/${f.id}`)}>
               <Card style={{ padding: 10, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View style={{ width: 50, height: 50, borderRadius: radius.sm, backgroundColor: surface.well, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 24 }}>{f.emoji}</Text>
-                </View>
+                <FoodImage food={f} size={56} />
                 <View style={{ flex: 1, gap: 2 }}>
                   <T v="h3" numberOfLines={1}>
                     {f.name}

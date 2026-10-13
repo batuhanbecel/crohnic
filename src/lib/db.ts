@@ -37,7 +37,7 @@ export type BowelLog = {
   note: string | null;
 };
 
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export async function migrate(db: SQLiteDatabase) {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
@@ -96,6 +96,17 @@ export async function migrate(db: SQLiteDatabase) {
       CREATE INDEX IF NOT EXISTS meals_group ON meals(group_id);
     `);
     v = 2;
+  }
+
+  if (v === 2) {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS food_images (
+        food_id TEXT PRIMARY KEY,
+        url TEXT,
+        checked_at INTEGER NOT NULL
+      );
+    `);
+    v = 3;
   }
 
   await db.execAsync(`PRAGMA user_version = ${DB_VERSION}`);

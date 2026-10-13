@@ -1,7 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Alert, View } from 'react-native';
+import { FoodImage } from '../../components/FoodImage';
 import { Mascot } from '../../components/Mascot';
 import { ThinkingOverlay } from '../../components/ThinkingOverlay';
 import { Button, Card, Row, Screen, T, VERDICT_UI, VerdictBadge } from '../../components/ui';
@@ -74,7 +75,7 @@ export default function FoodDetail() {
       <Card style={{ gap: 12 }}>
         <Row style={{ alignItems: 'flex-start' }}>
           <View style={{ flex: 1, gap: 8 }}>
-            <Text style={{ fontSize: 44 }}>{food.emoji}</Text>
+            <FoodImage food={food} size={96} radius={radius.md} />
             <T v="title">{food.name}</T>
             <Row gap={8}>
               <VerdictBadge verdict={a.verdict} />
@@ -147,7 +148,7 @@ export default function FoodDetail() {
           <T v="h3">Bunun yerine</T>
           {alternatives.map((f) => (
             <Row key={f.id} gap={10}>
-              <Text style={{ fontSize: 22 }}>{f.emoji}</Text>
+              <FoodImage food={f} size={36} radius={10} />
               <T v="callout" style={{ flex: 1 }} onPress={() => router.replace(`/besin/${f.id}`)}>
                 {f.name}
               </T>
