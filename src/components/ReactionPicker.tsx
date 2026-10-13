@@ -1,12 +1,12 @@
 import { Text, View } from 'react-native';
 import type { Reaction } from '../lib/db';
-import { colors, fonts, radius } from '../lib/theme';
+import { palette, radius } from '../lib/theme';
 import { T, Tap } from './ui';
 
 export const REACTIONS: { value: Reaction; emoji: string; label: string; color: string; bg: string }[] = [
-  { value: 0, emoji: '😌', label: 'İyi geldi', color: colors.mint, bg: colors.mintSoft },
-  { value: 1, emoji: '😕', label: 'Biraz dokundu', color: '#C98A06', bg: colors.butterSoft },
-  { value: 2, emoji: '😣', label: 'Çok dokundu', color: colors.tomato, bg: colors.tomatoSoft },
+  { value: 0, emoji: '😌', label: 'İyi geldi', color: palette.good, bg: palette.goodSoft },
+  { value: 1, emoji: '😕', label: 'Biraz dokundu', color: palette.warn, bg: palette.warnSoft },
+  { value: 2, emoji: '😣', label: 'Çok dokundu', color: palette.bad, bg: palette.badSoft },
 ];
 
 export function ReactionPicker({ value, onChange, compact }: { value?: Reaction | null; onChange: (r: Reaction) => void; compact?: boolean }) {
@@ -27,8 +27,8 @@ export function ReactionPicker({ value, onChange, compact }: { value?: Reaction 
               backgroundColor: active ? r.color : r.bg,
             }}
           >
-            <Text style={{ fontSize: compact ? 24 : 30 }}>{r.emoji}</Text>
-            <T v="tiny" color={active ? '#fff' : r.color} style={{ fontFamily: fonts.heavy, textAlign: 'center' }}>
+            <Text style={{ fontSize: compact ? 22 : 28 }}>{r.emoji}</Text>
+            <T v="caption" color={active ? '#fff' : r.color} style={{ textAlign: 'center' }}>
               {r.label}
             </T>
           </Tap>

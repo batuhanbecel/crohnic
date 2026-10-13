@@ -4,13 +4,13 @@ import { useEffect, useState } from 'react';
 import { Alert, Image, TextInput, View } from 'react-native';
 import { MealThumb } from '../../components/MealRow';
 import { ReactionPicker } from '../../components/ReactionPicker';
-import { Button, Card, Row, Screen, T, VerdictBadge, s as ui } from '../../components/ui';
+import { WhenField } from '../../components/WhenField';
+import { Button, Card, Row, Screen, T, VerdictBadge, st } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
-import { dayLabel, timeLabel } from '../../lib/dates';
 import * as db from '../../lib/db';
 import { TAGS } from '../../lib/foods';
 import { deletePhoto, photoUri } from '../../lib/photos';
-import { colors, radius } from '../../lib/theme';
+import { palette, radius, surface } from '../../lib/theme';
 import { tagsOf } from '../../lib/tolerance';
 
 export default function MealDetail() {
@@ -20,12 +20,14 @@ export default function MealDetail() {
   const [meal, setMeal] = useState<db.Meal | null>(null);
   const [reaction, setReaction] = useState<db.Reaction | null>(null);
   const [note, setNote] = useState('');
+  const [at, setAt] = useState(0);
 
   useEffect(() => {
     db.getMeal(sql, Number(id)).then((m) => {
       setMeal(m);
       setReaction(m?.reaction ?? null);
       setNote(m?.reaction_note ?? '');
+      setAt(m?.eaten_at ?? 0);
     });
   }, [sql, id]);
 
@@ -35,6 +37,7 @@ export default function MealDetail() {
 
   const save = async () => {
     await db.setReaction(sql, meal.id, reaction, note.trim() || null);
+    if (at && at !== meal.eaten_at) await db.setMealTime(sql, meal.id, at);
     app.bump();
     router.back();
   };
@@ -55,48 +58,41 @@ export default function MealDetail() {
     ]);
 
   return (
-    <Screen padTop={false}>
+    <Screen header={false}>
       {uri ? (
-        <Image source={{ uri }} style={{ width: '100%', aspectRatio: 1.3, borderRadius: radius.lg }} />
+        <Image source={{ uri }} style={{ width: '100%', aspectRatio: 1.3, borderRadius: radius.xl }} />
       ) : (
         <Row>
           <MealThumb meal={meal} size={64} />
         </Row>
       )}
-      <View style={{ gap: 6 }}>
-        <T v="h1">{meal.name}</T>
-        <T v="small" color={colors.inkSoft}>
-          {dayLabel(meal.eaten_at)}, {timeLabel(meal.eaten_at)} · {meal.phase === 'atak' ? '🌧️ atak döneminde' : '🌤️ remisyonda'}
-        </T>
-        {meal.ai_verdict ? (
-          <Row gap={8}>
-            <T v="small" color={colors.inkSoft}>
-              Tahminim:
-            </T>
-            <VerdictBadge verdict={meal.ai_verdict} size="sm" />
-          </Row>
-        ) : null}
+      <View style={{ gap: 6, paddingHorizontal: 2 }}>
+        <T v="title">{meal.name}</T>
+        <Row gap={8}>
+          {meal.ai_verdict ? <VerdictBadge verdict={meal.ai_verdict} size="sm" /> : null}
+          <T v="small" color={palette.inkSoft}>
+            {meal.phase === 'atak' ? 'Atak döneminde yendi' : 'Remisyonda yendi'}
+          </T>
+        </Row>
         {tags.length ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
             {tags.map((t) => (
-              <View key={t} style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, backgroundColor: colors.card }}>
-                <T v="tiny">{TAGS[t].label.toLocaleUpperCase('tr-TR')}</T>
+              <View key={t} style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, backgroundColor: surface.card }}>
+                <T v="caption" color={palette.inkSoft}>
+                  {TAGS[t].label}
+                </T>
               </View>
             ))}
           </View>
         ) : null}
       </View>
 
+      <Card>{at ? <WhenField value={at} onChange={setAt} /> : null}</Card>
+
       <Card style={{ gap: 12 }}>
-        <T v="h3">Nasıl geldi?</T>
+        <T v="h3">Nasıl geçti?</T>
         <ReactionPicker value={reaction} onChange={setReaction} />
-        <TextInput
-          value={note}
-          onChangeText={setNote}
-          placeholder="Not (ör. 2 saat sonra şişkinlik)"
-          placeholderTextColor={colors.inkFaint}
-          style={ui.input}
-        />
+        <TextInput value={note} onChangeText={setNote} placeholder="Not (ör. 2 saat sonra şişkinlik)" placeholderTextColor={palette.inkFaint} style={st.input} />
       </Card>
 
       <Button title="Kaydet" icon="checkmark" onPress={save} />

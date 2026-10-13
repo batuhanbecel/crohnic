@@ -2,61 +2,69 @@ import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { Switch, Text, TextInput, View } from 'react-native';
-import { BRISTOL } from '../components/bristol';
-import { Button, Card, Row, Screen, T, Tap, s as ui } from '../components/ui';
+import { BRISTOL, bristolTone } from '../components/bristol';
+import { WhenField } from '../components/WhenField';
+import { Button, Card, Row, Screen, T, Tap, st } from '../components/ui';
 import { useApp } from '../lib/app-state';
+import { now } from '../lib/dates';
 import * as db from '../lib/db';
-import { colors, radius } from '../lib/theme';
+import { palette, radius } from '../lib/theme';
 
 export default function Bowel() {
   const sql = useSQLiteContext();
   const app = useApp();
-  const [type, setType] = useState<number | null>(null);
+  const [at, setAt] = useState(() => now());
+  const [kind, setKind] = useState<number | null>(null);
   const [blood, setBlood] = useState(false);
   const [urgency, setUrgency] = useState(false);
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
-    if (!type) return;
+    if (!kind) return;
     setSaving(true);
-    await db.addBowel(sql, { at: Date.now(), bristol: type, blood: blood ? 1 : 0, urgency: urgency ? 1 : 0, note: note.trim() || null });
+    await db.addBowel(sql, { at, bristol: kind, blood: blood ? 1 : 0, urgency: urgency ? 1 : 0, note: note.trim() || null });
     app.bump();
     setSaving(false);
     router.back();
   };
 
   return (
-    <Screen padTop={false}>
-      <T v="body" color={colors.inkSoft}>
-        Utanacak bir şey yok, ben bir bağırsağım. Bristol skalasında hangisine benziyordu?
-      </T>
-      <View style={{ gap: 8 }}>
+    <Screen header={false}>
+      <Card>
+        <WhenField value={at} onChange={setAt} />
+      </Card>
+
+      <View style={{ gap: 6 }}>
+        <T v="h3" style={{ paddingHorizontal: 4 }}>
+          Kıvam
+        </T>
+        <T v="small" color={palette.inkSoft} style={{ paddingHorizontal: 4, marginBottom: 4 }}>
+          Bristol skalası. 3 ve 4 normal kabul edilir.
+        </T>
         {BRISTOL.map((b) => {
-          const active = type === b.type;
-          const tone = b.type <= 2 ? colors.butter : b.type <= 4 ? colors.mint : b.type === 5 ? colors.butter : colors.tomato;
+          const active = kind === b.type;
+          const tone = bristolTone(b.type);
           return (
-            <Tap key={b.type} onPress={() => setType(b.type)}>
+            <Tap key={b.type} onPress={() => setKind(b.type)}>
               <View
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
                   gap: 12,
-                  padding: 12,
+                  padding: 10,
                   borderRadius: radius.md,
-                  backgroundColor: active ? tone : colors.card,
-                  borderWidth: 2,
-                  borderColor: active ? tone : colors.line,
+                  backgroundColor: active ? tone : 'rgba(255,255,255,0.72)',
                 }}
               >
-                <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: active ? 'rgba(255,255,255,0.35)' : colors.bg, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 22 }}>{b.emoji}</Text>
+                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: active ? 'rgba(255,255,255,0.3)' : 'rgba(29,43,34,0.05)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 20 }}>{b.emoji}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <T v="h3" color={active ? '#fff' : colors.ink}>
-                    Tip {b.type} · {b.short}
+                  <T v="h3" color={active ? '#fff' : palette.ink}>
+                    {b.type}. {b.short}
                   </T>
-                  <T v="small" color={active ? '#fff' : colors.inkSoft}>
+                  <T v="small" color={active ? '#fff' : palette.inkSoft}>
                     {b.desc}
                   </T>
                 </View>
@@ -68,29 +76,23 @@ export default function Bowel() {
 
       <Card style={{ gap: 14 }}>
         <Row style={{ justifyContent: 'space-between' }}>
-          <T v="h3">🩸 Kan gördüm</T>
-          <Switch value={blood} onValueChange={setBlood} trackColor={{ true: colors.tomato }} />
+          <T v="callout">Kan vardı</T>
+          <Switch value={blood} onValueChange={setBlood} trackColor={{ true: palette.bad }} />
         </Row>
         <Row style={{ justifyContent: 'space-between' }}>
-          <T v="h3">⚡ Acil yetiştim</T>
-          <Switch value={urgency} onValueChange={setUrgency} trackColor={{ true: colors.coral }} />
+          <T v="callout">Zor yetiştim</T>
+          <Switch value={urgency} onValueChange={setUrgency} trackColor={{ true: palette.apricot }} />
         </Row>
-        <TextInput
-          value={note}
-          onChangeText={setNote}
-          placeholder="Not (isteğe bağlı)"
-          placeholderTextColor={colors.inkFaint}
-          style={ui.input}
-        />
+        <TextInput value={note} onChangeText={setNote} placeholder="Not ekle" placeholderTextColor={palette.inkFaint} style={st.input} />
       </Card>
 
       {blood ? (
-        <Card tint={colors.tomatoSoft}>
-          <T v="small">Dışkıda kan gördüysen bunu doktoruna mutlaka bildir. Yoğun kanama, baş dönmesi ya da ateş varsa acile git.</T>
+        <Card tint={palette.badSoft}>
+          <T v="small">Dışkıda kan gördüysen doktoruna mutlaka söyle. Yoğun kanama, baş dönmesi ya da ateş varsa acile git.</T>
         </Card>
       ) : null}
 
-      <Button title="Kaydet" icon="checkmark" color={colors.sky} onPress={save} loading={saving} disabled={!type} />
+      <Button title="Kaydet" icon="checkmark" onPress={save} loading={saving} disabled={!kind} />
     </Screen>
   );
 }

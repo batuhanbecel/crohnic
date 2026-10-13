@@ -4,28 +4,15 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useMemo, useState } from 'react';
 import { Alert, Image, TextInput, View } from 'react-native';
 import { ReactionPicker } from '../components/ReactionPicker';
-import { Button, Card, Chip, Row, Screen, T, Tap, s as ui } from '../components/ui';
+import { WhenField } from '../components/WhenField';
+import { Button, Card, Chip, Row, Screen, T, Tap, st } from '../components/ui';
 import { useApp } from '../lib/app-state';
+import { now } from '../lib/dates';
 import * as db from '../lib/db';
-import { FOODS, normalizeName, type Food } from '../lib/foods';
+import { searchFoods, type Food } from '../lib/foods';
 import { savePhoto } from '../lib/photos';
-import { colors, radius } from '../lib/theme';
+import { palette, radius } from '../lib/theme';
 import { assessFood } from '../lib/tolerance';
-
-const WHEN: { label: string; ms: () => number }[] = [
-  { label: 'Şimdi', ms: () => Date.now() },
-  { label: '1 saat önce', ms: () => Date.now() - 3600000 },
-  { label: '3 saat önce', ms: () => Date.now() - 3 * 3600000 },
-  {
-    label: 'Dün akşam',
-    ms: () => {
-      const d = new Date();
-      d.setDate(d.getDate() - 1);
-      d.setHours(20, 0, 0, 0);
-      return d.getTime();
-    },
-  },
-];
 
 export default function AddMeal() {
   const sql = useSQLiteContext();
@@ -33,15 +20,11 @@ export default function AddMeal() {
   const [name, setName] = useState('');
   const [food, setFood] = useState<Food | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
-  const [when, setWhen] = useState(0);
+  const [at, setAt] = useState(() => now());
   const [reaction, setReaction] = useState<db.Reaction | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const suggestions = useMemo(() => {
-    const n = normalizeName(name);
-    if (!n || food) return [];
-    return FOODS.filter((f) => normalizeName(f.name).includes(n)).slice(0, 6);
-  }, [name, food]);
+  const suggestions = useMemo(() => (name.trim().length < 2 || food ? [] : searchFoods(name).slice(0, 8)), [name, food]);
 
   const pickPhoto = async (camera: boolean) => {
     const perm = camera ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -69,7 +52,7 @@ export default function AddMeal() {
         food_id: food?.id ?? null,
         tags: food?.tags.join(',') ?? '',
         photo: file,
-        eaten_at: WHEN[when].ms(),
+        eaten_at: at,
         ai_verdict: food ? assessFood(food, app.phase, []).verdict : null,
         reaction,
         phase: app.phase,
@@ -77,14 +60,14 @@ export default function AddMeal() {
       app.bump();
       router.back();
     } catch (e: any) {
-      Alert.alert('Kaydedemedim', e?.message ?? '');
+      Alert.alert('Kaydedilemedi', e?.message ?? '');
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Screen padTop={false}>
+    <Screen header={false}>
       <Card style={{ gap: 12 }}>
         <T v="h3">Ne yedin?</T>
         <TextInput
@@ -94,13 +77,13 @@ export default function AddMeal() {
             setFood(null);
           }}
           placeholder="ör. mercimek çorbası"
-          placeholderTextColor={colors.inkFaint}
-          style={ui.input}
+          placeholderTextColor={palette.inkFaint}
+          style={st.input}
           autoFocus
         />
         {food ? (
-          <T v="small" color={colors.mint}>
-            {food.emoji} Listeden eşleşti, etiketleri otomatik eklenecek.
+          <T v="small" color={palette.good}>
+            {food.emoji} Listede var, içeriği otomatik eklenecek.
           </T>
         ) : null}
         {suggestions.length ? (
@@ -120,34 +103,32 @@ export default function AddMeal() {
         ) : null}
       </Card>
 
-      <Card style={{ gap: 12 }}>
-        <T v="h3">Ne zaman?</T>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {WHEN.map((w, i) => (
-            <Chip key={w.label} label={w.label} active={when === i} onPress={() => setWhen(i)} />
-          ))}
-        </View>
+      <Card>
+        <WhenField value={at} onChange={setAt} />
       </Card>
 
       <Card style={{ gap: 12 }}>
-        <T v="h3">Fotoğraf (isteğe bağlı)</T>
+        <T v="h3">Fotoğraf</T>
         {photo ? (
           <Tap onPress={() => setPhoto(null)}>
             <Image source={{ uri: photo }} style={{ width: '100%', aspectRatio: 1.4, borderRadius: radius.md }} />
-            <T v="tiny" color={colors.inkSoft} style={{ textAlign: 'center', marginTop: 6 }}>
-              KALDIRMAK İÇİN DOKUN
+            <T v="caption" color={palette.inkSoft} style={{ textAlign: 'center', marginTop: 6 }}>
+              Kaldırmak için dokun
             </T>
           </Tap>
         ) : (
-          <Row>
-            <Button title="Çek" kind="soft" icon="camera.fill" style={{ flex: 1 }} onPress={() => pickPhoto(true)} />
-            <Button title="Galeri" kind="soft" icon="photo.on.rectangle" style={{ flex: 1 }} onPress={() => pickPhoto(false)} />
+          <Row gap={8}>
+            <Button title="Çek" kind="glass" icon="camera.fill" style={{ flex: 1 }} onPress={() => pickPhoto(true)} />
+            <Button title="Galeri" kind="glass" icon="photo.on.rectangle" style={{ flex: 1 }} onPress={() => pickPhoto(false)} />
           </Row>
         )}
       </Card>
 
       <Card style={{ gap: 12 }}>
-        <T v="h3">Nasıl geldi? (sonra da söyleyebilirsin)</T>
+        <T v="h3">Nasıl geçti?</T>
+        <T v="small" color={palette.inkSoft} style={{ marginTop: -8 }}>
+          Şimdi bilmiyorsan boş bırak, sonra soracağım.
+        </T>
         <ReactionPicker value={reaction} onChange={(r) => setReaction(reaction === r ? null : r)} />
       </Card>
 

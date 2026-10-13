@@ -16,6 +16,7 @@ export function generalVerdict(tags: Tag[], phase: Phase): { verdict: Verdict; r
   const reasons = [...tags]
     .sort((a, b) => TAGS[b].w[phase] - TAGS[a].w[phase])
     .map((t) => TAGS[t].reason);
+  if (!reasons.length) reasons.push('Bilinen bir tetikleyici içermiyor');
   return { verdict, reasons };
 }
 
@@ -73,9 +74,10 @@ export type FoodAssessment = {
 };
 
 /** Combine general knowledge with the user's own history. Personal data wins once there's enough of it. */
-export function assessFood(food: Food, phase: Phase, meals: Meal[]): FoodAssessment {
+export function assessFood(food: Food, phase: Phase, meals: Meal[], stats?: ReturnType<typeof statsByName>): FoodAssessment {
   const g = generalVerdict(food.tags, phase);
-  const stat = statsByName(meals).get(food.id) ?? statsByName(meals).get(normalizeName(food.name));
+  const map = stats ?? statsByName(meals);
+  const stat = map.get(food.id) ?? map.get(normalizeName(food.name));
   const p = personalVerdict(stat);
 
   let verdict = g.verdict;

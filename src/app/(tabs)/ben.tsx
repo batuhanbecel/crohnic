@@ -1,17 +1,27 @@
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { bristolTone } from '../../components/bristol';
 import { Mascot } from '../../components/Mascot';
 import { Card, Empty, Row, Screen, SectionTitle, T } from '../../components/ui';
+import { useApp } from '../../lib/app-state';
 import { dayKey, now } from '../../lib/dates';
 import * as db from '../../lib/db';
 import { TAGS } from '../../lib/foods';
-import { colors, fonts, radius } from '../../lib/theme';
+import { palette, radius, surface, type } from '../../lib/theme';
 import { personalVerdict, statsByName, triggerInsights } from '../../lib/tolerance';
+
+const SLOTS = [
+  { label: 'Sabah', from: 5, to: 11 },
+  { label: 'Öğle', from: 11, to: 16 },
+  { label: 'Akşam', from: 16, to: 22 },
+  { label: 'Gece', from: 22, to: 29 },
+];
 
 export default function Insights() {
   const sql = useSQLiteContext();
+  const app = useApp();
   const [rated, setRated] = useState<db.Meal[]>([]);
   const [allMeals, setAllMeals] = useState<db.Meal[]>([]);
   const [bowel, setBowel] = useState<db.BowelLog[]>([]);
@@ -20,7 +30,7 @@ export default function Insights() {
 
   useFocusEffect(
     useCallback(() => {
-      Promise.all([db.allRatedMeals(sql), db.listMeals(sql, 500), db.listBowel(sql, 500), db.listSymptoms(sql, 500)]).then(([r, m, b, s]) => {
+      Promise.all([db.allRatedMeals(sql), db.listMeals(sql, 600), db.listBowel(sql, 600), db.listSymptoms(sql, 600)]).then(([r, m, b, s]) => {
         setRated(r);
         setAllMeals(m);
         setBowel(b);
@@ -40,9 +50,9 @@ export default function Insights() {
   }, [rated]);
 
   const last14 = useMemo(() => {
-    const days: { key: string; label: string; bristol: number | null; pain: number | null; count: number }[] = [];
+    const days: { key: string; label: string; count: number; bristol: number | null; pain: number | null }[] = [];
     for (let i = 13; i >= 0; i--) {
-      const d = new Date();
+      const d = new Date(loadedAt || 0);
       d.setDate(d.getDate() - i);
       const key = dayKey(d.getTime());
       const bs = bowel.filter((b) => dayKey(b.at) === key);
@@ -50,62 +60,70 @@ export default function Insights() {
       days.push({
         key,
         label: d.toLocaleDateString('tr-TR', { weekday: 'narrow' }),
+        count: bs.length,
         bristol: bs.length ? bs.reduce((a, b) => a + b.bristol, 0) / bs.length : null,
         pain: ss.length ? Math.max(...ss.map((s) => s.pain)) : null,
-        count: bs.length,
       });
     }
     return days;
-  }, [bowel, symptoms]);
+  }, [bowel, symptoms, loadedAt]);
 
   const monthAgo = loadedAt - 30 * 86400000;
+  const monthBowel = bowel.filter((b) => b.at >= monthAgo);
+  const slots = SLOTS.map((s) => ({
+    ...s,
+    n: monthBowel.filter((b) => {
+      const h = new Date(b.at).getHours();
+      const hh = h < 5 ? h + 24 : h;
+      return hh >= s.from && hh < s.to;
+    }).length,
+  }));
+  const slotMax = Math.max(1, ...slots.map((s) => s.n));
+  const maxCount = Math.max(3, ...last14.map((d) => d.count));
+  const activeDays = last14.filter((d) => d.count).length;
+  const avgPerDay = activeDays ? last14.reduce((a, d) => a + d.count, 0) / activeDays : 0;
   const monthMeals = allMeals.filter((m) => m.eaten_at >= monthAgo);
-  const ratedPct = monthMeals.length ? Math.round((monthMeals.filter((m) => m.reaction != null).length / monthMeals.length) * 100) : 0;
-
   const enough = rated.length >= 4;
 
   return (
-    <Screen>
-      <T v="title">Beni tanı</T>
+    <Screen tone={app.phase === 'atak' ? 'flare' : 'calm'}>
+      <T v="large" style={{ marginTop: 4 }}>
+        Örüntüler
+      </T>
 
-      <Card tint={colors.coralSoft} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <Mascot mood={enough ? 'cheer' : 'sleepy'} size={92} />
+      <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
+        <Mascot mood={enough ? 'happy' : 'sleepy'} size={84} />
         <View style={{ flex: 1, gap: 4 }}>
-          <T v="tiny" color={colors.coral}>
-            SON 30 GÜN
+          <T v="caption" color={palette.inkSoft}>
+            Son 30 gün
           </T>
-          <T v="body" style={{ fontFamily: fonts.bold }}>
-            {monthMeals.length} öğün, {bowel.filter((b) => b.at >= monthAgo).length} tuvalet, {symptoms.filter((s) => s.at >= monthAgo).length} semptom kaydı.
-            {monthMeals.length ? ` Öğünlerin %${ratedPct}’ine “nasıl geldi” demişsin.` : ''}
+          <T v="callout" style={type.medium}>
+            {monthMeals.length} öğün, {monthBowel.length} tuvalet, {symptoms.filter((s) => s.at >= monthAgo).length} semptom kaydı.
           </T>
         </View>
       </Card>
 
       {!enough ? (
-        <Empty
-          emoji="🔍"
-          title="Seni tanımaya başlıyorum"
-          text={`En az 4 öğüne “nasıl geldi” dediğinde tetikleyicilerini burada göstereceğim. Şu an ${rated.length} tane var.`}
-        />
+        <Empty emoji="🔍" title="Biraz daha kayıt lazım" text={`4 öğünün nasıl geçtiğini yazınca tetikleyicilerini göstermeye başlarım. Şu an ${rated.length} tane var.`} />
       ) : null}
 
       {triggers.length ? (
         <>
-          <SectionTitle title="Olası tetikleyicilerin" />
+          <SectionTitle title="Olası tetikleyiciler" />
           <Card style={{ gap: 14 }}>
             {triggers.slice(0, 6).map((t) => (
               <View key={t.tag} style={{ gap: 6 }}>
                 <Row style={{ justifyContent: 'space-between' }}>
                   <T v="h3">{TAGS[t.tag].label}</T>
-                  <T v="small" color={colors.inkSoft}>
-                    {t.stat.n} kayıtta {t.stat.mild + t.stat.bad} kez dokundu
+                  <T v="small" color={palette.inkSoft}>
+                    {t.stat.n} kayıtta {t.stat.mild + t.stat.bad} kez
                   </T>
                 </Row>
-                <Bar pct={t.rate} color={t.rate >= 0.75 ? colors.tomato : colors.butter} />
+                <Bar pct={t.rate} color={t.rate >= 0.75 ? palette.bad : palette.warn} />
               </View>
             ))}
-            <T v="tiny" color={colors.inkFaint}>
-              Bu bir korelasyon, kesin teşhis değil. Diyetinden bir şey çıkarmadan önce doktorun ya da diyetisyeninle konuş.
+            <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
+              Bu bir ilişki, kesin sonuç değil. Diyetinden bir şey çıkarmadan önce doktorun ya da diyetisyeninle konuş.
             </T>
           </Card>
         </>
@@ -113,11 +131,11 @@ export default function Insights() {
 
       {safe.length ? (
         <>
-          <SectionTitle title="Seninle iyi anlaşanlar" />
+          <SectionTitle title="Sorun çıkarmayanlar" />
           <Card style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {safe.slice(0, 8).map((t) => (
-              <View key={t.tag} style={{ backgroundColor: colors.mintSoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
-                <T v="small" color={colors.mint} style={{ fontFamily: fonts.heavy }}>
+              <View key={t.tag} style={{ backgroundColor: palette.goodSoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
+                <T v="small" color={palette.good} style={type.semibold}>
                   {TAGS[t.tag].label} · {t.stat.n}
                 </T>
               </View>
@@ -127,65 +145,109 @@ export default function Insights() {
       ) : null}
 
       {foods.bad.length || foods.good.length ? (
-        <Row gap={12} style={{ alignItems: 'flex-start' }}>
-          <FoodList title="😣 Dokunanlar" items={foods.bad.map((x) => `${x.name} (${x.bad + x.mild}/${x.n})`)} tint={colors.tomatoSoft} />
-          <FoodList title="😌 Dostların" items={foods.good.map((x) => `${x.name} (${x.n})`)} tint={colors.mintSoft} />
+        <Row gap={10} style={{ alignItems: 'flex-start' }}>
+          <FoodList title="Dokunanlar" items={foods.bad.map((x) => `${x.name} (${x.bad + x.mild}/${x.n})`)} color={palette.bad} />
+          <FoodList title="İyi gelenler" items={foods.good.map((x) => `${x.name} (${x.n})`)} color={palette.good} />
         </Row>
       ) : null}
 
-      <SectionTitle title="Son 14 gün" />
+      <SectionTitle title="Tuvalet, son 14 gün" />
       <Card style={{ gap: 12 }}>
-        <T v="small" color={colors.inkSoft}>
-          Günlük ortalama Bristol tipi. 3–4 ideal aralık, 6–7 sulu.
-        </T>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 120, gap: 4 }}>
-          {last14.map((d) => {
-            const h = d.bristol ? (d.bristol / 7) * 100 : 4;
-            const c = !d.bristol ? colors.line : d.bristol <= 2 ? colors.butter : d.bristol <= 4.5 ? colors.mint : d.bristol <= 5.5 ? colors.butter : colors.tomato;
-            return (
-              <View key={d.key} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
-                <View style={{ width: '100%', height: h, backgroundColor: c, borderRadius: 6 }} />
-                <T v="tiny" color={colors.inkFaint}>
-                  {d.label}
-                </T>
-              </View>
-            );
-          })}
-        </View>
-        <Row gap={14}>
-          <Legend c={colors.mint} l="İdeal" />
-          <Legend c={colors.butter} l="Sert / yumuşak" />
-          <Legend c={colors.tomato} l="Sulu" />
-        </Row>
-        {last14.some((d) => d.pain != null) ? (
-          <View style={{ gap: 6 }}>
-            <T v="small" color={colors.inkSoft}>
-              En yüksek ağrı
+        <Row gap={18}>
+          <View>
+            <T v="title">{avgPerDay ? avgPerDay.toFixed(1) : '–'}</T>
+            <T v="caption" color={palette.inkSoft}>
+              günde ortalama
             </T>
-            <View style={{ flexDirection: 'row', gap: 4 }}>
-              {last14.map((d) => (
-                <View
-                  key={d.key}
-                  style={{
-                    flex: 1,
-                    height: 22,
-                    borderRadius: 6,
-                    backgroundColor: d.pain == null ? colors.bg : d.pain >= 4 ? colors.tomato : d.pain >= 2 ? colors.lavender : colors.lavSoft,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {d.pain != null ? (
-                    <Text style={{ fontSize: 10, fontFamily: fonts.heavy, color: d.pain >= 2 ? '#fff' : colors.lavender }}>{d.pain}</Text>
-                  ) : null}
-                </View>
-              ))}
-            </View>
           </View>
-        ) : null}
+          <View>
+            <T v="title">{monthBowel.filter((b) => b.bristol >= 6).length}</T>
+            <T v="caption" color={palette.inkSoft}>
+              sulu (30 gün)
+            </T>
+          </View>
+          <View>
+            <T v="title">{monthBowel.filter((b) => b.blood).length}</T>
+            <T v="caption" color={palette.inkSoft}>
+              kanlı (30 gün)
+            </T>
+          </View>
+        </Row>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 110, gap: 4 }}>
+          {last14.map((d) => (
+            <View key={d.key} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
+              <T v="caption" color={palette.inkSoft} style={{ fontSize: 10 }}>
+                {d.count || ''}
+              </T>
+              <View
+                style={{
+                  width: '100%',
+                  height: d.count ? Math.max(8, (d.count / maxCount) * 80) : 4,
+                  backgroundColor: d.bristol ? bristolTone(Math.round(d.bristol)) : surface.well,
+                  borderRadius: 6,
+                }}
+              />
+              <T v="caption" color={palette.inkFaint} style={{ fontSize: 10 }}>
+                {d.label}
+              </T>
+            </View>
+          ))}
+        </View>
+        <Row gap={14} style={{ flexWrap: 'wrap' }}>
+          <Legend c={palette.good} l="Normal (3–4)" />
+          <Legend c={palette.apricot} l="Sert" />
+          <Legend c={palette.warn} l="Yumuşak" />
+          <Legend c={palette.bad} l="Sulu" />
+        </Row>
       </Card>
 
-      <T v="tiny" color={colors.inkFaint} style={{ textAlign: 'center', lineHeight: 17 }}>
+      {monthBowel.length ? (
+        <Card style={{ gap: 10 }}>
+          <T v="h3">Günün hangi saatinde</T>
+          {slots.map((s) => (
+            <Row key={s.label} gap={10}>
+              <T v="small" style={{ width: 52 }}>
+                {s.label}
+              </T>
+              <View style={{ flex: 1 }}>
+                <Bar pct={s.n / slotMax} color={palette.sky} />
+              </View>
+              <T v="small" color={palette.inkSoft} style={{ width: 24, textAlign: 'right' }}>
+                {s.n}
+              </T>
+            </Row>
+          ))}
+        </Card>
+      ) : null}
+
+      {last14.some((d) => d.pain != null) ? (
+        <Card style={{ gap: 8 }}>
+          <T v="h3">En yüksek ağrı</T>
+          <View style={{ flexDirection: 'row', gap: 4 }}>
+            {last14.map((d) => (
+              <View
+                key={d.key}
+                style={{
+                  flex: 1,
+                  height: 24,
+                  borderRadius: 6,
+                  backgroundColor: d.pain == null ? surface.well : d.pain >= 4 ? palette.bad : d.pain >= 2 ? palette.peri : palette.periSoft,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {d.pain != null ? (
+                  <T v="caption" color={d.pain >= 2 ? '#fff' : palette.peri} style={{ fontSize: 10 }}>
+                    {d.pain}
+                  </T>
+                ) : null}
+              </View>
+            ))}
+          </View>
+        </Card>
+      ) : null}
+
+      <T v="caption" color={palette.inkFaint} style={{ textAlign: 'center', lineHeight: 17, fontWeight: '400' }}>
         Kontrole giderken bu ekranı doktoruna gösterebilirsin.{'\n'}Tüm verini Ayarlar’dan dışa aktarabilirsin.
       </T>
     </Screen>
@@ -194,7 +256,7 @@ export default function Insights() {
 
 function Bar({ pct, color }: { pct: number; color: string }) {
   return (
-    <View style={{ height: 10, borderRadius: 5, backgroundColor: colors.bg, overflow: 'hidden' }}>
+    <View style={{ height: 10, borderRadius: 5, backgroundColor: surface.well, overflow: 'hidden' }}>
       <View style={{ width: `${Math.min(100, Math.round(pct * 100))}%`, height: '100%', backgroundColor: color, borderRadius: 5 }} />
     </View>
   );
@@ -204,17 +266,20 @@ function Legend({ c, l }: { c: string; l: string }) {
   return (
     <Row gap={6}>
       <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: c }} />
-      <T v="tiny" color={colors.inkSoft}>
+      <T v="caption" color={palette.inkSoft} style={{ fontWeight: '400' }}>
         {l}
       </T>
     </Row>
   );
 }
 
-function FoodList({ title, items, tint }: { title: string; items: string[]; tint: string }) {
+function FoodList({ title, items, color }: { title: string; items: string[]; color: string }) {
   return (
-    <Card tint={tint} style={{ flex: 1, gap: 6, padding: 14 }}>
-      <T v="h3">{title}</T>
+    <Card style={{ flex: 1, gap: 6, padding: 14 }}>
+      <Row gap={6}>
+        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} />
+        <T v="h3">{title}</T>
+      </Row>
       {items.length ? (
         items.map((x) => (
           <T key={x} v="small" numberOfLines={2}>
@@ -222,7 +287,7 @@ function FoodList({ title, items, tint }: { title: string; items: string[]; tint
           </T>
         ))
       ) : (
-        <T v="small" color={colors.inkSoft}>
+        <T v="small" color={palette.inkSoft}>
           Henüz yok
         </T>
       )}

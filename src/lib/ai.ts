@@ -56,7 +56,7 @@ function sanitize(raw: any): Analysis {
   if (raw?.kind === 'menu') {
     return {
       kind: 'menu',
-      headline: String(raw.headline ?? 'Menüye baktım!'),
+      headline: String(raw.headline ?? 'Menüye baktım.'),
       dishes: (Array.isArray(raw.dishes) ? raw.dishes : []).map((d: any) => ({
         name: String(d?.name ?? '?'),
         verdict: asVerdict(d?.verdict),
@@ -69,7 +69,7 @@ function sanitize(raw: any): Analysis {
   }
   return {
     kind: 'meal',
-    dish: String(raw?.dish ?? 'Bilinmeyen yemek'),
+    dish: String(raw?.dish ?? 'Tanınmayan yemek'),
     ingredients: asStrings(raw?.ingredients),
     tags: asTags(raw?.tags),
     verdict: asVerdict(raw?.verdict),
@@ -94,13 +94,13 @@ export async function analyze(cfg: AiConfig, input: AnalyzeInput): Promise<Analy
     });
     const json = await res.json().catch(() => null);
     if (!res.ok) {
-      if (res.status === 401) throw new Error('Sunucu şifresi yanlış. Ayarlar’dan kontrol et.');
+      if (res.status === 401) throw new Error('Sunucu şifresi yanlış, Ayarlar\'dan kontrol et.');
       throw new Error(json?.error ?? `Sunucu hata verdi (${res.status}).`);
     }
     return sanitize(json);
   } catch (e: any) {
-    if (e?.name === 'AbortError') throw new Error('Cevap çok uzun sürdü, bir daha dener misin?');
-    if (e instanceof TypeError) throw new Error('Sunucuya ulaşamadım. İnternetini ve sunucu adresini kontrol et.');
+    if (e?.name === 'AbortError') throw new Error('Cevap gecikti, tekrar dener misin?');
+    if (e instanceof TypeError) throw new Error('Sunucuya ulaşılamadı. İnterneti ve sunucu adresini kontrol et.');
     throw e;
   } finally {
     clearTimeout(timer);

@@ -35,7 +35,7 @@ export function greeting() {
   const h = new Date().getHours();
   if (h < 6) return 'Gece kuşu';
   if (h < 12) return 'Günaydın';
-  if (h < 18) return 'Tünaydın';
+  if (h < 18) return 'İyi günler';
   return 'İyi akşamlar';
 }
 
@@ -46,4 +46,8 @@ export function daysSince(ms: number) {
 /** Current time; kept as a helper so render-time code stays pure. */
 export function now() {
   return Date.now();
+}
+
+export function todayLabel() {
+  return new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
 }

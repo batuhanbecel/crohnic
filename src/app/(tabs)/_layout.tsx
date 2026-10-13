@@ -1,93 +1,29 @@
-import { Tabs, type BottomTabBarProps } from 'expo-router/js-tabs';
-import type { SymbolViewProps } from 'expo-symbols';
-import { StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Icon, T, Tap } from '../../components/ui';
-import { colors, fonts, shadow } from '../../lib/theme';
-
-const ITEMS: Record<string, { label: string; icon: SymbolViewProps['name']; fallback: string }> = {
-  index: { label: 'Bugün', icon: 'house.fill', fallback: '🏠' },
-  gunluk: { label: 'Günlük', icon: 'book.closed.fill', fallback: '📖' },
-  sor: { label: 'Sor', icon: 'camera.fill', fallback: '📷' },
-  liste: { label: 'Yemekler', icon: 'fork.knife', fallback: '🍽️' },
-  ben: { label: 'Beni tanı', icon: 'heart.text.square.fill', fallback: '💗' },
-};
-
-function TabBar({ state, navigation }: BottomTabBarProps) {
-  const insets = useSafeAreaInsets();
-  return (
-    <View style={[st.wrap, { paddingBottom: Math.max(insets.bottom, 12) }]} pointerEvents="box-none">
-      <View style={st.bar}>
-        {state.routes.map((route, i) => {
-          const item = ITEMS[route.name];
-          if (!item) return null;
-          const focused = state.index === i;
-          const go = () => {
-            const e = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-            if (!focused && !e.defaultPrevented) navigation.navigate(route.name);
-          };
-          if (route.name === 'sor') {
-            return (
-              <Tap key={route.key} onPress={go} style={st.centerWrap} accessibilityLabel="Kıvırcık’a sor">
-                <View style={[st.center, focused && { backgroundColor: colors.pinkDeep }]}>
-                  <Icon name={item.icon} size={26} color="#fff" fallback={item.fallback} />
-                </View>
-              </Tap>
-            );
-          }
-          const c = focused ? colors.coral : colors.inkFaint;
-          return (
-            <Tap key={route.key} onPress={go} style={st.item} accessibilityLabel={item.label}>
-              <Icon name={item.icon} size={21} color={c} fallback={item.fallback} />
-              <T v="tiny" color={c} style={{ fontFamily: fonts.heavy, fontSize: 11 }}>
-                {item.label}
-              </T>
-            </Tap>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { palette } from '../../lib/theme';
 
 export default function TabsLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false }} tabBar={(p) => <TabBar {...p} />}>
-      <Tabs.Screen name="index" />
-      <Tabs.Screen name="gunluk" />
-      <Tabs.Screen name="sor" />
-      <Tabs.Screen name="liste" />
-      <Tabs.Screen name="ben" />
-    </Tabs>
+    <NativeTabs tintColor={palette.ink} minimizeBehavior="onScrollDown">
+      <NativeTabs.Trigger name="index">
+        <NativeTabs.Trigger.Icon sf={{ default: 'leaf', selected: 'leaf.fill' }} md="eco" />
+        <NativeTabs.Trigger.Label>Bugün</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="gunluk">
+        <NativeTabs.Trigger.Icon sf={{ default: 'book.closed', selected: 'book.closed.fill' }} md="menu_book" />
+        <NativeTabs.Trigger.Label>Günlük</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="sor">
+        <NativeTabs.Trigger.Icon sf={{ default: 'camera', selected: 'camera.fill' }} md="photo_camera" />
+        <NativeTabs.Trigger.Label>Sor</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="ben">
+        <NativeTabs.Trigger.Icon sf={{ default: 'chart.bar', selected: 'chart.bar.fill' }} md="insights" />
+        <NativeTabs.Trigger.Label>Örüntüler</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="liste" role="search">
+        <NativeTabs.Trigger.Icon sf="magnifyingglass" md="search" />
+        <NativeTabs.Trigger.Label>Yemekler</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }
-
-const st = StyleSheet.create({
-  wrap: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16 },
-  bar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: 30,
-    height: 68,
-    paddingHorizontal: 6,
-    ...shadow,
-    shadowOpacity: 0.22,
-  },
-  item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, height: '100%' },
-  centerWrap: { flex: 1, alignItems: 'center' },
-  center: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: colors.coral,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: -28,
-    borderWidth: 5,
-    borderColor: colors.bg,
-    ...shadow,
-    shadowColor: colors.coral,
-    shadowOpacity: 0.4,
-  },
-});

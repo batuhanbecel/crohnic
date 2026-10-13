@@ -1,87 +1,86 @@
-# Crohnic 🩷
+# Crohnic
 
-Kıvırcık'la birlikte Crohn yemek koçu. Neyin dokunduğunu takip eder, yemek ya da menü fotoğrafından "bu bana iyi gelir mi?" diye cevap verir.
+Crohn için yemek koçu. Neyin dokunduğunu takip eder; tabağın ya da menünün fotoğrafından "bu bana iyi gelir mi?" sorusuna cevap verir. Maskotu Kıvırcık, bir marul.
 
-- **Uygulama:** Expo SDK 57 + Expo Router + TypeScript. Veriler sadece telefonda (SQLite) tutulur.
-- **AI:** `server/` klasöründe Vercel'de çalışan küçük bir fonksiyon var. Fotoğrafı Claude vision ile analiz eder. API anahtarı telefonda değil, sunucuda durur.
+- **Uygulama:** Expo SDK 57, Expo Router, iOS 26 liquid glass (native tab bar + `expo-glass-effect`). Veriler sadece telefonda (SQLite).
+- **Yemek veritabanı:** 600+ yemek, 14 kategori. Hüküm etiketlerden ve döneme (remisyon/atak) göre hesaplanır, kişisel kayıtlar geldikçe senin verin öne geçer. Liste: `src/lib/food-data.ts`.
+- **AI:** `server/` klasöründeki Vercel fonksiyonu fotoğrafı Claude'a gönderir. API anahtarı telefonda değil, sunucuda durur.
 
 ---
 
-## 1. iPhone'da çalıştır (Expo Go, ~5 dk)
-
-Gerekenler: bilgisayarda Node 20+ ve iPhone'da App Store'dan **Expo Go**.
+## 1. Geliştirme (Expo Go)
 
 ```bash
-cd crohnic
 npm install
 npx expo start
 ```
 
-Terminalde çıkan QR kodu iPhone kamerasıyla okut, uygulama Expo Go içinde açılır.
+QR kodu iPhone kamerasıyla okut. Liquid glass efektleri Expo Go'da da görünür, ama asıl görünümü TestFlight sürümünde görürsün.
 
-- Telefon ile bilgisayar aynı Wi-Fi'da olmalı. Değillerse `npx expo start --tunnel` kullan.
-- Expo Go "SDK uyumsuz" derse App Store'dan Expo Go'yu güncelle.
+## 2. TestFlight ile kalıcı kurulum
 
-Bu aşamada kayıt tutma, yemek listesi ve kişisel analiz zaten çalışır. Fotoğraf analizi için 2. adım gerekiyor.
-
-## 2. AI sunucusunu Vercel'e kur (~5 dk)
+Apple Developer hesabın onaylandıktan sonra bir kez:
 
 ```bash
-cd server
-npx vercel            # ilk seferde login + proje oluşturma
-npx vercel env add ANTHROPIC_API_KEY     # console.anthropic.com'dan aldığın anahtar
-npx vercel env add APP_TOKEN             # kendin uydur: uzun rastgele bir şifre
-npx vercel --prod
-```
-
-GitHub'dan da kurabilirsin: Vercel'de "Import Project" deyip **Root Directory** olarak `server` seç, environment variables'a aynı iki değeri gir.
-
-İsteğe bağlı: `CLAUDE_MODEL` (varsayılan `claude-sonnet-5-5`). Daha ucuz ve hızlı olsun dersen `claude-haiku-5-5` yaz.
-
-Kontrol: tarayıcıda `https://<proje-adın>.vercel.app/api/analyze` adresini açınca `{"ok":true,...}` görmelisin.
-
-## 3. Uygulamaya bağla
-
-Uygulamada şu adımları izle:
-
-1. Ana sayfada ⚙️ simgesine dokunup Ayarlar'ı aç.
-2. Sunucu adresini (`https://<proje-adın>.vercel.app`) gir.
-3. `APP_TOKEN` olarak belirlediğin şifreyi gir.
-4. **Test et**'e bas.
-
-"Bağlantı çalışıyor 🎉" yazısını görürsen kurulum tamam.
-
-## 4. Kalıcı olarak telefona kur (opsiyonel, TestFlight)
-
-Apple Developer hesabı ($99/yıl) gerekir. Mac veya Xcode gerekmez, build bulutta yapılır.
-
-```bash
+npx eas-cli@latest login            # expo.dev hesabın (yoksa ücretsiz aç)
+npx eas-cli@latest init             # projeyi expo.dev'e bağlar
+npx eas-cli@latest update:configure # uzaktan güncellemeyi açar
 npx eas-cli@latest build -p ios --profile production
-npx eas-cli@latest submit -p ios
+npx eas-cli@latest submit -p ios --latest
 ```
 
-Bundle ID `app.json` içinde `tr.com.f28.crohnic` olarak ayarlı.
+`build` sırasında Apple hesabınla giriş ister ve sertifikaları kendisi oluşturur. Mac'te Xcode gerekmez. `submit` bittikten 10-20 dakika sonra build App Store Connect → TestFlight'ta görünür. iPhone'a **TestFlight** uygulamasını kur, oradan Crohnic'i yükle.
+
+### Güncellemeler
+
+Kodda değişiklik yaptığında yeniden build almana gerek yok:
+
+```bash
+npx eas-cli@latest update --channel production --message "ne değişti"
+```
+
+Uygulama bir sonraki açılışta yeni sürümü indirir. Ayarlar → "Güncelleme var mı?" ile elle de kontrol edebilirsin.
+
+Yeni bir native paket eklendiğinde ya da `app.json`'daki sürüm değiştiğinde yeniden `build` + `submit` gerekir.
+
+## 3. AI sunucusu (Vercel)
+
+1. Vercel'de **Add New → Project** ile GitHub'daki `crohnic` reposunu seç.
+2. **Root Directory:** `server`
+3. **Environment Variables:**
+   - `ANTHROPIC_API_KEY`: console.anthropic.com → API Keys
+   - `APP_TOKEN`: kendin uydur, uzun rastgele bir şifre (ör. `openssl rand -hex 24`)
+   - `CLAUDE_MODEL` (isteğe bağlı): varsayılan `claude-sonnet-5-5`. Daha ucuzu için `claude-haiku-5-5`.
+4. Deploy et. `https://<proje>.vercel.app/api/analyze` adresini açınca `{"ok":true,...}` görmelisin.
+5. Uygulamada Ayarlar → Fotoğraf analizi bölümüne adresi ve `APP_TOKEN`'ı gir, **Bağlantıyı test et**.
+
+### Maliyet
+
+Claude API kullandığın kadar öder, aylık abonelik yok. console.anthropic.com'da kredi yükleyip harcama limiti koyabilirsin.
+
+| İşlem | Sonnet 5.5 | Haiku 5.5 |
+|---|---|---|
+| Tabak fotoğrafı | ~0,01 $ | ~0,001 $ |
+| Menü fotoğrafı | ~0,03 $ | ~0,002 $ |
+| Günde 10 soru, 1 ay | ~3-5 $ | ~0,3 $ |
+
+Fotoğraflar gönderilmeden önce 1024 px'e (menüde 1500 px) küçültülür, bu da maliyeti düşük tutar.
 
 ---
 
-## Nasıl çalışıyor?
+## Yapı
 
-| Özellik | Nerede |
+| Ne | Nerede |
 |---|---|
-| Tabağı veya menüyü çek → iyi / dikkat / riskli | `Sor` sekmesi → `server/api/analyze.ts` |
-| 93 Türk yemeği, döneme ve senin geçmişine göre işaretli | `Yemekler` sekmesi, `src/lib/foods.ts` |
-| "Nasıl geldi?" takibi (iyi / biraz / çok dokundu) | Ana sayfa kartları, öğün detayı |
-| Semptom (ağrı, şişkinlik, gaz, yorgunluk) | `semptom.tsx` |
-| Bristol skalası, kan ve aciliyet | `tuvalet.tsx` |
-| Atak / remisyon modu | Ana sayfa. Atakta tüm öneriler daha temkinli olur |
-| Tetikleyici analizi ve 14 günlük grafik | `Beni tanı` sekmesi, `src/lib/tolerance.ts` |
-| Uyarı bayrağı | Kan, şiddetli ağrı ya da sık sulu dışkılamada "doktoruna haber ver" uyarısı çıkar |
+| Sekmeler (native, liquid glass) | `src/app/(tabs)/_layout.tsx` |
+| Tasarım bileşenleri, Glass | `src/components/ui.tsx` |
+| Renkler | `src/lib/theme.ts` |
+| Kıvırcık | `src/components/Mascot.tsx` |
+| Yemek listesi | `src/lib/food-data.ts` |
+| Etiket ağırlıkları ve hüküm | `src/lib/foods.ts`, `src/lib/tolerance.ts` |
+| Saat seçici | `src/components/WhenField.tsx` |
+| AI isteği ve sistem promptu | `server/api/analyze.ts` |
 
-**Kişiselleştirme:** Her "nasıl geldi" cevabı yemeğe ve etiketlerine (acı, yağlı, laktoz, lif…) işlenir.
+Yemek eklemek için `food-data.ts`'e bir satır yazman yeterli: `Ad|emoji|etiketler`.
 
-- Aynı yemekte 2 veya daha fazla kayıt olduğunda senin verin genel bilgiyi geçer.
-- AI'a her soruda iyi gelenler, dokunanlar ve olası tetikleyiciler listesi gönderilir.
-
-**Veri:** Kayıtların sadece telefonda tutulur. Ayarlar → "Verilerimi dışa aktar" ile JSON olarak yedekleyebilir ya da doktoruna gönderebilirsin.
-
-> Crohnic bir takip ve farkındalık aracıdır, tıbbi tavsiye vermez. Diyet ve tedavi kararlarını gastroenteroloğun ve diyetisyeninle birlikte al.
+> Crohnic bir takip aracıdır, tıbbi tavsiye vermez. Diyet ve tedavi kararlarını gastroenteroloğun ve diyetisyeninle birlikte al.

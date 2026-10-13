@@ -220,3 +220,7 @@ export async function exportAll(db: SQLiteDatabase) {
   ]);
   return { app: 'Crohnic', exported_at: new Date().toISOString(), meals, symptoms, bowel, phases };
 }
+
+export async function setMealTime(db: SQLiteDatabase, id: number, at: number) {
+  await db.runAsync('UPDATE meals SET eaten_at = ? WHERE id = ?', at, id);
+}

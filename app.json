@@ -3,24 +3,25 @@
     "name": "Crohnic",
     "slug": "crohnic",
     "scheme": "crohnic",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "backgroundColor": "#FFF7EF",
+    "backgroundColor": "#F4F6EE",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "tr.com.f28.crohnic",
       "infoPlist": {
         "NSCameraUsageDescription": "Crohnic, yemeğinin ya da menünün fotoğrafını çekip sana uygun olup olmadığını söylemek için kamerayı kullanır.",
         "NSPhotoLibraryUsageDescription": "Crohnic, galerinden seçtiğin yemek ve menü fotoğraflarını analiz etmek için fotoğraflarına erişir.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDevelopmentRegion": "tr"
       }
     },
     "android": {
       "package": "tr.com.f28.crohnic",
       "adaptiveIcon": {
-        "backgroundColor": "#FFF7EF",
+        "backgroundColor": "#F4F6EE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -29,13 +30,12 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      "expo-font",
       [
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",
-          "imageWidth": 160,
-          "backgroundColor": "#FFF7EF"
+          "imageWidth": 170,
+          "backgroundColor": "#F4F6EE"
         }
       ],
       [
@@ -44,10 +44,17 @@
           "cameraPermission": "Crohnic, yemeğinin ya da menünün fotoğrafını çekip sana uygun olup olmadığını söylemek için kamerayı kullanır.",
           "photosPermission": "Crohnic, galerinden seçtiğin yemek ve menü fotoğraflarını analiz etmek için fotoğraflarına erişir."
         }
-      ]
+      ],
+      "expo-updates"
     ],
     "experiments": {
       "typedRoutes": false
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
     }
   }
 }

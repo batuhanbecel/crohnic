@@ -15,9 +15,9 @@ export function useAnalyze() {
 
   const needsSetup = useCallback(() => {
     if (app.ai) return false;
-    Alert.alert('Önce küçük bir kurulum', 'Fotoğraf analizi için Ayarlar’a sunucu adresini girmen lazım. README’de 5 dakikalık anlatım var.', [
+    Alert.alert('Fotoğraf analizi kapalı', 'Açmak için Ayarlar\'a sunucu adresini gir.', [
       { text: 'Vazgeç', style: 'cancel' },
-      { text: 'Ayarlar’a git', onPress: () => router.push('/ayarlar') },
+      { text: 'Ayarlar', onPress: () => router.push('/ayarlar') },
     ]);
     return true;
   }, [app.ai]);
@@ -59,7 +59,7 @@ export function useAnalyze() {
         app.setPending({ analysis, photoUri: mode === 'meal' ? preparedUri : null, foodId: opts.foodId ?? null });
         router.push('/sonuc');
       } catch (e: any) {
-        Alert.alert('Kıvırcık’ın kafası karıştı', e?.message ?? 'Bir şeyler ters gitti.');
+        Alert.alert('Olmadı', e?.message ?? 'Bir sorun çıktı, tekrar dener misin?');
       } finally {
         setBusy(null);
       }
@@ -73,7 +73,7 @@ export function useAnalyze() {
       const perm =
         source === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('İzin lazım', source === 'camera' ? 'Kamera izni olmadan fotoğraf çekemem.' : 'Galeri izni olmadan fotoğraf seçemem.');
+        Alert.alert('İzin gerekli', source === 'camera' ? 'Ayarlar > Crohnic > Kamera iznini aç.' : 'Ayarlar > Crohnic > Fotoğraflar iznini aç.');
         return;
       }
       const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.8, allowsEditing: mode === 'meal' };
