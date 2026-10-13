@@ -14,6 +14,8 @@ export type Meal = {
   reaction: Reaction | null;
   reaction_note: string | null;
   phase: Phase;
+  /** Items eaten together share a group id (one sitting = one group). */
+  group_id: string | null;
 };
 
 export type SymptomLog = {
@@ -35,7 +37,7 @@ export type BowelLog = {
   note: string | null;
 };
 
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export async function migrate(db: SQLiteDatabase) {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
@@ -88,6 +90,14 @@ export async function migrate(db: SQLiteDatabase) {
     v = 1;
   }
 
+  if (v === 1) {
+    await db.execAsync(`
+      ALTER TABLE meals ADD COLUMN group_id TEXT;
+      CREATE INDEX IF NOT EXISTS meals_group ON meals(group_id);
+    `);
+    v = 2;
+  }
+
   await db.execAsync(`PRAGMA user_version = ${DB_VERSION}`);
 }
 
@@ -120,11 +130,11 @@ export async function setPhase(db: SQLiteDatabase, phase: Phase) {
 // ---------- meals ----------
 export async function addMeal(
   db: SQLiteDatabase,
-  m: Omit<Meal, 'id' | 'reaction' | 'reaction_note'> & { reaction?: Reaction | null; reaction_note?: string | null },
+  m: Omit<Meal, 'id' | 'reaction' | 'reaction_note' | 'group_id'> & { reaction?: Reaction | null; reaction_note?: string | null; group_id?: string | null },
 ) {
   const r = await db.runAsync(
-    `INSERT INTO meals (name, food_id, tags, photo, eaten_at, ai_verdict, reaction, reaction_note, phase)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO meals (name, food_id, tags, photo, eaten_at, ai_verdict, reaction, reaction_note, phase, group_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     m.name,
     m.food_id,
     m.tags,
@@ -134,8 +144,85 @@ export async function addMeal(
     m.reaction ?? null,
     m.reaction_note ?? null,
     m.phase,
+    m.group_id ?? null,
   );
   return r.lastInsertRowId;
+}
+
+export function newGroupId() {
+  return `g${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+}
+
+/** Save several foods eaten in one sitting. Returns the group id. */
+export async function addMealGroup(
+  db: SQLiteDatabase,
+  items: Omit<Meal, 'id' | 'reaction' | 'reaction_note' | 'group_id' | 'eaten_at' | 'phase'>[],
+  shared: { eaten_at: number; phase: Phase; reaction?: Reaction | null },
+) {
+  const group_id = items.length > 1 ? newGroupId() : null;
+  await db.withTransactionAsync(async () => {
+    for (const it of items) await addMeal(db, { ...it, ...shared, group_id });
+  });
+  return group_id;
+}
+
+/** All rows that belong to the same sitting as this meal (or just the meal). */
+export async function getMealGroup(db: SQLiteDatabase, id: number) {
+  const m = await getMeal(db, id);
+  if (!m) return [];
+  if (!m.group_id) return [m];
+  return db.getAllAsync<Meal>('SELECT * FROM meals WHERE group_id = ? ORDER BY id', m.group_id);
+}
+
+export async function setGroupReaction(db: SQLiteDatabase, ids: number[], reaction: Reaction | null, note: string | null) {
+  await db.withTransactionAsync(async () => {
+    for (const id of ids) await setReaction(db, id, reaction, note);
+  });
+}
+
+export async function setGroupTime(db: SQLiteDatabase, ids: number[], at: number) {
+  await db.withTransactionAsync(async () => {
+    for (const id of ids) await db.runAsync('UPDATE meals SET eaten_at = ? WHERE id = ?', at, id);
+  });
+}
+
+export type MealGroup = {
+  key: string;
+  ids: number[];
+  items: Meal[];
+  name: string;
+  eaten_at: number;
+  photo: string | null;
+  phase: Phase;
+  reaction: Reaction | null;
+  ai_verdict: Verdict | null;
+};
+
+const VRANK: Record<Verdict, number> = { iyi: 0, dikkat: 1, riskli: 2 };
+
+/** Collapse rows into sittings, keeping the input order (newest first). */
+export function groupMeals(meals: Meal[]): MealGroup[] {
+  const map = new Map<string, Meal[]>();
+  for (const m of meals) {
+    const k = m.group_id ?? `m${m.id}`;
+    map.set(k, [...(map.get(k) ?? []), m]);
+  }
+  return [...map.entries()].map(([key, items]) => {
+    const sorted = [...items].sort((a, b) => a.id - b.id);
+    const verdicts = sorted.map((x) => x.ai_verdict).filter((v): v is Verdict => !!v);
+    const reactions = sorted.map((x) => x.reaction);
+    return {
+      key,
+      ids: sorted.map((x) => x.id),
+      items: sorted,
+      name: sorted.map((x) => x.name).join(', '),
+      eaten_at: sorted[0].eaten_at,
+      photo: sorted.find((x) => x.photo)?.photo ?? null,
+      phase: sorted[0].phase,
+      reaction: reactions.every((r) => r === reactions[0]) ? reactions[0] : null,
+      ai_verdict: verdicts.length ? verdicts.reduce((a, b) => (VRANK[b] > VRANK[a] ? b : a)) : null,
+    };
+  });
 }
 
 export async function setReaction(db: SQLiteDatabase, id: number, reaction: Reaction | null, note: string | null) {
@@ -163,7 +250,7 @@ export async function pendingReactions(db: SQLiteDatabase) {
   const cutoff = Date.now() - 90 * 60 * 1000;
   const since = Date.now() - 4 * 24 * 60 * 60 * 1000;
   return db.getAllAsync<Meal>(
-    'SELECT * FROM meals WHERE reaction IS NULL AND eaten_at <= ? AND eaten_at >= ? ORDER BY eaten_at DESC LIMIT 5',
+    'SELECT * FROM meals WHERE reaction IS NULL AND eaten_at <= ? AND eaten_at >= ? ORDER BY eaten_at DESC LIMIT 40',
     cutoff,
     since,
   );

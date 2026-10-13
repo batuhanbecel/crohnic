@@ -11,7 +11,7 @@ import * as db from '../../lib/db';
 import { palette, type } from '../../lib/theme';
 
 type Entry =
-  | { kind: 'meal'; at: number; item: db.Meal }
+  | { kind: 'meal'; at: number; item: db.MealGroup }
   | { kind: 'symptom'; at: number; item: db.SymptomLog }
   | { kind: 'bowel'; at: number; item: db.BowelLog };
 
@@ -27,7 +27,7 @@ export default function Journal() {
     const [m, s, b] = await Promise.all([db.listMeals(sql, 400), db.listSymptoms(sql, 400), db.listBowel(sql, 400)]);
     setEntries(
       [
-        ...m.map((item) => ({ kind: 'meal' as const, at: item.eaten_at, item })),
+        ...db.groupMeals(m).map((item) => ({ kind: 'meal' as const, at: item.eaten_at, item })),
         ...s.map((item) => ({ kind: 'symptom' as const, at: item.at, item })),
         ...b.map((item) => ({ kind: 'bowel' as const, at: item.at, item })),
       ].sort((a, c) => c.at - a.at),
@@ -97,7 +97,7 @@ export default function Journal() {
             </T>
             {list.map((e) =>
               e.kind === 'meal' ? (
-                <MealRow key={`m${e.item.id}`} meal={e.item} />
+                <MealRow key={e.item.key} group={e.item} />
               ) : e.kind === 'symptom' ? (
                 <Tap key={`s${e.item.id}`} onLongPress={() => remove(e)}>
                   <Card style={{ padding: 12, gap: 6 }}>

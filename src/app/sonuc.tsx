@@ -193,8 +193,11 @@ function MealResult({ a, photo, foodId }: { a: MealAnalysis; photo: string | nul
 }
 
 function MenuResult({ a }: { a: MenuAnalysis }) {
-  const save = useSaveMeal();
+  const sql = useSQLiteContext();
+  const app = useApp();
   const personal = usePersonal();
+  const [picked, setPicked] = useState<Set<number>>(new Set());
+  const [saving, setSaving] = useState(false);
   const groups = useMemo(
     () =>
       (['iyi', 'dikkat', 'riskli'] as Verdict[])
@@ -203,17 +206,36 @@ function MenuResult({ a }: { a: MenuAnalysis }) {
     [a.dishes],
   );
 
-  const pick = (d: MenuAnalysis['dishes'][number]) => {
-    Alert.alert(d.name, 'Bunu mu söyledin? Kaydedeyim, sonra nasıl geçtiğini sorarım.', [
-      { text: 'Vazgeç', style: 'cancel' },
-      {
-        text: 'Kaydet',
-        onPress: async () => {
-          await save({ name: d.name, tags: d.tags, verdict: d.verdict });
-          Alert.alert('Kaydedildi', 'Afiyet olsun.');
-        },
-      },
-    ]);
+  const toggle = (idx: number) =>
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+
+  const saveOrder = async () => {
+    const dishes = a.dishes.filter((_, i) => picked.has(i));
+    if (!dishes.length) return;
+    setSaving(true);
+    try {
+      await db.addMealGroup(
+        sql,
+        dishes.map((d) => ({
+          name: d.name,
+          food_id: findFoodByName(d.name)?.id ?? null,
+          tags: d.tags.join(','),
+          photo: null,
+          ai_verdict: d.verdict,
+        })),
+        { eaten_at: Date.now(), phase: app.phase },
+      );
+      app.bump();
+      router.back();
+      setTimeout(() => Alert.alert('Kaydedildi', 'Afiyet olsun. Birkaç saat sonra nasıl geçtiğini soracağım.'), 350);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -249,16 +271,19 @@ function MenuResult({ a }: { a: MenuAnalysis }) {
               {g.items.length}
             </T>
           </Row>
-          {g.items.map((d, i) => {
+          {g.items.map((d) => {
+            const idx = a.dishes.indexOf(d);
+            const on = picked.has(idx);
             const stt = personal(d.name);
             return (
-              <Tap key={`${d.name}-${i}`} onPress={() => pick(d)}>
-                <Card style={{ gap: 4, padding: 14 }}>
+              <Tap key={`${d.name}-${idx}`} onPress={() => toggle(idx)}>
+                <Card style={[{ gap: 4, padding: 14 }, on ? { borderColor: palette.ink, borderWidth: 2 } : null]}>
                   <Row style={{ justifyContent: 'space-between' }}>
+                    <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: VERDICT_UI[d.verdict].fg }} />
                     <T v="h3" style={{ flex: 1 }}>
                       {d.name}
                     </T>
-                    <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: VERDICT_UI[d.verdict].fg }} />
+                    <Icon name={on ? 'checkmark.circle.fill' : 'circle'} size={22} color={on ? palette.ink : palette.inkFaint} fallback={on ? '✓' : '○'} />
                   </Row>
                   {d.reason ? (
                     <T v="small" color={palette.inkSoft}>
@@ -277,8 +302,15 @@ function MenuResult({ a }: { a: MenuAnalysis }) {
         </View>
       ))}
       <T v="small" color={palette.inkSoft} style={{ textAlign: 'center' }}>
-        Sipariş ettiğin yemeğe dokun, kaydedeyim.
+        Sipariş ettiklerini işaretle, tek öğün olarak kaydedeyim.
       </T>
+      <Button
+        title={picked.size ? `${picked.size} yemeği kaydet` : 'Yemek seç'}
+        icon="checkmark"
+        onPress={saveOrder}
+        loading={saving}
+        disabled={!picked.size}
+      />
       <Disclaimer />
     </Screen>
   );

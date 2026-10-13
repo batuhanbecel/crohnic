@@ -3,7 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import type { SymbolViewProps } from 'expo-symbols';
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { MealRow, MealThumb } from '../../components/MealRow';
+import { GroupThumb, MealRow } from '../../components/MealRow';
 import { Mascot, type Mood } from '../../components/Mascot';
 import { ReactionPicker } from '../../components/ReactionPicker';
 import { Card, IconBubble, IconButton, Row, Screen, SectionTitle, Segmented, T, Tap } from '../../components/ui';
@@ -31,8 +31,8 @@ const ACTIONS: { label: string; sub: string; icon: SymbolViewProps['name']; fall
 export default function Home() {
   const sql = useSQLiteContext();
   const app = useApp();
-  const [pending, setPendingMeals] = useState<db.Meal[]>([]);
-  const [today, setToday] = useState<db.Meal[]>([]);
+  const [pending, setPendingMeals] = useState<db.MealGroup[]>([]);
+  const [today, setToday] = useState<db.MealGroup[]>([]);
   const [lastBowel, setLastBowel] = useState<db.BowelLog | null>(null);
   const [bowelToday, setBowelToday] = useState(0);
   const [lastSymptom, setLastSymptom] = useState<db.SymptomLog | null>(null);
@@ -43,8 +43,8 @@ export default function Home() {
     const [p, meals, bowel, symptoms] = await Promise.all([db.pendingReactions(sql), db.listMeals(sql, 40), db.listBowel(sql, 40), db.listSymptoms(sql, 5)]);
     const t = now();
     const k = dayKey(t);
-    setPendingMeals(p);
-    setToday(meals.filter((m) => dayKey(m.eaten_at) === k));
+    setPendingMeals(db.groupMeals(p));
+    setToday(db.groupMeals(meals.filter((m) => dayKey(m.eaten_at) === k)));
     setLastBowel(bowel[0] ?? null);
     setBowelToday(bowel.filter((b) => dayKey(b.at) === k).length);
     setLastSymptom(symptoms[0] ?? null);
@@ -70,8 +70,8 @@ export default function Home() {
     return { mood: 'happy', line: TIPS[new Date(loadedAt || 0).getDate() % TIPS.length] };
   }, [today, app.phase, loadedAt]);
 
-  const react = async (meal: db.Meal, r: db.Reaction) => {
-    await db.setReaction(sql, meal.id, r, null);
+  const react = async (group: db.MealGroup, r: db.Reaction) => {
+    await db.setGroupReaction(sql, group.ids, r, null);
     app.bump();
     load();
   };
@@ -127,9 +127,9 @@ export default function Home() {
       ) : null}
 
       {pending.slice(0, 2).map((m) => (
-        <Card key={m.id} style={{ gap: 12 }}>
+        <Card key={m.key} style={{ gap: 12 }}>
           <Row gap={12}>
-            <MealThumb meal={m} size={44} />
+            <GroupThumb group={m} size={44} />
             <View style={{ flex: 1 }}>
               <T v="caption" color={palette.inkSoft}>
                 {relative(m.eaten_at)}
@@ -168,7 +168,7 @@ export default function Home() {
         <Stat label="Ağrı" value={lastSymptom ? `${lastSymptom.pain}/5` : '–'} sub={lastSymptom ? relative(lastSymptom.at) : undefined} />
       </Row>
       {today.length ? (
-        today.map((m) => <MealRow key={m.id} meal={m} />)
+        today.map((m) => <MealRow key={m.key} group={m} />)
       ) : (
         <Tap onPress={() => router.push('/yemek-ekle')}>
           <Card style={{ alignItems: 'center', gap: 4, paddingVertical: 22 }}>
