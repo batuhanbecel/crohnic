@@ -131,7 +131,7 @@ export default function Settings() {
       </Card>
 
       <T v="caption" color={palette.inkFaint} style={{ textAlign: 'center', lineHeight: 17, fontWeight: '400' }}>
-        Crohnic tıbbi tavsiye vermez. Acil durumda 112.{'\n'}Yemek fotoğrafları: Wikipedia ve Wikimedia Commons.
+        Crohnic tıbbi tavsiye vermez. Acil durumda 112.
       </T>
     </Screen>
   );
