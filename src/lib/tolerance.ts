@@ -52,8 +52,10 @@ function push(stat: PersonalStat, m: Meal) {
 export function statsByName(meals: Meal[]): Map<string, PersonalStat & { name: string }> {
   const map = new Map<string, PersonalStat & { name: string }>();
   for (const m of meals) {
-    const key = m.food_id ?? normalizeName(m.name);
-    const s = map.get(key) ?? { ...emptyStat(), name: m.food_id ? FOOD_BY_ID[m.food_id]?.name ?? m.name : m.name };
+    // ids of merged entries resolve to the food they were merged into
+    const food = m.food_id ? FOOD_BY_ID[m.food_id] : undefined;
+    const key = food?.id ?? m.food_id ?? normalizeName(m.name);
+    const s = map.get(key) ?? { ...emptyStat(), name: food?.name ?? m.name };
     push(s, m);
     map.set(key, s);
   }

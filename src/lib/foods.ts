@@ -1,4 +1,4 @@
-import { FOOD_SOURCE } from './food-data';
+import { ALIAS_SOURCE, FOOD_SOURCE } from './food-data';
 
 export type Phase = 'remisyon' | 'atak';
 export type Verdict = 'iyi' | 'dikkat' | 'riskli';
@@ -121,27 +121,75 @@ const parsed = parse(FOOD_SOURCE);
 
 export const FOODS: Food[] = parsed.foods;
 export const CATEGORIES: Category[] = parsed.cats;
-export const FOOD_BY_ID: Record<string, Food> = Object.fromEntries(FOODS.map((x) => [x.id, x]));
 
 export function normalizeName(s: string): string {
   return s.toLocaleLowerCase('tr-TR').replace(/\s+/g, ' ').trim();
 }
 
-const BY_NAME = new Map(FOODS.map((x) => [normalizeName(x.name), x]));
+const BY_SLUG = new Map(FOODS.map((x) => [x.id, x]));
+
+/** Old or short names → the food they mean (merged duplicates, synonyms like "Nutella"). */
+const ALIASES: [string, Food][] = ALIAS_SOURCE.split('\n')
+  .map((l) => l.trim())
+  .filter((l) => l && !l.startsWith('#'))
+  .flatMap((l) => {
+    const [from, to] = l.split('|').map((x) => x.trim());
+    const food = BY_SLUG.get(slug(to));
+    return food ? [[from, food] as [string, Food]] : [];
+  });
+
+const ALIAS_SLUGS = new Map<string, string[]>();
+for (const [from, food] of ALIASES) ALIAS_SLUGS.set(food.id, [...(ALIAS_SLUGS.get(food.id) ?? []), slug(from)]);
+
+/** Food by id, including ids of entries that were merged into another one. */
+export const FOOD_BY_ID: Record<string, Food> = {
+  ...Object.fromEntries(ALIASES.map(([from, food]) => [slug(from), food])),
+  ...Object.fromEntries(FOODS.map((x) => [x.id, x])),
+};
+
+const BY_NAME = new Map<string, Food>([...ALIASES.map(([from, food]) => [normalizeName(from), food] as [string, Food]), ...FOODS.map((x) => [normalizeName(x.name), x] as [string, Food])]);
 
 export function findFoodByName(name: string): Food | undefined {
-  return BY_NAME.get(normalizeName(name));
+  return BY_NAME.get(normalizeName(name)) ?? BY_SLUG.get(slug(name)) ?? FOOD_BY_ID[slug(name)];
 }
 
-/** Search that ignores Turkish characters, so "kofte" finds "köfte". */
+/**
+ * Turkish-aware word match: "kofte" finds "köfte", "ekmek" finds "ekmeği" (k→ğ softening)
+ * and "tatlısı" finds "tatlı" (possessive suffix).
+ */
+function wordForms(w: string) {
+  const forms = [w];
+  const soft: Record<string, string> = { k: 'g', p: 'b', t: 'd', c: 'c' };
+  if (w.length >= 4 && soft[w[w.length - 1]]) forms.push(w.slice(0, -1) + soft[w[w.length - 1]]);
+  const bare = w.replace(/(si|su|i|u)$/, '');
+  if (bare !== w && bare.length >= 4) forms.push(bare);
+  return forms;
+}
+
+function matches(target: string, words: string[][]) {
+  return words.every((forms) => forms.some((f) => target.includes(f)));
+}
+
+/** Search that ignores Turkish characters and suffixes, and knows old/short names. */
 export function searchFoods(q: string, list: Food[] = FOODS) {
   const n = slug(q);
   if (!n) return list;
-  const words = n.split('-');
-  return list
-    .filter((f) => {
-      const s = slug(f.name);
-      return words.every((w) => s.includes(w));
-    })
-    .sort((a, b) => Number(!slug(a.name).startsWith(n)) - Number(!slug(b.name).startsWith(n)));
+  const words = n.split('-').map(wordForms);
+  const allowed = list === FOODS ? null : new Set(list.map((f) => f.id));
+  const hits = new Map<string, Food>();
+  for (const f of list) if (matches(slug(f.name), words)) hits.set(f.id, f);
+  for (const [from, food] of ALIASES) {
+    if ((!allowed || allowed.has(food.id)) && matches(slug(from), words)) hits.set(food.id, food);
+  }
+  const aliasOf = (f: Food) => ALIAS_SLUGS.get(f.id) ?? [];
+  // exact name or short name first ("muz" → Olgun muz), then names that start with the query
+  const rank = (f: Food) => {
+    const s = slug(f.name);
+    const al = aliasOf(f);
+    if (s === n || al.includes(n)) return 0;
+    if (s.startsWith(n)) return 1;
+    if (al.some((a) => a.startsWith(n))) return 2;
+    return 3;
+  };
+  return [...hits.values()].sort((a, b) => rank(a) - rank(b));
 }

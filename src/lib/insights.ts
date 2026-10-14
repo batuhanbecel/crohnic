@@ -1,6 +1,6 @@
 import type { BowelLog, Daily, Meal, SymptomLog } from './db';
 import { isoDay } from './dates';
-import { normalizeName } from './foods';
+import { findFoodByName, normalizeName } from './foods';
 
 const H = 3600000;
 
@@ -41,7 +41,8 @@ export function suspectFoods(meals: Meal[], symptoms: SymptomLog[], bowel: Bowel
   const byFood = new Map<string, SuspectFood>();
   for (const [k, items] of sittings) {
     const hit = hitBySitting.get(k)!;
-    for (const name of new Set(items.map((m) => m.name))) {
+    // merged/renamed foods count as one (e.g. an old "Kayseri mantısı" entry is "Mantı")
+    for (const name of new Set(items.map((m) => findFoodByName(m.name)?.name ?? m.name))) {
       const key = normalizeName(name);
       const cur = byFood.get(key) ?? { name, n: 0, hit: 0, rate: 0 };
       cur.n++;
