@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Modal, PanResponder, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { palette, radius, surface } from '../lib/theme';
-import { Icon, IconBubble, Row, T, Tap, type SymbolName } from './ui';
+import { Icon, IconBubble, Row, T, Tap, prefersReducedMotion, type SymbolName } from './ui';
 
 type Item = { title: string; sub: string; icon: SymbolName; fallback: string; color: string; to: string };
 
@@ -32,7 +32,9 @@ export function AddMenu({ visible, onClose }: { visible: boolean; onClose: () =>
     closing.current = false;
     drag.setValue(0);
     anim.setValue(0);
-    Animated.timing(anim, { toValue: 1, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    // critically damped spring, response 0.3 s: stiffness (2π/0.3)², damping 2·√stiffness (no overshoot,
+    // so the panel never lifts off the bottom edge)
+    Animated.spring(anim, { toValue: 1, stiffness: 438, damping: 41.9, mass: 1, useNativeDriver: true }).start();
   }, [visible, anim, drag]);
 
   /** Slide out, then tell the parent; optionally open a form afterwards. */
@@ -51,14 +53,17 @@ export function AddMenu({ visible, onClose }: { visible: boolean; onClose: () =>
     onMoveShouldSetPanResponder: (_, g) => g.dy > 6 && Math.abs(g.dy) > Math.abs(g.dx),
     onPanResponderMove: (_, g) => drag.setValue(Math.max(0, g.dy)),
     onPanResponderRelease: (_, g) => {
-      if (g.dy > 110 || g.vy > 1.2) close();
+      // project where the flick would come to rest (UIScrollView deceleration 0.998), not where the finger let go
+      const projected = g.dy + (g.vy * 0.998) / (1 - 0.998);
+      if (projected > SHEET_H * 0.4) close();
       else Animated.spring(drag, { toValue: 0, useNativeDriver: true, bounciness: 4 }).start();
     },
   });
 
   if (!visible) return null;
 
-  const translateY = Animated.add(anim.interpolate({ inputRange: [0, 1], outputRange: [SHEET_H, 0] }), drag);
+  const still = prefersReducedMotion(); // fade only, no slide
+  const translateY = Animated.add(anim.interpolate({ inputRange: [0, 1], outputRange: [still ? 0 : SHEET_H, 0], extrapolate: 'clamp' }), drag);
 
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={() => close()}>
@@ -69,7 +74,7 @@ export function AddMenu({ visible, onClose }: { visible: boolean; onClose: () =>
         {...pan.panHandlers}
         style={[
           styles.sheet,
-          { paddingBottom: Math.max(insets.bottom, 16) + 8, backgroundColor: surface.sheet, transform: [{ translateY }] },
+          { paddingBottom: Math.max(insets.bottom, 16) + 8, backgroundColor: surface.sheet, transform: [{ translateY }], opacity: still ? anim : 1 },
         ]}
       >
         <View style={styles.grabber} />

@@ -2,10 +2,10 @@ import { forwardRef } from 'react';
 import { Text as RNText, TextInput as RNTextInput, type TextInputProps, type TextProps } from 'react-native';
 
 /**
- * Text and TextInput with Dynamic Type capped at 1.2×. Controls have fixed
+ * Text and TextInput with Dynamic Type capped at 1.35×. Controls have fixed
  * heights (buttons, chips, tiles); uncapped system text sizes would overflow them.
  */
-const MAX = 1.2;
+const MAX = 1.35;
 
 export const Text = forwardRef<RNText, TextProps>(function Text(props, ref) {
   return <RNText maxFontSizeMultiplier={MAX} {...props} ref={ref} />;

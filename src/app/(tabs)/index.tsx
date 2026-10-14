@@ -1,7 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, View } from 'react-native';
 import { AddMenu } from '../../components/AddMenu';
 import { BRISTOL } from '../../components/bristol';
 import { SLEEP, STRESS } from '../../components/checkin';
@@ -107,12 +107,29 @@ export default function Home() {
     return { mood: 'happy', line: TIPS[new Date(loadedAt || 0).getDate() % TIPS.length] };
   }, [meals, app.phase, loadedAt, redFlag]);
 
-  const changePhase = () =>
+  // a choice between options is an action sheet on iOS, not an alert
+  const changePhase = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          title: 'Hangi dönemdesin?',
+          message: 'Önerilerim ve yemek değerlendirmeleri buna göre değişir.',
+          options: ['Remisyon', 'Atak', 'Vazgeç'],
+          cancelButtonIndex: 2,
+        },
+        (i) => {
+          const next = i === 0 ? 'remisyon' : i === 1 ? 'atak' : null;
+          if (next && next !== app.phase) app.changePhase(next);
+        },
+      );
+      return;
+    }
     Alert.alert('Hangi dönemdesin?', 'Önerilerim ve yemek değerlendirmeleri buna göre değişir.', [
       { text: 'Remisyon', onPress: () => app.phase !== 'remisyon' && app.changePhase('remisyon') },
       { text: 'Atak', onPress: () => app.phase !== 'atak' && app.changePhase('atak') },
       { text: 'Vazgeç', style: 'cancel' },
     ]);
+  };
 
   const react = async (group: db.MealGroup, r: db.Reaction) => {
     await db.setGroupReaction(sql, group.ids, r, null);

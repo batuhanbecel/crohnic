@@ -3,11 +3,11 @@ import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import React from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View, type PressableProps, type StyleProp, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View, type PressableProps, type StyleProp, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
 import { Text } from './text';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import type { Verdict } from '../lib/foods';
-import { isDark, onTint, palette, radius, shadow, size, surface, type } from '../lib/theme';
+import { isDark, onTint, palette, radius, readable, shadow, size, surface, type } from '../lib/theme';
 
 /*
  * Crohnic design system
@@ -32,7 +32,32 @@ export function hasLiquidGlass() {
   return glassOk;
 }
 
-/** iOS 26 liquid glass. On older systems: frosted blur with the same tint. */
+// Reduce Transparency (Settings > Accessibility): glass and blur become opaque surfaces.
+let reduceTransparency = false;
+AccessibilityInfo.isReduceTransparencyEnabled?.()
+  .then((v) => {
+    reduceTransparency = v;
+  })
+  .catch(() => {});
+AccessibilityInfo.addEventListener?.('reduceTransparencyChanged', (v) => {
+  reduceTransparency = v;
+});
+
+// Reduce Motion: slides and looping animations give way to fades or stillness.
+let reduceMotion = false;
+AccessibilityInfo.isReduceMotionEnabled?.()
+  .then((v) => {
+    reduceMotion = v;
+  })
+  .catch(() => {});
+AccessibilityInfo.addEventListener?.('reduceMotionChanged', (v) => {
+  reduceMotion = v;
+});
+export function prefersReducedMotion() {
+  return reduceMotion;
+}
+
+/** iOS 26 liquid glass. On older systems: frosted blur with the same tint. Opaque with Reduce Transparency. */
 export function Glass({
   children,
   style,
@@ -44,6 +69,13 @@ export function Glass({
   tint?: string;
   interactive?: boolean;
 }) {
+  if (reduceTransparency) {
+    return (
+      <View style={[{ overflow: 'hidden', backgroundColor: tint ?? surface.sheet, borderWidth: StyleSheet.hairlineWidth, borderColor: palette.hairline }, style]}>
+        {children}
+      </View>
+    );
+  }
   if (hasLiquidGlass()) {
     return (
       <GlassView glassEffectStyle="regular" tintColor={tint} isInteractive={interactive} style={[{ overflow: 'hidden' }, style]}>
@@ -132,9 +164,10 @@ export function Backdrop({ tone = 'calm' }: { tone?: 'calm' | 'flare' }) {
 // ---------- text ----------
 type Variant = 'large' | 'title' | 'h2' | 'h3' | 'body' | 'callout' | 'small' | 'caption';
 const variantStyle: Record<Variant, TextStyle> = {
-  large: { ...type.display, fontSize: 34, lineHeight: 40, letterSpacing: 0.2 },
-  title: { ...type.display, fontSize: 26, lineHeight: 31 },
-  h2: { ...type.rounded, fontSize: 20, lineHeight: 25 },
+  // tracking tightens as size grows, small text stays open
+  large: { ...type.display, fontSize: 34, lineHeight: 40, letterSpacing: -0.4 },
+  title: { ...type.display, fontSize: 26, lineHeight: 31, letterSpacing: -0.3 },
+  h2: { ...type.rounded, fontSize: 20, lineHeight: 25, letterSpacing: -0.2 },
   h3: { ...type.semibold, fontSize: 17, lineHeight: 22 },
   body: { ...type.body, fontSize: 17, lineHeight: 23 },
   callout: { ...type.body, fontSize: 16, lineHeight: 21 },
@@ -143,7 +176,7 @@ const variantStyle: Record<Variant, TextStyle> = {
 };
 
 export function T({ v = 'body', color = palette.ink, style, ...rest }: TextProps & { v?: Variant; color?: string }) {
-  return <Text {...rest} style={[variantStyle[v], { color }, style]} />;
+  return <Text {...rest} style={[variantStyle[v], { color: readable(color) }, style]} />;
 }
 
 /** Single-line label for controls: never wraps, shrinks a little if it must. */
@@ -153,7 +186,7 @@ function Label({ children, color, small }: { children: string; color: string; sm
       numberOfLines={1}
       adjustsFontSizeToFit
       minimumFontScale={0.75}
-      style={[type.semibold, { fontSize: small ? 14 : 16, lineHeight: small ? 18 : 20, color, flexShrink: 1 }]}
+      style={[type.semibold, { fontSize: small ? 14 : 16, lineHeight: small ? 18 : 20, color: readable(color), flexShrink: 1 }]}
     >
       {children}
     </Text>
@@ -447,7 +480,7 @@ export function VerdictBadge({ verdict, size: sz = 'md' }: { verdict: Verdict; s
   return (
     <View style={[st.badge, { backgroundColor: u.bg }, sz === 'sm' && { paddingHorizontal: 8, paddingVertical: 3 }]}>
       <Icon name={u.icon} size={sz === 'sm' ? 12 : 14} color={u.fg} fallback={u.dot} />
-      <Text numberOfLines={1} style={[type.semibold, { fontSize: 12, color: u.fg }]}>
+      <Text numberOfLines={1} style={[type.semibold, { fontSize: 12, color: readable(u.fg) }]}>
         {sz === 'sm' ? u.short : u.label}
       </Text>
     </View>

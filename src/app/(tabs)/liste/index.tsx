@@ -2,13 +2,16 @@ import { Stack, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ThinkingOverlay } from '../../../components/ThinkingOverlay';
 import { Text } from '../../../components/text';
-import { Card, Chip, Glass, Icon, Row, T, Tap, VERDICT_UI } from '../../../components/ui';
+import { Backdrop, Button, Card, Chip, Icon, Row, T, Tap, VERDICT_UI } from '../../../components/ui';
 import { useApp } from '../../../lib/app-state';
 import * as db from '../../../lib/db';
 import { CATEGORIES, FOODS, searchFoods, type Category, type Verdict } from '../../../lib/foods';
 import { palette, radius, surface, type } from '../../../lib/theme';
 import { assessFood, statsByName } from '../../../lib/tolerance';
+import { useAnalyze } from '../../../lib/use-analyze';
 
 type VF = Verdict | 'hepsi' | 'denedim';
 
@@ -19,6 +22,9 @@ export default function FoodList() {
   const [q, setQ] = useState('');
   const [cat, setCat] = useState<Category | null>(null);
   const [vf, setVf] = useState<VF>('hepsi');
+  const insets = useSafeAreaInsets();
+  const { busy, byName } = useAnalyze();
+  const query = q.trim();
 
   useFocusEffect(
     useCallback(() => {
@@ -65,59 +71,75 @@ export default function FoodList() {
 
   const header = (
     <View style={{ gap: 12, marginBottom: 12 }}>
+      <T v="large">Yemekler</T>
       <Tap onPress={explain} haptic={false}>
-        <Row gap={6} style={{ paddingHorizontal: 2 }}>
+        <Row gap={6} style={{ paddingHorizontal: 2, marginTop: -6 }}>
           <T v="small" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft} style={{ flex: 1 }}>
             {FOODS.length} yemek, {app.phase === 'atak' ? 'atak' : 'remisyon'} dönemine göre
           </T>
           <Icon name="info.circle" size={15} color={palette.inkSoft} fallback="ⓘ" />
         </Row>
       </Tap>
-      <Glass style={{ borderRadius: radius.lg, paddingVertical: 10, gap: 8 }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 10 }}>
+      <View style={{ gap: 8 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -18 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 18 }}>
           {filters.map((x) => (
             <Chip key={x.key} label={`${x.label} ${counts[x.key]}`} active={vf === x.key} color={x.color} onPress={() => setVf(x.key)} />
           ))}
         </ScrollView>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 10 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -18 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 18 }}>
           <Chip label="Tüm kategoriler" active={!cat} onPress={() => setCat(null)} />
           {CATEGORIES.map((c) => (
             <Chip key={c} label={c} active={cat === c} onPress={() => setCat(cat === c ? null : c)} />
           ))}
         </ScrollView>
-      </Glass>
+      </View>
     </View>
   );
 
+  // a food that isn't in the list: ask Kıvırcık (AI) about it by name
+  const askCard = (empty: boolean) =>
+    query.length >= 2 ? (
+      <Card style={{ gap: 10, marginTop: empty ? 0 : 8 }}>
+        <T v="h3">{empty ? `“${query}” listede yok` : `Aradığın “${query}” değil mi?`}</T>
+        <T v="small" color={palette.inkSoft}>
+          Adını Kıvırcık’a sor, {app.phase === 'atak' ? 'atak' : 'remisyon'} dönemine ve kayıtlarına göre değerlendireyim.
+        </T>
+        <Button title={`“${query}” için sor`} icon="sparkles" color={palette.peri} onPress={() => byName(query, null)} />
+      </Card>
+    ) : empty ? (
+      <Card style={{ alignItems: 'center', gap: 4, paddingVertical: 24 }}>
+        <T v="h3">Bulamadım</T>
+      </Card>
+    ) : null;
+
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: palette.paper }}>
+      <Backdrop tone={app.phase === 'atak' ? 'flare' : 'calm'} />
+      <ThinkingOverlay mode={busy} />
       <Stack.SearchBar
-        placeholder="Ara: köfte, çorba, kahve…"
+        placeholder="Ara ya da yeni bir yemek yaz"
         onChangeText={(e) => setQ(e.nativeEvent.text)}
         onCancelButtonPress={() => setQ('')}
+        onSearchButtonPress={() => {
+          if (query.length >= 2 && !rows.length) byName(query, null);
+        }}
         hideWhenScrolling={false}
         autoCapitalize="none"
         placement="automatic"
       />
       <FlatList
-        style={{ flex: 1, backgroundColor: palette.paper }}
+        style={{ flex: 1 }}
         data={rows}
         keyExtractor={(r) => r.f.id}
-        contentInsetAdjustmentBehavior="automatic"
+        contentInsetAdjustmentBehavior="never"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 8, paddingBottom: 120 }}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 110 }}
         ListHeaderComponent={header}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         initialNumToRender={20}
-        ListEmptyComponent={
-          <Card style={{ alignItems: 'center', gap: 4, paddingVertical: 24 }}>
-            <T v="h3">Bulamadım</T>
-            <T v="small" color={palette.inkSoft} style={{ textAlign: 'center' }}>
-              Sor sekmesinden adını yazıp sorabilirsin.
-            </T>
-          </Card>
-        }
+        ListEmptyComponent={askCard(true)}
+        ListFooterComponent={rows.length ? askCard(false) : null}
         renderItem={({ item: { f, a } }) => {
           const u = VERDICT_UI[a.verdict];
           return (
@@ -143,6 +165,6 @@ export default function FoodList() {
           );
         }}
       />
-    </>
+    </View>
   );
 }

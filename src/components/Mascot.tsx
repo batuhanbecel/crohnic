@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Animated, Easing, Platform, View, type ViewStyle } from 'react-native';
 import { Text } from './text';
 import Svg, { Circle, Ellipse, G, Path } from 'react-native-svg';
+import { prefersReducedMotion } from './ui';
 
 export type Mood = 'happy' | 'ok' | 'worried' | 'cheer' | 'sleepy';
 
@@ -61,7 +62,7 @@ export function Mascot({ mood = 'happy', size = 120, animate = true, style }: Pr
   const [bob] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
-    if (!animate) return;
+    if (!animate || prefersReducedMotion()) return;
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(bob, { toValue: 1, duration: 1700, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),

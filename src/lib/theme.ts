@@ -14,7 +14,7 @@ const LIGHT = {
   /** text/icon colour on top of an `ink` tint */
   onInk: '#FFFFFF',
   inkSoft: '#5E6B62',
-  inkFaint: '#9AA59D',
+  inkFaint: '#66726A', // 4.6:1 on paper
   hairline: 'rgba(29,43,34,0.08)',
 
   lettuce: '#5FAE35',
@@ -46,7 +46,7 @@ const DARK: typeof LIGHT = {
   ink: '#EAF0E5',
   onInk: '#13201A',
   inkSoft: '#A3AFA6',
-  inkFaint: '#6D7A71',
+  inkFaint: '#808C83', // 5.3:1 on paper
   hairline: 'rgba(234,240,229,0.1)',
 
   lettuce: '#6CC23F',
@@ -126,6 +126,19 @@ export function onTint(tint: string | undefined) {
   if (!tint) return '#FFFFFF';
   if (tint === palette.ink) return palette.onInk;
   return luminance(tint) > 0.36 ? '#13201A' : '#FFFFFF';
+}
+
+/**
+ * Signal colours are tuned as fills. Used as small text on light surfaces they fall
+ * under 4.5:1, so text gets a deeper variant of the same hue (dark mode already passes).
+ */
+const TEXT_VARIANT: Record<string, string> = isDark
+  ? {}
+  : { [LIGHT.good]: '#16723A', [LIGHT.warn]: '#8A5F00', [LIGHT.bad]: '#B32A20', [LIGHT.peri]: '#5551D6', [LIGHT.sky]: '#1F6FAE', [LIGHT.flare]: '#C2461A', [LIGHT.lettuce]: '#3F7F26', [LIGHT.apricot]: '#A35A1C' };
+
+/** Colour to use when a palette colour is the colour of text. */
+export function readable(c: string) {
+  return TEXT_VARIANT[c] ?? c;
 }
 
 export const radius = { sm: 12, md: 18, lg: 24, xl: 30, pill: 999 };
