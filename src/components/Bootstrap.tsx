@@ -8,6 +8,7 @@ import { useApp } from '../lib/app-state';
 import { autoSnapshot } from '../lib/backup';
 import { handleNotificationAction, setupNotifications, syncReminders } from '../lib/reminders';
 import { scheme } from '../lib/theme';
+import { syncWidget } from '../lib/widget-sync';
 
 setupNotifications();
 
@@ -18,7 +19,9 @@ export function Bootstrap() {
 
   // keep rolling reminders fresh
   useEffect(() => {
-    if (ready) syncReminders(sql);
+    if (!ready) return;
+    syncReminders(sql);
+    syncWidget(sql);
   }, [sql, ready, dataVersion]);
 
   // weekly automatic copy (cheap: one small JSON, skipped when the last one is recent)
@@ -54,6 +57,7 @@ export function Bootstrap() {
     const sub = AppState.addEventListener('change', (s) => {
       if (s !== 'active') return;
       syncReminders(sql);
+      syncWidget(sql);
       const now = Appearance.getColorScheme() === 'dark' ? 'dark' : 'light';
       if (now !== scheme) {
         if (__DEV__) DevSettings.reload();

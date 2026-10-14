@@ -55,7 +55,30 @@
       ],
       "expo-updates",
       "./plugins/local-notifications-only.js",
-      "expo-quick-actions"
+      "expo-quick-actions",
+      [
+        "expo-widgets",
+        {
+          "bundleIdentifier": "tr.com.f28.crohnic.ExpoWidgetsTarget",
+          "groupIdentifier": "group.tr.com.f28.crohnic",
+          "widgets": [
+            {
+              "name": "Bugun",
+              "displayName": "Bugün",
+              "description": "Bugünkü kayıtların ve tek dokunuşla tuvalet, öğün, semptom kaydı.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium",
+                  "accessoryCircular",
+                  "accessoryRectangular",
+                  "accessoryInline"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false
