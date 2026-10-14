@@ -181,7 +181,7 @@ async function cancelPrefix(prefixes: string[]) {
 export async function syncReminders(sql: SQLiteDatabase) {
   if (!supported) return;
   try {
-    await cancelPrefix(['med-', 'daily-']);
+    await cancelPrefix(['med-', 'daily-', 'stock-']);
     if ((await permission()) !== 'granted') return;
     const now = Date.now();
 
@@ -214,6 +214,15 @@ export async function syncReminders(sql: SQLiteDatabase) {
           await schedule(`med-${m.id}-${t}`, 'İlaç günü', `Bugün ${title} günü.`, t, '/', { category: CATEGORY.med, data: { kind: 'med', medId: m.id, due: t } });
         }
       }
+    }
+
+    // running out at home: one nudge the next morning (re-planned on every sync, so it stops once refilled)
+    for (const m of meds) {
+      if (m.stock == null || m.stock > (m.stock_alert ?? 2)) continue;
+      const d = new Date(startOfDay(now) + DAY + 3600000);
+      const at = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 10, 0).getTime();
+      const body = m.stock === 0 ? `${m.name} evde bitti. Reçeteni yenilemeyi unutma.` : `${m.name} için evde ${m.stock} doz kaldı. Reçeteni yenilemeyi unutma.`;
+      await schedule(`stock-${m.id}`, 'İlacın bitiyor', body, at, '/ilaclar');
     }
 
     // evening check-in on the next days that aren't filled in yet

@@ -9,7 +9,7 @@ import { Logo } from '../components/Mascot';
 import { Button, Card, Icon, Row, Screen, T, Tap, st } from '../components/ui';
 import { DEFAULT_AI, analyze, type AiConfig } from '../lib/ai';
 import { useApp } from '../lib/app-state';
-import { applyBackup, lastBackup, latestSnapshot, pickBackup, shareBackup } from '../lib/backup';
+import { applyBackup, lastAutoBackup, lastBackup, latestSnapshot, pickBackup, shareBackup } from '../lib/backup';
 import { daysSince, relative } from '../lib/dates';
 import * as db from '../lib/db';
 import { SETTINGS, askPermission, isOn, permission, syncReminders, type PermissionState } from '../lib/reminders';
@@ -28,6 +28,7 @@ export default function Settings() {
   const [remindMeals, setRemindMeals] = useState(true);
   const [remindDaily, setRemindDaily] = useState(true);
   const [backupAt, setBackupAt] = useState<number | null>(null);
+  const [autoAt, setAutoAt] = useState<number | null>(null);
   const [backingUp, setBackingUp] = useState(false);
   // personal factors that change how foods are rated
   const [factors, setFactors] = useState({ stricture: hasStricture(), stoma: hasStoma(), lactose: hasLactose() });
@@ -47,6 +48,7 @@ export default function Settings() {
         setRemindMeals(await isOn(sql, SETTINGS.meals));
         setRemindDaily(await isOn(sql, SETTINGS.daily));
         setBackupAt(await lastBackup(sql));
+        setAutoAt(await lastAutoBackup(sql));
       })();
     }, [sql]),
   );
@@ -215,6 +217,8 @@ export default function Settings() {
         <LinkRow icon="pills.fill" title="İlaçlarım" onPress={() => router.push('/ilaclar')} />
         <View style={{ height: 1, backgroundColor: palette.hairline }} />
         <LinkRow icon="doc.text.fill" title="Doktor raporu (PDF)" onPress={() => router.push('/rapor')} />
+        <View style={{ height: 1, backgroundColor: palette.hairline }} />
+        <LinkRow icon="testtube.2" title="Tahliller ve kilo" onPress={() => router.push('/tahliller')} />
       </Card>
 
       <Card style={{ gap: 14 }}>
@@ -273,7 +277,10 @@ export default function Settings() {
       <Card style={{ gap: 10 }}>
         <T v="h3">Yedek</T>
         <T v="small" color={palette.inkSoft}>
-          Kayıtların ve fotoğrafların bu telefonda durur ve iPhone’un iCloud Yedeklemesi açıksa her gece otomatik yedeklenir. Yeni telefonu bu yedekten kurunca hepsi geri gelir. Açık mı diye bakmak için: Ayarlar › adın › iCloud › iCloud Yedeklemesi.{'\n\n'}Ayrıca her hafta uygulamanın içine otomatik bir kopya alırım. Elle yedek ise başka bir yere (iCloud Drive, e-posta) ayrı bir kopya koymak içindir.
+          Kayıtların ve fotoğrafların bu telefonda durur ve iPhone’un iCloud Yedeklemesi açıksa her gece otomatik yedeklenir. Yeni telefonu bu yedekten kurunca hepsi geri gelir. Açık mı diye bakmak için: Ayarlar › adın › iCloud › iCloud Yedeklemesi.{'\n\n'}Ayrıca her gün uygulamanın içine otomatik bir kopya alırım, son 7 gün durur. Elle yedek ise başka bir yere (iCloud Drive, e-posta) ayrı bir kopya koymak içindir.
+        </T>
+        <T v="small" color={autoAt && daysSince(autoAt) < 3 ? palette.good : palette.inkSoft}>
+          {autoAt ? `Son otomatik kopya: ${relative(autoAt)}` : 'Otomatik kopya ilk kayıttan sonra başlar'}
         </T>
         <T v="small" color={backupAt && daysSince(backupAt) < 30 ? palette.good : palette.warn}>
           {backupAt ? `Son elle yedek: ${relative(backupAt)}` : 'Henüz elle yedek almadın'}
@@ -305,7 +312,7 @@ export default function Settings() {
   );
 }
 
-function LinkRow({ icon, title, onPress }: { icon: 'pills.fill' | 'doc.text.fill'; title: string; onPress: () => void }) {
+function LinkRow({ icon, title, onPress }: { icon: 'pills.fill' | 'doc.text.fill' | 'testtube.2'; title: string; onPress: () => void }) {
   return (
     <Tap onPress={onPress}>
       <Row gap={12} style={{ paddingVertical: 10 }}>

@@ -28,6 +28,9 @@ const TIPS = [
 ];
 
 /** One-tap daily check-in (stored in daily.feel, 0 … 4). */
+/** Streak lengths worth a small celebration on the home screen. */
+const STREAK_MARKS = [3, 7, 14, 21, 30, 45, 60, 90, 120];
+
 const FEELS: { emoji: string; label: string; mood: Mood; line: string }[] = [
   { emoji: '😣', label: 'Kötü', mood: 'agri', line: 'Zor bir gün. Az ve hafif ye, bol sıvı al. Ağrın varsa semptom olarak yaz.' },
   { emoji: '😕', label: 'Zor', mood: 'worried', line: 'Bugün denenmiş, sana iyi gelen yemeklerle git. Yenilerini başka güne bırak.' },
@@ -64,6 +67,7 @@ export default function Home() {
   const [backupDue, setBackupDue] = useState(false);
   const [factorsSeen, setFactorsSeen] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [streak, setStreak] = useState({ days: 0, today: false });
 
   useEffect(() => {
     if (app.ready && !app.onboarded) router.push('/hosgeldin');
@@ -86,6 +90,11 @@ export default function Home() {
       db.countMeals(sql),
       db.getSetting(sql, 'factors_seen'),
     ]);
+    // consecutive days with at least one log, counted back from today (yesterday if today is still empty)
+    const logged = await db.loggedDays(sql, today - 120 * 86400000);
+    let run = 0;
+    for (let i = logged.has(isoDay(t)) ? 0 : 1; logged.has(isoDay(today - i * 86400000 + 3600000)); i++) run++;
+    setStreak({ days: run, today: logged.has(isoDay(t)) });
     setFactorsSeen(!!factorsSeenV);
     const k = dayKey(t);
     setPendingMeals(db.groupMeals(p));
@@ -100,7 +109,10 @@ export default function Home() {
     const week = t - 7 * 86400000;
     const recent = bowelRows.filter((b) => b.at >= week);
     const severePain = symptomRows.some((s) => s.at >= t - 2 * 86400000 && s.pain >= 5);
-    setRedFlag(recent.some((b) => b.blood) || recent.filter((b) => b.bristol === 7).length >= 6 || severePain);
+    // fever of 38 °C or more in the last two days also counts
+    const recentDays = await db.listDaily(sql, 3);
+    const fever = recentDays.some((x) => (x.temp ?? 0) >= 38 && x.day >= isoDay(t - 2 * 86400000));
+    setRedFlag(recent.some((b) => b.blood) || recent.filter((b) => b.bristol === 7).length >= 6 || severePain || fever);
     setLoadedAt(t);
   }, [sql]);
 
@@ -407,7 +419,7 @@ export default function Home() {
             </T>
           </Row>
           <T v="small">
-            Son günlerde kan, şiddetli ağrı ya da çok sık sulu dışkılama kaydettin. Bunu gastroenteroloğunla paylaş. Ateş, şiddetli ağrı veya yoğun kanama varsa
+            Son günlerde kan, ateş, şiddetli ağrı ya da çok sık sulu dışkılama kaydettin. Bunu gastroenteroloğunla paylaş. Ateş, şiddetli ağrı veya yoğun kanama varsa
             beklemeden acile git.
           </T>
         </Card>
@@ -465,6 +477,18 @@ export default function Home() {
           </T>
         </Card>
       )}
+
+      {streak.today && STREAK_MARKS.includes(streak.days) ? (
+        <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 6 }}>
+          <Mascot mood="kutlama" size={72} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <T v="h3">{streak.days} gündür her gün kayıt tutuyorsun</T>
+            <T v="small" color={palette.inkSoft}>
+              Örüntüler düzenli kayıtla ortaya çıkıyor. Böyle devam.
+            </T>
+          </View>
+        </Card>
+      ) : null}
 
       {backupDue ? (
         <Tap onPress={() => router.push('/ayarlar')}>

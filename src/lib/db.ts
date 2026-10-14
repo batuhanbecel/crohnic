@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import type { Phase, Verdict } from './foods';
+import { isoDay } from './dates';
 
 export type Reaction = 0 | 1 | 2; // 0 = iyi geldi, 1 = biraz dokundu, 2 = çok dokundu
 
@@ -37,7 +38,7 @@ export type BowelLog = {
   note: string | null;
 };
 
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 export async function migrate(db: SQLiteDatabase) {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
@@ -148,6 +149,28 @@ export async function migrate(db: SQLiteDatabase) {
     // one-tap "how do you feel today" on the home screen (0 bad … 4 great)
     await db.execAsync(`ALTER TABLE daily ADD COLUMN feel INTEGER;`);
     v = 5;
+  }
+
+  if (v === 5) {
+    // biologics: injection site rotation and how many doses are left at home;
+    // daily: fever and fluids; labs: blood/stool results and weight for the doctor
+    await db.execAsync(`
+      ALTER TABLE meds ADD COLUMN injection INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE meds ADD COLUMN stock INTEGER;
+      ALTER TABLE meds ADD COLUMN stock_alert INTEGER NOT NULL DEFAULT 2;
+      ALTER TABLE med_logs ADD COLUMN site TEXT;
+      ALTER TABLE daily ADD COLUMN temp REAL;
+      ALTER TABLE daily ADD COLUMN water INTEGER;
+      CREATE TABLE IF NOT EXISTS labs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        at INTEGER NOT NULL,
+        kind TEXT NOT NULL,
+        value REAL NOT NULL,
+        note TEXT
+      );
+      CREATE INDEX IF NOT EXISTS labs_at ON labs(at);
+    `);
+    v = 6;
   }
 
   await db.execAsync(`PRAGMA user_version = ${DB_VERSION}`);
@@ -418,8 +441,14 @@ export type Med = {
   remind: number;
   active: number;
   created_at: number;
+  /** 1 = injection (site rotation is tracked) */
+  injection?: number;
+  /** doses left at home; null = not tracked */
+  stock?: number | null;
+  /** warn when stock is at or below this */
+  stock_alert?: number;
 };
-export type MedLog = { id: number; med_id: number; due_at: number; taken_at: number | null; skipped: number };
+export type MedLog = { id: number; med_id: number; due_at: number; taken_at: number | null; skipped: number; site?: string | null };
 
 export async function listMeds(db: SQLiteDatabase, all = false) {
   return db.getAllAsync<Med>(`SELECT * FROM meds ${all ? '' : 'WHERE active = 1'} ORDER BY name`);
@@ -430,16 +459,19 @@ export async function getMed(db: SQLiteDatabase, id: number) {
 }
 
 export async function saveMed(db: SQLiteDatabase, m: Omit<Med, 'id' | 'created_at' | 'active'> & { id?: number }) {
+  const injection = m.injection ? 1 : 0;
+  const stock = m.stock ?? null;
+  const alert = m.stock_alert ?? 2;
   if (m.id) {
     await db.runAsync(
-      'UPDATE meds SET name = ?, dose = ?, kind = ?, times = ?, every_days = ?, start_day = ?, remind = ? WHERE id = ?',
-      m.name, m.dose, m.kind, m.times, m.every_days, m.start_day, m.remind, m.id,
+      'UPDATE meds SET name = ?, dose = ?, kind = ?, times = ?, every_days = ?, start_day = ?, remind = ?, injection = ?, stock = ?, stock_alert = ? WHERE id = ?',
+      m.name, m.dose, m.kind, m.times, m.every_days, m.start_day, m.remind, injection, stock, alert, m.id,
     );
     return m.id;
   }
   const r = await db.runAsync(
-    'INSERT INTO meds (name, dose, kind, times, every_days, start_day, remind, active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)',
-    m.name, m.dose, m.kind, m.times, m.every_days, m.start_day, m.remind, Date.now(),
+    'INSERT INTO meds (name, dose, kind, times, every_days, start_day, remind, active, created_at, injection, stock, stock_alert) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)',
+    m.name, m.dose, m.kind, m.times, m.every_days, m.start_day, m.remind, Date.now(), injection, stock, alert,
   );
   return r.lastInsertRowId;
 }
@@ -453,20 +485,88 @@ export async function medLogsBetween(db: SQLiteDatabase, from: number, to: numbe
   return db.getAllAsync<MedLog>('SELECT * FROM med_logs WHERE due_at >= ? AND due_at < ?', from, to);
 }
 
-export async function logDose(db: SQLiteDatabase, medId: number, dueAt: number, taken: boolean) {
+/** Mark a dose taken or skipped. A newly taken dose comes off the home stock. */
+export async function logDose(db: SQLiteDatabase, medId: number, dueAt: number, taken: boolean, site?: string | null) {
+  const prev = await db.getFirstAsync<MedLog>('SELECT * FROM med_logs WHERE med_id = ? AND due_at = ?', medId, dueAt);
   await db.runAsync(
-    `INSERT INTO med_logs (med_id, due_at, taken_at, skipped) VALUES (?, ?, ?, ?)
-     ON CONFLICT(med_id, due_at) DO UPDATE SET taken_at = excluded.taken_at, skipped = excluded.skipped`,
-    medId, dueAt, taken ? Date.now() : null, taken ? 0 : 1,
+    `INSERT INTO med_logs (med_id, due_at, taken_at, skipped, site) VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(med_id, due_at) DO UPDATE SET taken_at = excluded.taken_at, skipped = excluded.skipped, site = excluded.site`,
+    medId, dueAt, taken ? Date.now() : null, taken ? 0 : 1, taken ? site ?? null : null,
   );
+  const wasTaken = prev?.taken_at != null;
+  if (taken && !wasTaken) await db.runAsync('UPDATE meds SET stock = MAX(stock - 1, 0) WHERE id = ? AND stock IS NOT NULL', medId);
+  if (!taken && wasTaken) await db.runAsync('UPDATE meds SET stock = stock + 1 WHERE id = ? AND stock IS NOT NULL', medId);
 }
 
 export async function undoDose(db: SQLiteDatabase, medId: number, dueAt: number) {
+  const prev = await db.getFirstAsync<MedLog>('SELECT * FROM med_logs WHERE med_id = ? AND due_at = ?', medId, dueAt);
   await db.runAsync('DELETE FROM med_logs WHERE med_id = ? AND due_at = ?', medId, dueAt);
+  if (prev?.taken_at != null) await db.runAsync('UPDATE meds SET stock = stock + 1 WHERE id = ? AND stock IS NOT NULL', medId);
+}
+
+/** Injection sites used for this med, newest first. */
+export async function recentSites(db: SQLiteDatabase, medId: number, limit = 6) {
+  const rows = await db.getAllAsync<{ site: string }>(
+    'SELECT site FROM med_logs WHERE med_id = ? AND site IS NOT NULL ORDER BY taken_at DESC LIMIT ?',
+    medId,
+    limit,
+  );
+  return rows.map((r) => r.site);
+}
+
+export async function setStock(db: SQLiteDatabase, medId: number, stock: number | null) {
+  await db.runAsync('UPDATE meds SET stock = ? WHERE id = ?', stock, medId);
+}
+
+/** Local days (YYYY-MM-DD) with at least one meal, toilet, symptom or check-in since `from`. */
+export async function loggedDays(db: SQLiteDatabase, from: number) {
+  const rows = await db.getAllAsync<{ at: number }>(
+    `SELECT eaten_at AS at FROM meals WHERE eaten_at >= ?
+     UNION ALL SELECT at FROM bowel WHERE at >= ?
+     UNION ALL SELECT at FROM symptoms WHERE at >= ?`,
+    from, from, from,
+  );
+  const days = new Set(rows.map((r) => isoDay(r.at)));
+  const daily = await db.getAllAsync<{ day: string }>('SELECT day FROM daily WHERE day >= ?', isoDay(from));
+  for (const d of daily) days.add(d.day);
+  return days;
+}
+
+// ---------- lab results and weight ----------
+export type Lab = { id: number; at: number; kind: string; value: number; note: string | null };
+
+export async function listLabs(db: SQLiteDatabase, kind?: string) {
+  return kind
+    ? db.getAllAsync<Lab>('SELECT * FROM labs WHERE kind = ? ORDER BY at DESC', kind)
+    : db.getAllAsync<Lab>('SELECT * FROM labs ORDER BY at DESC');
+}
+
+export async function labsBetween(db: SQLiteDatabase, from: number, to: number) {
+  return db.getAllAsync<Lab>('SELECT * FROM labs WHERE at >= ? AND at < ? ORDER BY at', from, to);
+}
+
+export async function addLab(db: SQLiteDatabase, l: Omit<Lab, 'id'>) {
+  await db.runAsync('INSERT INTO labs (at, kind, value, note) VALUES (?, ?, ?, ?)', l.at, l.kind, l.value, l.note);
+}
+
+export async function deleteLab(db: SQLiteDatabase, id: number) {
+  await db.runAsync('DELETE FROM labs WHERE id = ?', id);
 }
 
 // ---------- daily check-in (stress, sleep) ----------
-export type Daily = { day: string; stress: number | null; sleep_q: number | null; sleep_h: number | null; note: string | null; at: number; feel?: number | null };
+export type Daily = {
+  day: string;
+  stress: number | null;
+  sleep_q: number | null;
+  sleep_h: number | null;
+  note: string | null;
+  at: number;
+  feel?: number | null;
+  /** °C, only when the user had a fever */
+  temp?: number | null;
+  /** glasses of water/fluids */
+  water?: number | null;
+};
 
 export async function getDaily(db: SQLiteDatabase, day: string) {
   return db.getFirstAsync<Daily>('SELECT * FROM daily WHERE day = ?', day);
@@ -474,9 +574,10 @@ export async function getDaily(db: SQLiteDatabase, day: string) {
 
 export async function saveDaily(db: SQLiteDatabase, d: Omit<Daily, 'at'>) {
   await db.runAsync(
-    `INSERT INTO daily (day, stress, sleep_q, sleep_h, note, at) VALUES (?, ?, ?, ?, ?, ?)
-     ON CONFLICT(day) DO UPDATE SET stress = excluded.stress, sleep_q = excluded.sleep_q, sleep_h = excluded.sleep_h, note = excluded.note, at = excluded.at`,
-    d.day, d.stress, d.sleep_q, d.sleep_h, d.note, Date.now(),
+    `INSERT INTO daily (day, stress, sleep_q, sleep_h, note, temp, water, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(day) DO UPDATE SET stress = excluded.stress, sleep_q = excluded.sleep_q, sleep_h = excluded.sleep_h, note = excluded.note,
+       temp = excluded.temp, water = excluded.water, at = excluded.at`,
+    d.day, d.stress, d.sleep_q, d.sleep_h, d.note, d.temp ?? null, d.water ?? null, Date.now(),
   );
 }
 
@@ -494,7 +595,7 @@ export async function listDaily(db: SQLiteDatabase, limit = 400) {
 }
 
 // ---------- backup ----------
-const BACKUP_TABLES = ['meals', 'symptoms', 'bowel', 'phases', 'meds', 'med_logs', 'daily', 'settings'] as const;
+const BACKUP_TABLES = ['meals', 'symptoms', 'bowel', 'phases', 'meds', 'med_logs', 'daily', 'labs', 'settings'] as const;
 /** Settings that belong to this phone/build and are never restored. */
 const LOCAL_SETTINGS = ['ai_url', 'ai_token', 'onboarded', 'last_backup', 'install_id', 'last_auto_backup'];
 
@@ -556,7 +657,7 @@ export async function countMeals(db: SQLiteDatabase) {
 
 /** Everything in a time window, oldest first (report, insights). */
 export async function rangeData(db: SQLiteDatabase, from: number, to: number) {
-  const [meals, symptoms, bowel, phases, logs, meds, daily] = await Promise.all([
+  const [meals, symptoms, bowel, phases, logs, meds, daily, labs] = await Promise.all([
     db.getAllAsync<Meal>('SELECT * FROM meals WHERE eaten_at >= ? AND eaten_at < ? ORDER BY eaten_at', from, to),
     db.getAllAsync<SymptomLog>('SELECT * FROM symptoms WHERE at >= ? AND at < ? ORDER BY at', from, to),
     db.getAllAsync<BowelLog>('SELECT * FROM bowel WHERE at >= ? AND at < ? ORDER BY at', from, to),
@@ -564,8 +665,9 @@ export async function rangeData(db: SQLiteDatabase, from: number, to: number) {
     medLogsBetween(db, from, to),
     listMeds(db, true),
     db.getAllAsync<Daily>('SELECT * FROM daily ORDER BY day'),
+    db.getAllAsync<Lab>('SELECT * FROM labs ORDER BY at'),
   ]);
-  return { meals, symptoms, bowel, phases, logs, meds, daily };
+  return { meals, symptoms, bowel, phases, logs, meds, daily, labs };
 }
 
 /** Meals eaten in the window before a symptom (default 2–24 h), grouped into sittings. */

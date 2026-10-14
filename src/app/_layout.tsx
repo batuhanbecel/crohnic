@@ -75,6 +75,7 @@ export default function RootLayout() {
               <Stack.Screen name="ayarlar" options={{ ...pushed, title: 'Ayarlar' }} />
               <Stack.Screen name="ilaclar" options={{ ...pushed, title: 'İlaçlarım' }} />
               <Stack.Screen name="rapor" options={{ ...pushed, title: 'Doktor raporu' }} />
+              <Stack.Screen name="tahliller" options={{ ...pushed, title: 'Tahliller ve kilo' }} />
               <Stack.Screen name="ilac" options={{ ...sheet, title: 'İlaç' }} />
               <Stack.Screen name="gun" options={{ ...sheet, title: 'Gün nasıldı' }} />
               <Stack.Screen name="hosgeldin" options={{ presentation: 'fullScreenModal', headerShown: false, gestureEnabled: false }} />

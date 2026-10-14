@@ -115,7 +115,7 @@ export default function Insights() {
       {periods.length ? <PhaseHistory periods={periods} at={loadedAt} /> : null}
 
       {!enough ? (
-        <Empty emoji="🔍" title="Biraz daha kayıt lazım" text={`4 öğünün nasıl geçtiğini yazınca tetikleyicilerini göstermeye başlarım. Şu an ${rated.length} tane var.`} />
+        <Empty art={<Mascot mood="arastirma" size={100} />} title="Biraz daha kayıt lazım" text={`4 öğünün nasıl geçtiğini yazınca tetikleyicilerini göstermeye başlarım. Şu an ${rated.length} tane var.`} />
       ) : null}
 
       {triggers.length ? (
@@ -216,7 +216,7 @@ export default function Insights() {
           </Card>
         </>
       ) : daily.length ? null : (
-        <Empty emoji="🌙" title="Stres ve uyku" text="Akşamları “Bugün nasıldı” kaydını doldurursan, stres ve uykunun şikayetlerinle ilişkisini burada gösteririm." />
+        <Empty art={<Mascot mood="uyku" size={100} />} title="Stres ve uyku" text="Akşamları “Bugün nasıldı” kaydını doldurursan, stres ve uykunun şikayetlerinle ilişkisini burada gösteririm." />
       )}
 
       {foods.bad.length || foods.good.length ? (

@@ -532,10 +532,11 @@ export function SectionTitle({ title, action, onAction }: { title: string; actio
   );
 }
 
-export function Empty({ emoji, title, text }: { emoji: string; title: string; text?: string }) {
+/** Empty state; `art` is usually a Kıvırcık pose (passed in to keep ui.tsx free of Mascot). */
+export function Empty({ art, title, text }: { art: React.ReactNode; title: string; text?: string }) {
   return (
-    <Card style={{ alignItems: 'center', paddingVertical: 28, gap: 6 }}>
-      <Text style={{ fontSize: 38 }}>{emoji}</Text>
+    <Card style={{ alignItems: 'center', paddingVertical: 24, gap: 6 }}>
+      {art}
       <T v="h3">{title}</T>
       {text ? (
         <T v="small" color={palette.inkSoft} style={{ textAlign: 'center' }}>

@@ -82,3 +82,18 @@ export function scheduleLabel(med: Pick<Med, 'kind' | 'times' | 'every_days'>) {
 }
 
 export { isoDay };
+
+/** Subcutaneous injection sites, in the order people usually rotate through them. */
+export const INJECTION_SITES = ['Karın sol', 'Karın sağ', 'Sol uyluk', 'Sağ uyluk', 'Sol kol', 'Sağ kol'];
+
+/** Suggest the site used longest ago (never-used sites first), so the same spot isn't hit twice in a row. */
+export function nextSite(recent: string[]) {
+  const unused = INJECTION_SITES.find((s) => !recent.includes(s));
+  if (unused) return unused;
+  return [...INJECTION_SITES].sort((a, b) => recent.indexOf(b) - recent.indexOf(a))[0];
+}
+
+/** Low on doses at home? */
+export function lowStock(med: Pick<Med, 'stock' | 'stock_alert'>) {
+  return med.stock != null && med.stock <= (med.stock_alert ?? 2);
+}

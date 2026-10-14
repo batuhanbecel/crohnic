@@ -1,4 +1,5 @@
-import type { Daily, Med, MedLog, Meal, BowelLog, SymptomLog } from './db';
+import type { Daily, Lab, Med, MedLog, Meal, BowelLog, SymptomLog } from './db';
+import { LAB_KINDS, fmtLab } from './labs';
 import { dateLabel, isoDay, startOfDay } from './dates';
 import { TAGS, type Phase } from './foods';
 import { lifestyleEffects, suspectFoods } from './insights';
@@ -16,6 +17,8 @@ export type ReportInput = {
   meds: Med[];
   logs: MedLog[];
   daily: Daily[];
+  /** all lab results (the report shows the window plus the value before it, for context) */
+  labs?: Lab[];
 };
 
 const DAY = 86400000;
@@ -73,6 +76,32 @@ export function summarize(r: ReportInput) {
     adh,
     currentPhase: phaseAt(r.phases, r.to),
   };
+}
+
+/** Lab results and weight: last value in the window, change from the one before, every value in the window. */
+function labsHtml(r: ReportInput) {
+  const labs = r.labs ?? [];
+  const rows = LAB_KINDS.map((k) => {
+    const all = labs.filter((l) => l.kind === k.key).sort((a, b) => a.at - b.at);
+    const inside = all.filter((l) => l.at >= r.from && l.at < r.to);
+    if (!inside.length) return '';
+    const last = inside[inside.length - 1];
+    const before = all.filter((l) => l.at < last.at).pop();
+    const change = before ? `${last.value >= before.value ? '+' : '−'}${fmtLab(k.key, Math.abs(last.value - before.value))} <span class="soft">(${short(before.at)}'e göre)</span>` : '<span class="soft">–</span>';
+    const series = inside.map((l) => `${short(l.at)}: ${fmtLab(k.key, l.value)}`).join(' · ');
+    return `<tr><td>${esc(k.label)}</td><td class="num"><b>${fmtLab(k.key, last.value)}</b> <span class="soft">${short(last.at)}</span></td><td>${change}</td><td class="soft">${series}</td></tr>`;
+  }).join('');
+  const days = r.daily.filter((d) => d.day >= isoDay(r.from) && d.day < isoDay(r.to));
+  const fevers = days.filter((d) => d.temp != null);
+  const water = days.map((d) => d.water).filter((x): x is number => x != null);
+  const extra = [
+    fevers.length ? `Ateş kaydedilen gün: ${fevers.length} (en yüksek ${fmt1(Math.max(...fevers.map((d) => d.temp!)))} °C)` : '',
+    water.length ? `Günlük ortalama sıvı: ${fmt1(water.reduce((a, b) => a + b, 0) / water.length)} bardak (${water.length} gün)` : '',
+  ].filter(Boolean);
+  if (!rows && !extra.length) return '';
+  return `<h2>Tahliller, kilo ve genel durum</h2>
+  ${rows ? `<table class="avoid"><tr><th>Ölçüm</th><th class="num">Son değer</th><th>Değişim</th><th>Dönem içindeki değerler</th></tr>${rows}</table>` : ''}
+  ${extra.length ? `<p class="soft" style="margin-top:6px">${extra.join('. ')}.</p>` : ''}`;
 }
 
 export function reportHtml(r: ReportInput) {
@@ -266,6 +295,8 @@ export function reportHtml(r: ReportInput) {
       <p class="soft" style="margin:6px 0 0">${r.symptoms.length} semptom kaydı.${stressVals.length ? ` Ortalama stres: ${STRESS[Math.round(stressVals.reduce((a, b) => a + b, 0) / stressVals.length)]}.` : ''}${sleepH.length ? ` Ortalama uyku: ${fmt1(sleepH.reduce((a, b) => a + b, 0) / sleepH.length)} saat.` : ''}</p>
     </div>
   </div>
+
+  ${labsHtml(r)}
 
   <h2>İlaçlar</h2>
   <table class="avoid">

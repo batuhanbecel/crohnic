@@ -39,6 +39,8 @@ export default function MedEdit() {
   const [customEvery, setCustomEvery] = useState('');
   const [anchor, setAnchor] = useState(() => now());
   const [remind, setRemind] = useState(true);
+  const [injection, setInjection] = useState(false);
+  const [stock, setStock] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -56,6 +58,8 @@ export default function MedEdit() {
       }
       setAnchor(fromIsoDay(m.start_day));
       setRemind(!!m.remind);
+      setInjection(!!m.injection);
+      setStock(m.stock != null ? String(m.stock) : '');
     });
   }, [sql, editing]);
 
@@ -78,6 +82,9 @@ export default function MedEdit() {
         every_days: kind === 'daily' ? 1 : everyDays,
         start_day: kind === 'daily' && !editing ? isoDay(now()) : isoDay(anchor),
         remind: remind ? 1 : 0,
+        injection: injection ? 1 : 0,
+        stock: stock.trim() ? parseInt(stock, 10) : null,
+        stock_alert: kind === 'daily' ? Math.max(2, Math.min(7, parseTimes(times.map(fmtTime).join(',')).length * 3)) : 1,
       });
       if (remind && (await permission()) === 'undetermined') await askPermission();
       app.bump();
@@ -212,6 +219,36 @@ export default function MedEdit() {
             ) : null}
           </View>
         )}
+      </Card>
+
+      <Card style={{ gap: 14 }}>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <View style={{ flex: 1 }}>
+            <T v="callout">İğne ile yapılıyor</T>
+            <T v="small" color={palette.inkSoft}>
+              Aldım dediğinde nereye yaptığını sorar, sıradaki yeri önerir
+            </T>
+          </View>
+          <Switch value={injection} onValueChange={setInjection} trackColor={{ true: palette.lettuce }} accessibilityLabel="İğne ile yapılıyor" />
+        </Row>
+        <View style={{ height: 1, backgroundColor: palette.hairline }} />
+        <Row style={{ justifyContent: 'space-between' }} gap={12}>
+          <View style={{ flex: 1 }}>
+            <T v="callout">Evde kaç doz var</T>
+            <T v="small" color={palette.inkSoft}>
+              Her “Aldım”da bir azalır, bitmeye yakın uyarırım. Boş bırakırsan saymam.
+            </T>
+          </View>
+          <TextInput
+            value={stock}
+            onChangeText={(t) => setStock(t.replace(/[^0-9]/g, ''))}
+            placeholder="–"
+            placeholderTextColor={palette.inkFaint}
+            keyboardType="number-pad"
+            accessibilityLabel="Evdeki doz sayısı"
+            style={[st.input, { width: 80, textAlign: 'center' }]}
+          />
+        </Row>
       </Card>
 
       <Card>

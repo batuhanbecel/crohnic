@@ -6,6 +6,7 @@ import Reanimated, { FadeIn, FadeOut, LinearTransition } from 'react-native-rean
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AddMenu } from '../../components/AddMenu';
 import { BRISTOL, bristolTone } from '../../components/bristol';
+import { Mascot } from '../../components/Mascot';
 import { GroupThumb } from '../../components/MealRow';
 import { MonthCalendar } from '../../components/MonthCalendar';
 import { REACTIONS } from '../../components/ReactionPicker';
@@ -251,7 +252,7 @@ export default function Journal() {
 
         {days.length === 0 ? (
           q.trim() ? (
-            <Empty emoji="🔍" title="Bulunamadı" text={`“${q.trim()}” geçen bir kayıt yok.`} />
+            <Empty art={<Mascot mood="arastirma" size={96} />} title="Bulunamadı" text={`“${q.trim()}” geçen bir kayıt yok.`} />
           ) : mode === 'calendar' ? (
             <Card style={{ alignItems: 'center', paddingVertical: 20 }}>
               <T v="small" color={palette.inkSoft}>
@@ -259,7 +260,7 @@ export default function Journal() {
               </T>
             </Card>
           ) : (
-            <Empty emoji="📖" title="Henüz kayıt yok" text="Yediklerini, nasıl hissettiğini ve tuvalet kayıtlarını yazdıkça burada birikir." />
+            <Empty art={<Mascot mood="kayit" size={110} />} title="Henüz kayıt yok" text="Yediklerini, nasıl hissettiğini ve tuvalet kayıtlarını yazdıkça burada birikir." />
           )
         ) : (
           days.map((list) => (

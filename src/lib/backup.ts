@@ -45,12 +45,12 @@ export async function applyBackup(sql: SQLiteDatabase, data: Record<string, unkn
 }
 
 /**
- * Weekly automatic copy inside the app's Documents folder (last 4 kept). Documents is part of
+ * Daily automatic copy inside the app's Documents folder (last 7 kept). Documents is part of
  * the iPhone's iCloud Backup, together with the database and meal photos, so this is a second
  * line of defence: it lets the user roll back if something goes wrong on the phone itself.
  */
 const SNAP_DIR = 'Yedekler';
-const SNAP_KEEP = 4;
+const SNAP_KEEP = 7;
 
 function snapDir() {
   const dir = new Directory(Paths.document, SNAP_DIR);
@@ -61,7 +61,7 @@ function snapDir() {
 export async function autoSnapshot(sql: SQLiteDatabase) {
   try {
     const last = Number((await db.getSetting(sql, 'last_auto_backup')) ?? 0);
-    if (Date.now() - last < 7 * 86400000) return;
+    if (Date.now() - last < 20 * 3600000) return;
     if ((await db.countMeals(sql)) === 0) return;
     const data = await db.exportAll(sql);
     const dir = snapDir();
@@ -93,6 +93,11 @@ export async function latestSnapshot() {
   } catch {
     return null;
   }
+}
+
+export async function lastAutoBackup(sql: SQLiteDatabase) {
+  const v = await db.getSetting(sql, 'last_auto_backup');
+  return v ? Number(v) : null;
 }
 
 export async function lastBackup(sql: SQLiteDatabase) {
