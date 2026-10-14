@@ -53,7 +53,8 @@ export default function Ask() {
         title="Tabağı çek"
         sub="Önündeki yemeğin fotoğrafından ne olduğunu ve sana uyup uymadığını söylerim."
         icon="fork.knife"
-        color={palette.lettuceDeep}
+        color={palette.lettuce}
+        primary
         onCamera={() => fromPhoto('meal', 'camera')}
         onLibrary={() => fromPhoto('meal', 'library')}
       />
@@ -95,6 +96,7 @@ function PhotoCard({
   sub,
   icon,
   color,
+  primary,
   onCamera,
   onLibrary,
 }: {
@@ -102,6 +104,7 @@ function PhotoCard({
   sub: string;
   icon: SymbolName;
   color: string;
+  primary?: boolean;
   onCamera: () => void;
   onLibrary: () => void;
 }) {
@@ -117,7 +120,7 @@ function PhotoCard({
         </View>
       </Row>
       <Row gap={8}>
-        <Button title="Çek" icon="camera.fill" color={color} onPress={onCamera} style={{ flex: 1 }} />
+        <Button title="Çek" icon="camera.fill" kind={primary ? 'primary' : 'glass'} onPress={onCamera} style={{ flex: 1 }} />
         <Button title="Galeriden" kind="glass" icon="photo.on.rectangle" onPress={onLibrary} style={{ flex: 1 }} />
       </Row>
     </Card>

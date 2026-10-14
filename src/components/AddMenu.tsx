@@ -12,7 +12,7 @@ const ITEMS: Item[] = [
   { title: 'Tuvalet', sub: 'Saat, kıvam, kan', icon: 'drop.fill', fallback: '💧', color: palette.sky, to: '/tuvalet' },
   { title: 'Semptom', sub: 'Ağrı, şişkinlik, gaz, yorgunluk', icon: 'waveform.path.ecg', fallback: '🌡️', color: palette.apricot, to: '/semptom' },
   { title: 'İlaç', sub: 'Aldığın dozu işaretle', icon: 'pills.fill', fallback: '💊', color: palette.peri, to: '/ilaclar' },
-  { title: 'Gün nasıldı', sub: 'Stres ve uyku', icon: 'moon.stars.fill', fallback: '🌙', color: palette.flare, to: '/gun' },
+  { title: 'Gün nasıldı', sub: 'Stres ve uyku', icon: 'moon.stars.fill', fallback: '🌙', color: palette.plum, to: '/gun' },
 ];
 
 const SHEET_H = 520;

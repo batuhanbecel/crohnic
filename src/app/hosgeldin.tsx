@@ -16,7 +16,7 @@ import { palette, type } from '../lib/theme';
 const POINTS: { icon: SymbolName; color: string; title: string; text: string }[] = [
   { icon: 'fork.knife', color: palette.lettuce, title: 'Ne yedin, nasıl geçti', text: 'Öğünlerini ve sonrasını yaz. Tuvalet ve semptomlar da tek dokunuş.' },
   { icon: 'camera.fill', color: palette.peri, title: 'Yemeden önce sor', text: 'Tabağın ya da menünün fotoğrafını çek, sana iyi gelir mi söyleyeyim.' },
-  { icon: 'chart.bar.fill', color: palette.flare, title: 'Neyin dokunduğunu bul', text: 'Kayıtlar biriktikçe tetikleyicilerini çıkarırım, doktoruna rapor hazırlarım.' },
+  { icon: 'chart.bar.fill', color: palette.sky, title: 'Neyin dokunduğunu bul', text: 'Kayıtlar biriktikçe tetikleyicilerini çıkarırım, doktoruna rapor hazırlarım.' },
 ];
 
 const STEPS = 3;
@@ -149,7 +149,7 @@ export default function Welcome() {
             {[
               { icon: 'fork.knife' as SymbolName, c: palette.lettuce, t: 'Yedikten 3 saat sonra “nasıl geçti?”' },
               { icon: 'pills.fill' as SymbolName, c: palette.peri, t: 'İlaç saatinde, eklediğin ilaçlar için' },
-              { icon: 'moon.stars.fill' as SymbolName, c: palette.flare, t: 'Akşam 21:30’da stres ve uyku' },
+              { icon: 'moon.stars.fill' as SymbolName, c: palette.plum, t: 'Akşam 21:30’da stres ve uyku' },
             ].map((x) => (
               <Row key={x.t} gap={12}>
                 <IconBubble name={x.icon} color={x.c} dim={32} />
@@ -162,7 +162,7 @@ export default function Welcome() {
               Gece 23 ile sabah 8 arası rahatsız etmem. Hepsini Ayarlar’dan kapatabilirsin.
             </T>
           </Card>
-          <Button title="Bildirimlere izin ver" icon="bell.fill" color={palette.peri} onPress={() => finish(true)} loading={busy} />
+          <Button title="Bildirimlere izin ver" icon="bell.fill" onPress={() => finish(true)} loading={busy} />
           <Button title="Şimdilik geç" kind="plain" compact onPress={() => finish(false)} disabled={busy} />
         </>
       )}

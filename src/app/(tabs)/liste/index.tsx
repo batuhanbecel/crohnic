@@ -104,7 +104,7 @@ export default function FoodList() {
         <T v="small" color={palette.inkSoft}>
           Adını Kıvırcık’a sor, {app.phase === 'atak' ? 'atak' : 'remisyon'} dönemine ve kayıtlarına göre değerlendireyim.
         </T>
-        <Button title={`“${query}” için sor`} icon="sparkles" color={palette.peri} onPress={() => byName(query, null)} />
+        <Button title={`“${query}” için sor`} icon="sparkles" onPress={() => byName(query, null)} />
       </Card>
     ) : empty ? (
       <Card style={{ alignItems: 'center', gap: 4, paddingVertical: 24 }}>

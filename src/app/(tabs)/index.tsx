@@ -185,14 +185,14 @@ export default function Home() {
             {d.due < dayStart ? 'Kaçırılmış doz' : `${timeLabel(d.due)}${d.med.dose ? `, ${d.med.dose}` : ''}`}
           </T>
         </View>
-        <Button title="Aldım" compact color={palette.peri} onPress={() => take(d)} />
+        <Button title="Aldım" compact onPress={() => take(d)} />
       </Row>
     )),
     ...(askCheckIn
       ? [
           <Tap key="checkin" onPress={() => router.push('/gun')}>
             <Row gap={12} style={{ paddingVertical: 12 }}>
-              <IconBubble name="moon.stars.fill" color={palette.flare} dim={40} fallback="🌙" />
+              <IconBubble name="moon.stars.fill" color={palette.plum} dim={40} fallback="🌙" />
               <View style={{ flex: 1 }}>
                 <T v="h3">Bugün nasıldı?</T>
                 <T v="small" color={palette.inkSoft}>
@@ -214,7 +214,7 @@ export default function Home() {
                 Öğün sonrası, ilaç ve akşam soruları
               </T>
             </View>
-            <Button title="Aç" compact color={palette.sky} onPress={enableNotifs} />
+            <Button title="Aç" compact onPress={enableNotifs} />
           </Row>,
         ]
       : []),
@@ -273,7 +273,7 @@ export default function Home() {
             at: daily.at,
             icon: 'moon.stars.fill' as SymbolName,
             fallback: '🌙',
-            color: palette.flare,
+            color: palette.plum,
             title: 'Gün nasıldı',
             sub: [
               daily.stress != null ? `stres: ${STRESS[daily.stress]?.label.toLocaleLowerCase('tr')}` : null,
@@ -329,7 +329,7 @@ export default function Home() {
         </Tap>
       </Card>
 
-      <Button title="Kayıt ekle" icon="plus" color={flare ? palette.flareStrong : undefined} onPress={() => setAdding(true)} />
+      <Button title="Kayıt ekle" icon="plus" onPress={() => setAdding(true)} />
       <AddMenu visible={adding} onClose={() => setAdding(false)} />
 
       {redFlag ? (

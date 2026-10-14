@@ -91,7 +91,7 @@ export function Doses({ showEmpty, title = 'İlaçlar', link = true }: { showEmp
             ) : (
               <Row gap={6}>
                 <Button title="Atla" kind="glass" compact onPress={() => mark(d, false)} />
-                <Button title="Aldım" compact color={palette.peri} onPress={() => mark(d, true)} />
+                <Button title="Aldım" compact onPress={() => mark(d, true)} />
               </Row>
             )}
           </Row>
