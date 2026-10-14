@@ -1,122 +1,91 @@
 {
-  "fill-specializations": [
+  "fill-specializations" : [
     {
-      "value": {
-        "linear-gradient": [
-          "srgb:1.00000,0.96078,0.90196,1.00000",
-          "srgb:1.00000,0.84314,0.69020,1.00000"
-        ],
-        "orientation": {
-          "start": {
-            "x": 0.5,
-            "y": 0
-          },
-          "stop": {
-            "x": 0.5,
-            "y": 0.7
-          }
-        }
+      "value" : {
+        "linear-gradient" : [
+          "display-p3:0.16833,0.34863,0.21143,1.00000",
+          "display-p3:0.40210,0.67529,0.35547,1.00000"
+        ]
       }
     },
     {
-      "appearance": "dark",
-      "value": {
-        "linear-gradient": [
-          "srgb:0.11765,0.20000,0.14902,1.00000",
-          "srgb:0.05490,0.09412,0.07059,1.00000"
-        ],
-        "orientation": {
-          "start": {
-            "x": 0.5,
-            "y": 0
-          },
-          "stop": {
-            "x": 0.5,
-            "y": 0.7
+      "appearance" : "dark",
+      "value" : "automatic"
+    }
+  ],
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "image-name" : "Kivircik_01_Merhaba.png",
+          "name" : "Kivircik_01_Merhaba",
+          "position" : {
+            "scale" : 1.25,
+            "translation-in-points" : [
+              -209,
+              119
+            ]
           }
         }
+      ],
+      "name" : "Yüz",
+      "shadow" : {
+        "kind" : "none",
+        "opacity" : 0.5
+      },
+      "specular" : false,
+      "translucency" : {
+        "enabled" : false,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+
+      ],
+      "name" : "Yüz zemini",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.35
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.15
+      }
+    },
+    {
+      "layers" : [
+
+      ],
+      "name" : "İç yapraklar",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.4
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.3
+      }
+    },
+    {
+      "layers" : [
+
+      ],
+      "name" : "Dış yapraklar",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.4
       }
     }
   ],
-  "groups": [
-    {
-      "name": "Y\u00fcz",
-      "layers": [
-        {
-          "image-name": "features.svg",
-          "name": "features",
-          "glass": false
-        }
-      ],
-      "shadow": {
-        "kind": "none",
-        "opacity": 0.5
-      },
-      "specular": false,
-      "translucency": {
-        "enabled": false,
-        "value": 0.5
-      }
-    },
-    {
-      "name": "Y\u00fcz zemini",
-      "layers": [
-        {
-          "image-name": "face.svg",
-          "name": "face",
-          "glass": true
-        }
-      ],
-      "shadow": {
-        "kind": "neutral",
-        "opacity": 0.35
-      },
-      "specular": true,
-      "translucency": {
-        "enabled": true,
-        "value": 0.15
-      }
-    },
-    {
-      "name": "\u0130\u00e7 yapraklar",
-      "layers": [
-        {
-          "image-name": "mid.svg",
-          "name": "mid",
-          "glass": true
-        }
-      ],
-      "shadow": {
-        "kind": "neutral",
-        "opacity": 0.4
-      },
-      "specular": true,
-      "translucency": {
-        "enabled": true,
-        "value": 0.3
-      }
-    },
-    {
-      "name": "D\u0131\u015f yapraklar",
-      "layers": [
-        {
-          "image-name": "back.svg",
-          "name": "back",
-          "glass": true
-        }
-      ],
-      "shadow": {
-        "kind": "neutral",
-        "opacity": 0.5
-      },
-      "specular": true,
-      "translucency": {
-        "enabled": true,
-        "value": 0.4
-      }
-    }
-  ],
-  "supported-platforms": {
-    "squares": "shared"
+  "supported-platforms" : {
+    "squares" : "shared"
   }
 }

@@ -37,7 +37,7 @@ export default function Ask() {
           </T>
           <T v="large">Bunu yesem mi?</T>
         </View>
-        <Mascot mood="happy" size={72} />
+        <Mascot mood="soru" size={80} />
       </Row>
 
       {!hasAi ? (

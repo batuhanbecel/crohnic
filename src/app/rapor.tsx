@@ -59,7 +59,7 @@ export default function Report() {
   return (
     <Screen header={false}>
       <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
-        <Mascot mood="happy" size={80} />
+        <Mascot mood="rapor" size={88} />
         <T v="callout" style={{ flex: 1 }}>
           Kontrole hazır git. Tek sayfalık özetini PDF olarak hazırlarım, mail, WhatsApp ya da yazıcıyla paylaşırsın.
         </T>

@@ -13,7 +13,7 @@ import { savePhoto } from '../lib/photos';
 import { palette, radius, surface, type } from '../lib/theme';
 import { statsByName, type PersonalStat } from '../lib/tolerance';
 
-const MOOD: Record<Verdict, Mood> = { iyi: 'cheer', dikkat: 'ok', riskli: 'worried' };
+const MOOD: Record<Verdict, Mood> = { iyi: 'catalla', dikkat: 'dusunuyor', riskli: 'agri' };
 
 export default function Result() {
   const app = useApp();

@@ -1,21 +1,45 @@
-import { useEffect, useId, useMemo, useState } from 'react';
-import { Animated, Easing, View, type ViewStyle } from 'react-native';
-import Svg, { Path, SvgXml } from 'react-native-svg';
-import { mascotSvg, type Mood } from '../lib/mascot-svg';
+import { useEffect, useState } from 'react';
+import { Animated, Easing, Image, View, type ImageSourcePropType, type ViewStyle } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { isDark } from '../lib/theme';
 import { Text } from './text';
 import { prefersReducedMotion } from './ui';
 
-export type { Mood } from '../lib/mascot-svg';
-export { MASCOT_COLORS } from '../lib/mascot-svg';
+/** Kıvırcık's poses from the brand pack (Crohnic_Marka_Paketi/Kivircik_Maskot). */
+const POSES = {
+  merhaba: require('../../assets/kivircik/merhaba.webp'),
+  mutlu: require('../../assets/kivircik/mutlu.webp'),
+  sevgi: require('../../assets/kivircik/sevgi.webp'),
+  yemek: require('../../assets/kivircik/yemek.webp'),
+  kayit: require('../../assets/kivircik/kayit.webp'),
+  soru: require('../../assets/kivircik/soru.webp'),
+  doktor: require('../../assets/kivircik/doktor.webp'),
+  catalla: require('../../assets/kivircik/catalla.webp'),
+  dusunuyor: require('../../assets/kivircik/dusunuyor.webp'),
+  agri: require('../../assets/kivircik/agri.webp'),
+  uyku: require('../../assets/kivircik/uyku.webp'),
+  kutlama: require('../../assets/kivircik/kutlama.webp'),
+  fikir: require('../../assets/kivircik/fikir.webp'),
+  arastirma: require('../../assets/kivircik/arastirma.webp'),
+  su: require('../../assets/kivircik/su.webp'),
+  sakin: require('../../assets/kivircik/sakin.webp'),
+  gezgin: require('../../assets/kivircik/gezgin.webp'),
+  rapor: require('../../assets/kivircik/rapor.webp'),
+} satisfies Record<string, ImageSourcePropType>;
+
+export type Pose = keyof typeof POSES;
+/** General moods kept for screens that pick by feeling rather than by scene. */
+type Feeling = 'happy' | 'ok' | 'worried' | 'cheer' | 'sleepy';
+export type Mood = Pose | Feeling;
+
+const FEELING: Record<Feeling, Pose> = { happy: 'mutlu', ok: 'sakin', worried: 'dusunuyor', cheer: 'kutlama', sleepy: 'uyku' };
 
 type Props = { mood?: Mood; size?: number; animate?: boolean; style?: ViewStyle };
 
-/** Kıvırcık, the curly-lettuce mascot from the brand sheet. Colours are fixed in both themes. */
+/** Kıvırcık, the curly-lettuce mascot. The artwork is fixed, so it reads the same in both themes. */
 export function Mascot({ mood = 'happy', size = 120, animate = true, style }: Props) {
   const [bob] = useState(() => new Animated.Value(0));
-  const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
-  const xml = useMemo(() => mascotSvg(mood, `k${uid}`), [mood, uid]);
+  const pose = (FEELING as Record<string, Pose>)[mood] ?? (mood as Pose);
 
   useEffect(() => {
     if (!animate || prefersReducedMotion()) return;
@@ -35,7 +59,7 @@ export function Mascot({ mood = 'happy', size = 120, animate = true, style }: Pr
   return (
     <View style={[{ width: size, height: size }, style]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       <Animated.View style={{ transform: [{ translateY }, { rotate }] }}>
-        <SvgXml xml={xml} width={size} height={size} />
+        <Image source={POSES[pose]} style={{ width: size, height: size }} resizeMode="contain" fadeDuration={0} />
       </Animated.View>
     </View>
   );

@@ -29,11 +29,11 @@ const TIPS = [
 
 /** One-tap daily check-in (stored in daily.feel, 0 … 4). */
 const FEELS: { emoji: string; label: string; mood: Mood; line: string }[] = [
-  { emoji: '😣', label: 'Kötü', mood: 'worried', line: 'Zor bir gün. Az ve hafif ye, bol sıvı al. Ağrın varsa semptom olarak yaz.' },
+  { emoji: '😣', label: 'Kötü', mood: 'agri', line: 'Zor bir gün. Az ve hafif ye, bol sıvı al. Ağrın varsa semptom olarak yaz.' },
   { emoji: '😕', label: 'Zor', mood: 'worried', line: 'Bugün denenmiş, sana iyi gelen yemeklerle git. Yenilerini başka güne bırak.' },
   { emoji: '😐', label: 'İdare', mood: 'ok', line: 'İdare eder. Ne yediğini yazmaya devam, örüntüyü birlikte görürüz.' },
-  { emoji: '🙂', label: 'İyi', mood: 'happy', line: 'Güzel. İyi giden günler de karşılaştırma için çok değerli.' },
-  { emoji: '😄', label: 'Harika', mood: 'cheer', line: 'Harika bir gün. Neyin iyi geldiğini yazarsan tekrarlaması kolaylaşır.' },
+  { emoji: '🙂', label: 'İyi', mood: 'sevgi', line: 'Güzel. İyi giden günler de karşılaştırma için çok değerli.' },
+  { emoji: '😄', label: 'Harika', mood: 'kutlama', line: 'Harika bir gün. Neyin iyi geldiğini yazarsan tekrarlaması kolaylaşır.' },
 ];
 
 type Entry = {
@@ -111,10 +111,10 @@ export default function Home() {
     const hour = new Date(loadedAt || 0).getHours();
     if (redFlag) return { mood: 'worried', line: 'Son günlerin zor geçmiş görünüyor. Aşağıdaki notu oku, doktorunla paylaşmanı isterim.' };
     if (daily?.feel != null && FEELS[daily.feel]) return { mood: FEELS[daily.feel].mood, line: FEELS[daily.feel].line };
-    if (meals.some((m) => m.reaction === 2)) return { mood: 'worried', line: 'Bugün bir şey dokunmuş. Akşamı hafif geçir: çorba, pilav, haşlama.' };
+    if (meals.some((m) => m.reaction === 2)) return { mood: 'agri', line: 'Bugün bir şey dokunmuş. Akşamı hafif geçir: çorba, pilav, haşlama.' };
     if (app.phase === 'atak') return { mood: 'ok', line: 'Atak dönemindesin. Bu günlerde püre, haşlama ve az yağlı yemekleri öne çıkarıyorum.' };
     if (meals.length >= 2 && meals.every((m) => m.reaction === 0)) return { mood: 'cheer', line: 'Bugün yediklerin iyi gelmiş görünüyor.' };
-    if (!meals.length && hour < 11) return { mood: 'sleepy', line: 'Günaydın. Kahvaltıda ne var?' };
+    if (!meals.length && hour < 11) return { mood: 'merhaba', line: 'Günaydın. Kahvaltıda ne var?' };
     return { mood: 'happy', line: TIPS[new Date(loadedAt || 0).getDate() % TIPS.length] };
   }, [meals, app.phase, loadedAt, redFlag, daily]);
 

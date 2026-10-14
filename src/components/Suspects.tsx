@@ -44,7 +44,7 @@ export function Suspects({ at, onDone }: { at: number; onDone: () => void }) {
   return (
     <View style={{ gap: 12 }}>
       <Row gap={4}>
-        <Mascot mood="worried" size={72} />
+        <Mascot mood="fikir" size={76} />
         <View style={{ flex: 1, gap: 2 }}>
           <T v="h3">Şüpheliler</T>
           <T v="small" color={palette.inkSoft}>

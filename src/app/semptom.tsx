@@ -58,7 +58,7 @@ export default function Symptom() {
     ]);
 
   const total = v.pain + v.bloating + v.gas + v.fatigue;
-  const mood = total === 0 ? 'cheer' : v.pain >= 4 || total >= 12 ? 'worried' : total >= 6 ? 'ok' : 'happy';
+  const mood = total === 0 ? 'cheer' : v.pain >= 4 || total >= 12 ? 'agri' : total >= 6 ? 'ok' : 'happy';
 
   const save = async () => {
     setSaving(true);

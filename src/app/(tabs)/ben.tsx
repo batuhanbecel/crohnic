@@ -101,7 +101,7 @@ export default function Insights() {
       </Row>
 
       <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
-        <Mascot mood={enough ? 'happy' : 'sleepy'} size={84} />
+        <Mascot mood={enough ? 'arastirma' : 'dusunuyor'} size={88} />
         <View style={{ flex: 1, gap: 4 }}>
           <T v="caption" color={palette.inkSoft}>
             Son 30 gün

@@ -64,7 +64,7 @@ export default function Welcome() {
     }
   };
 
-  const mood: Mood = step === 0 ? 'cheer' : step === 1 ? 'happy' : 'ok';
+  const mood: Mood = step === 0 ? 'merhaba' : step === 1 ? 'mutlu' : 'kayit';
 
   return (
     <Screen tone={phase === 'atak' && step === 1 ? 'flare' : 'calm'} contentStyle={{ paddingTop: 24, gap: 16 }}>

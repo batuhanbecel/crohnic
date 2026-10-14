@@ -25,7 +25,7 @@ export function ThinkingOverlay({ mode }: { mode: Mode | null }) {
     <Modal visible={!!mode} transparent animationType="fade">
       <BlurView intensity={60} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 30, backgroundColor: surface.scrim }}>
-        <Mascot mood="ok" size={140} />
+        <Mascot mood="arastirma" size={150} />
         <T v="h2" style={{ textAlign: 'center' }}>
           {lines[i % lines.length]}…
         </T>

@@ -55,7 +55,7 @@ export default function FoodDetail() {
     setTimeout(() => Alert.alert('Kaydedildi', 'Birkaç saat sonra nasıl geçtiğini soracağım.'), 350);
   };
 
-  const mood = a.verdict === 'iyi' ? 'cheer' : a.verdict === 'dikkat' ? 'ok' : 'worried';
+  const mood = a.verdict === 'iyi' ? 'catalla' : a.verdict === 'dikkat' ? 'dusunuyor' : 'agri';
   const line =
     a.confidence === 'kişisel'
       ? a.verdict === 'iyi'
