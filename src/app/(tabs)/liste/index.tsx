@@ -3,6 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { TabSwipe } from '../../../components/TabSwipe';
 import { ThinkingOverlay } from '../../../components/ThinkingOverlay';
 import { Text } from '../../../components/text';
 import { Backdrop, Button, Card, Chip, Icon, Row, T, Tap, VERDICT_UI } from '../../../components/ui';
@@ -113,6 +114,7 @@ export default function FoodList() {
     ) : null;
 
   return (
+    <TabSwipe>
     <View style={{ flex: 1, backgroundColor: palette.paper }}>
       <Backdrop tone={app.phase === 'atak' ? 'flare' : 'calm'} />
       <ThinkingOverlay mode={busy} />
@@ -166,5 +168,6 @@ export default function FoodList() {
         }}
       />
     </View>
+    </TabSwipe>
   );
 }

@@ -167,7 +167,8 @@ export async function syncReminders(sql: SQLiteDatabase) {
         const d = new Date(startOfDay(now) + i * DAY + 3600000); // +1h guards DST
         const at = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, min).getTime();
         if (at <= now) continue;
-        if (await db.getDaily(sql, isoDay(at))) continue;
+        const done = await db.getDaily(sql, isoDay(at));
+        if (done && (done.stress != null || done.sleep_q != null || done.sleep_h != null)) continue; // a feel-only row isn't a check-in
         await schedule(`daily-${isoDay(at)}`, 'Bugün nasıldı?', 'Stres ve uykunu 10 saniyede yaz, örüntülerde işe yarıyor.', at, '/gun');
       }
     }

@@ -37,7 +37,7 @@ export type BowelLog = {
   note: string | null;
 };
 
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 export async function migrate(db: SQLiteDatabase) {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
@@ -142,6 +142,12 @@ export async function migrate(db: SQLiteDatabase) {
       );
     `);
     v = 4;
+  }
+
+  if (v === 4) {
+    // one-tap "how do you feel today" on the home screen (0 bad … 4 great)
+    await db.execAsync(`ALTER TABLE daily ADD COLUMN feel INTEGER;`);
+    v = 5;
   }
 
   await db.execAsync(`PRAGMA user_version = ${DB_VERSION}`);
@@ -441,7 +447,7 @@ export async function undoDose(db: SQLiteDatabase, medId: number, dueAt: number)
 }
 
 // ---------- daily check-in (stress, sleep) ----------
-export type Daily = { day: string; stress: number | null; sleep_q: number | null; sleep_h: number | null; note: string | null; at: number };
+export type Daily = { day: string; stress: number | null; sleep_q: number | null; sleep_h: number | null; note: string | null; at: number; feel?: number | null };
 
 export async function getDaily(db: SQLiteDatabase, day: string) {
   return db.getFirstAsync<Daily>('SELECT * FROM daily WHERE day = ?', day);
@@ -452,6 +458,15 @@ export async function saveDaily(db: SQLiteDatabase, d: Omit<Daily, 'at'>) {
     `INSERT INTO daily (day, stress, sleep_q, sleep_h, note, at) VALUES (?, ?, ?, ?, ?, ?)
      ON CONFLICT(day) DO UPDATE SET stress = excluded.stress, sleep_q = excluded.sleep_q, sleep_h = excluded.sleep_h, note = excluded.note, at = excluded.at`,
     d.day, d.stress, d.sleep_q, d.sleep_h, d.note, Date.now(),
+  );
+}
+
+/** Set only today's feeling; keeps stress/sleep if they were already filled in. */
+export async function setFeel(db: SQLiteDatabase, day: string, feel: number | null) {
+  await db.runAsync(
+    `INSERT INTO daily (day, feel, at) VALUES (?, ?, ?)
+     ON CONFLICT(day) DO UPDATE SET feel = excluded.feel`,
+    day, feel, Date.now(),
   );
 }
 

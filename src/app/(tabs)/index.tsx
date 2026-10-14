@@ -8,6 +8,7 @@ import { SLEEP, STRESS } from '../../components/checkin';
 import { GroupThumb } from '../../components/MealRow';
 import { Mascot, type Mood } from '../../components/Mascot';
 import { REACTIONS, ReactionPicker } from '../../components/ReactionPicker';
+import { Text } from '../../components/text';
 import { Button, Card, Icon, IconBubble, IconButton, Row, Screen, T, Tap, type SymbolName } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
 import { lastBackup } from '../../lib/backup';
@@ -15,7 +16,7 @@ import { dayKey, daysSince, isoDay, now, relative, startOfDay, timeLabel, todayL
 import * as db from '../../lib/db';
 import { dosesForToday, type Dose } from '../../lib/meds';
 import { askPermission, cancelMealReminder, permission, syncReminders, type PermissionState } from '../../lib/reminders';
-import { palette, radius, type } from '../../lib/theme';
+import { palette, radius, surface, type } from '../../lib/theme';
 
 const TIPS = [
   'Yeni bir yemeği küçük bir porsiyonla dene, birkaç saat sonra nasıl hissettiğini yaz.',
@@ -24,6 +25,15 @@ const TIPS = [
   'Kabuğu soyulmuş, iyice pişmiş sebze çiğine göre çok daha kolay sindirilir.',
   'Yavaş yemek ve iyi çiğnemek, bağırsağın işini gerçekten azaltır.',
   'Bir yemek bir kere dokundu diye listeden çıkarma. İki üç kayıt sonra daha net görürüz.',
+];
+
+/** One-tap daily check-in (stored in daily.feel, 0 … 4). */
+const FEELS: { emoji: string; label: string; mood: Mood; line: string }[] = [
+  { emoji: '😣', label: 'Kötü', mood: 'worried', line: 'Zor bir gün. Az ve hafif ye, bol sıvı al. Ağrın varsa semptom olarak yaz.' },
+  { emoji: '😕', label: 'Zor', mood: 'worried', line: 'Bugün denenmiş, sana iyi gelen yemeklerle git. Yenilerini başka güne bırak.' },
+  { emoji: '😐', label: 'İdare', mood: 'ok', line: 'İdare eder. Ne yediğini yazmaya devam, örüntüyü birlikte görürüz.' },
+  { emoji: '🙂', label: 'İyi', mood: 'happy', line: 'Güzel. İyi giden günler de karşılaştırma için çok değerli.' },
+  { emoji: '😄', label: 'Harika', mood: 'cheer', line: 'Harika bir gün. Neyin iyi geldiğini yazarsan tekrarlaması kolaylaşır.' },
 ];
 
 type Entry = {
@@ -100,12 +110,13 @@ export default function Home() {
   const { mood, line } = useMemo((): { mood: Mood; line: string } => {
     const hour = new Date(loadedAt || 0).getHours();
     if (redFlag) return { mood: 'worried', line: 'Son günlerin zor geçmiş görünüyor. Aşağıdaki notu oku, doktorunla paylaşmanı isterim.' };
+    if (daily?.feel != null && FEELS[daily.feel]) return { mood: FEELS[daily.feel].mood, line: FEELS[daily.feel].line };
     if (meals.some((m) => m.reaction === 2)) return { mood: 'worried', line: 'Bugün bir şey dokunmuş. Akşamı hafif geçir: çorba, pilav, haşlama.' };
     if (app.phase === 'atak') return { mood: 'ok', line: 'Atak dönemindesin. Bu günlerde püre, haşlama ve az yağlı yemekleri öne çıkarıyorum.' };
     if (meals.length >= 2 && meals.every((m) => m.reaction === 0)) return { mood: 'cheer', line: 'Bugün yediklerin iyi gelmiş görünüyor.' };
     if (!meals.length && hour < 11) return { mood: 'sleepy', line: 'Günaydın. Kahvaltıda ne var?' };
     return { mood: 'happy', line: TIPS[new Date(loadedAt || 0).getDate() % TIPS.length] };
-  }, [meals, app.phase, loadedAt, redFlag]);
+  }, [meals, app.phase, loadedAt, redFlag, daily]);
 
   // a choice between options is an action sheet on iOS, not an alert
   const changePhase = () => {
@@ -137,6 +148,12 @@ export default function Home() {
     app.bump();
   };
 
+  const feel = async (f: number) => {
+    const next = daily?.feel === f ? null : f; // tap again to clear
+    setDaily((d) => ({ ...(d ?? { day: isoDay(now()), stress: null, sleep_q: null, sleep_h: null, note: null, at: now() }), feel: next }));
+    await db.setFeel(sql, isoDay(now()), next);
+  };
+
   const take = async (d: Dose) => {
     await db.logDose(sql, d.med.id, d.due, true);
     app.bump();
@@ -153,7 +170,8 @@ export default function Home() {
   // ----- what needs an answer now -----
   const dayStart = startOfDay(loadedAt || 0);
   const dueDoses = doses.filter((d) => !d.log && d.due <= (loadedAt || 0) + 2 * 3600000);
-  const askCheckIn = !daily && new Date(loadedAt || 0).getHours() >= 18;
+  const checkedIn = !!daily && (daily.stress != null || daily.sleep_q != null || daily.sleep_h != null);
+  const askCheckIn = !checkedIn && new Date(loadedAt || 0).getHours() >= 18;
   const askNotifs = perm === 'undetermined' && !promptSeen;
   const next = pending.slice(0, 2);
 
@@ -266,7 +284,7 @@ export default function Home() {
         sub: d.med.dose ? `${d.med.dose} alındı` : 'Alındı',
         onPress: () => router.push('/ilaclar'),
       })),
-    ...(daily
+    ...(daily && checkedIn
       ? [
           {
             key: 'daily',
@@ -310,21 +328,43 @@ export default function Home() {
         <IconButton name="gearshape" label="Ayarlar" fallback="⚙️" onPress={() => router.push('/ayarlar')} />
       </Row>
 
-      <Card style={{ gap: 10, paddingLeft: 10 }}>
-        <Row gap={8}>
-          <Mascot mood={mood} size={92} />
-          <T v="callout" style={[{ flex: 1 }, type.medium]}>
-            {line}
-          </T>
+      <Card style={{ gap: 14 }}>
+        <Row gap={12} style={{ alignItems: 'center' }}>
+          <Mascot mood={mood} size={76} />
+          <View style={{ flex: 1, gap: 3 }}>
+            <T v="h2">Bugün nasılsın?</T>
+            <T v="small" color={palette.inkSoft}>
+              {line}
+            </T>
+          </View>
         </Row>
-        <Tap onPress={changePhase} accessibilityRole="button" accessibilityLabel="Dönemi değiştir" style={{ alignSelf: 'flex-start', marginLeft: 6 }}>
-          <Row gap={7} style={{ backgroundColor: flare ? palette.flareSoft : palette.lettuceSoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 7 }}>
-            <Icon name={flare ? 'flame.fill' : 'leaf.fill'} size={13} color={phaseTone} fallback={flare ? '🔥' : '🌿'} />
-            <T v="small" color={phaseTone} style={type.semibold}>
+        <Row gap={6}>
+          {FEELS.map((f, i) => {
+            const on = daily?.feel === i;
+            return (
+              <Tap key={f.label} onPress={() => feel(i)} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={f.label} accessibilityState={{ selected: on }}>
+                <View style={{ height: 64, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', gap: 2, backgroundColor: on ? palette.lettuceSoft : surface.well, borderWidth: 2, borderColor: on ? palette.lettuce : 'transparent' }}>
+                  <Text style={{ fontSize: 24 }}>{f.emoji}</Text>
+                  <T v="caption" color={on ? palette.lettuceDeep : palette.inkSoft} numberOfLines={1}>
+                    {f.label}
+                  </T>
+                </View>
+              </Tap>
+            );
+          })}
+        </Row>
+        <View style={{ height: 1, backgroundColor: palette.hairline }} />
+        <Tap onPress={changePhase} accessibilityRole="button" accessibilityLabel="Dönemi değiştir">
+          <Row gap={8}>
+            <Icon name={flare ? 'flame.fill' : 'leaf.fill'} size={15} color={phaseTone} fallback={flare ? '🔥' : '🌿'} />
+            <T v="callout" color={phaseTone} style={[type.semibold, { flex: 1 }]}>
               {flare ? 'Atak' : 'Remisyon'}
               {phaseDays ? `, ${phaseDays}. gün` : ''}
             </T>
-            <Icon name="chevron.down" size={10} color={phaseTone} fallback="▾" />
+            <T v="small" color={palette.inkSoft}>
+              Değiştir
+            </T>
+            <Icon name="chevron.right" size={12} color={palette.inkFaint} fallback="›" />
           </Row>
         </Tap>
       </Card>
