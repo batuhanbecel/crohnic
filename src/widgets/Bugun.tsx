@@ -7,11 +7,12 @@ export type BugunProps = {
   toilet: number;
   meals: number;
   symptoms: number;
-  /** next medication still to take today, e.g. "Mesalazin 21:00" */
-  dose: string | null;
-  /** file path of Kıvırcık in the shared widgets folder, null until the app copied it */
-  img: string | null;
+  /** next medication still to take today, e.g. "Mesalazin 21:00"; '' when none */
+  dose: string;
+  /** file URI of Kıvırcık in the shared widgets folder; '' until the app copied it */
+  img: string;
 };
+// No nulls in props: the timeline is kept in UserDefaults, which can't store null.
 
 /**
  * "Bugün" widget: today's counts and one-tap logging.
@@ -26,7 +27,15 @@ const Bugun = (props: BugunProps, env: WidgetEnvironment) => {
   const green = dark ? '#CFEA8E' : '#145A32';
   const bg = dark ? '#0D1A12' : '#FFF8E1';
   const chip = dark ? '#16271C' : '#FFFFFF';
-  const p = props ?? { toilet: 0, meals: 0, symptoms: 0, dose: null, img: null };
+  // before the app has written anything (widget gallery, fresh install) props is {}
+  const raw = props || {};
+  const p = {
+    toilet: typeof raw.toilet === 'number' ? raw.toilet : 0,
+    meals: typeof raw.meals === 'number' ? raw.meals : 0,
+    symptoms: typeof raw.symptoms === 'number' ? raw.symptoms : 0,
+    dose: typeof raw.dose === 'string' ? raw.dose : '',
+    img: typeof raw.img === 'string' ? raw.img : '',
+  };
   const summary = `${p.toilet} tuvalet · ${p.meals} öğün`;
 
   if (env.widgetFamily === 'accessoryInline') {

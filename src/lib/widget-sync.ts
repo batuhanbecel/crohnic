@@ -30,22 +30,23 @@ export async function syncWidget(sql: SQLiteDatabase) {
       toilet: bowel.filter((b) => b.at >= from).length,
       meals: mealsToday,
       symptoms: symptoms.filter((s) => s.at >= from).length,
-      dose: next ? `${next.med.name} ${timeLabel(next.due)}` : null,
+      dose: next ? `${next.med.name} ${timeLabel(next.due)}` : '',
       img,
     };
     // today's numbers now, and zeros from midnight on even if the app isn't opened
     Bugun.updateTimeline([
       { date: new Date(t), props: today },
-      { date: new Date(from + 86400000 + 60000), props: { toilet: 0, meals: 0, symptoms: 0, dose: null, img } },
+      { date: new Date(from + 86400000 + 60000), props: { toilet: 0, meals: 0, symptoms: 0, dose: '', img } },
     ]);
-  } catch {
-    // widget extension not in this build yet
+  } catch (e) {
+    // widget extension not in this build yet, or the write failed
+    console.warn('widget sync failed', e);
   }
 }
 
 /** Copies Kıvırcık into the folder the widget can read (once) and returns its file URI. */
-function mascotFile(dir: string | null) {
-  if (!dir) return null;
+function mascotFile(dir: string | null): string {
+  if (!dir) return '';
   try {
     const target = new File(dir, 'kivircik.webp');
     if (!target.exists) {
@@ -54,6 +55,6 @@ function mascotFile(dir: string | null) {
     }
     return target.uri;
   } catch {
-    return null;
+    return '';
   }
 }
