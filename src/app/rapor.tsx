@@ -102,7 +102,7 @@ export default function Report() {
 
 function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
-    <Card style={{ flex: 1, height: size.stat, padding: 12, justifyContent: 'space-between' }}>
+    <Card style={{ flex: 1, minHeight: size.stat, padding: 12, justifyContent: 'space-between' }}>
       <T v="caption" color={palette.inkSoft} numberOfLines={1}>
         {label}
       </T>

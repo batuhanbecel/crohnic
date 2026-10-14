@@ -123,3 +123,20 @@ export function flareDaysBetween(periods: PhasePeriod[], from: number, to: numbe
   }
   return Math.ceil(ms / 86400000); // a started day counts
 }
+
+export type DayStatus = 'good' | 'mid' | 'bad' | 'none';
+
+/** How each day went, for the calendar: the worst signal of the day wins. */
+export function dayStatuses(meals: Meal[], symptoms: SymptomLog[], bowel: BowelLog[], daily: Daily[]) {
+  const rank: Record<DayStatus, number> = { none: 0, good: 1, mid: 2, bad: 3 };
+  const out = new Map<string, DayStatus>();
+  const bump = (day: string, s: DayStatus) => {
+    const cur = out.get(day) ?? 'none';
+    if (rank[s] > rank[cur]) out.set(day, s);
+  };
+  for (const m of meals) bump(isoDay(m.eaten_at), m.reaction === 2 ? 'bad' : m.reaction === 1 ? 'mid' : 'good');
+  for (const s of symptoms) bump(isoDay(s.at), s.pain >= 3 || s.bloating >= 4 ? 'bad' : s.pain >= 1 || s.bloating >= 2 || s.gas >= 3 ? 'mid' : 'good');
+  for (const b of bowel) bump(isoDay(b.at), b.blood || b.bristol >= 6 ? 'bad' : b.bristol === 5 || b.bristol <= 2 ? 'mid' : 'good');
+  for (const d of daily) if (d.feel != null) bump(d.day, d.feel === 0 ? 'bad' : d.feel <= 2 ? 'mid' : 'good');
+  return out;
+}

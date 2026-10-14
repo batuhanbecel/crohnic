@@ -15,6 +15,7 @@ import {
   type StyleProp,
   type TextProps,
   type TextStyle,
+  type ViewProps,
   type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -189,7 +190,9 @@ const variantStyle: Record<Variant, TextStyle> = {
 };
 
 export function T({ v = 'body', color = palette.ink, style, ...rest }: TextProps & { v?: Variant; color?: string }) {
-  return <Text {...rest} style={[variantStyle[v], { color }, style]} />;
+  // page and section titles are headings for VoiceOver's rotor
+  const role = rest.accessibilityRole ?? (v === 'large' || v === 'h2' ? 'header' : undefined);
+  return <Text {...rest} accessibilityRole={role} style={[variantStyle[v], { color }, style]} />;
 }
 
 /** Single-line label for controls: never wraps, shrinks a little if it must. */
@@ -214,7 +217,11 @@ export function Icon({ name, size: s = 20, color = palette.ink, fallback }: { na
 /** Settings-style icon tile: rounded square in the item's colour, white (or dark) glyph. */
 export function IconBubble({ name, color, dim = size.icon, fallback }: { name: SymbolName; color: string; dim?: number; fallback?: string }) {
   return (
-    <View style={{ width: dim, height: dim, borderRadius: dim * 0.27, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={{ width: dim, height: dim, borderRadius: dim * 0.27, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}
+    >
       <Icon name={name} size={dim * 0.5} color={onTint(color)} fallback={fallback} />
     </View>
   );
@@ -277,8 +284,17 @@ export function Screen({
   return header ? <TabSwipe>{page}</TabSwipe> : page;
 }
 
-export function Card({ children, style, tint }: { children: React.ReactNode; style?: StyleProp<ViewStyle>; tint?: string }) {
-  return <View style={[st.card, tint ? { backgroundColor: tint } : null, style]}>{children}</View>;
+export function Card({
+  children,
+  style,
+  tint,
+  ...a11y
+}: { children: React.ReactNode; style?: StyleProp<ViewStyle>; tint?: string } & Pick<ViewProps, 'accessible' | 'accessibilityLabel' | 'accessibilityRole'>) {
+  return (
+    <View {...a11y} style={[st.card, tint ? { backgroundColor: tint } : null, style]}>
+      {children}
+    </View>
+  );
 }
 
 export function Row({ children, gap = 10, style }: { children: React.ReactNode; gap?: number; style?: StyleProp<ViewStyle> }) {
@@ -289,6 +305,7 @@ export function Row({ children, gap = 10, style }: { children: React.ReactNode; 
 export function Tap({ children, style, onPress, haptic = true, ...rest }: PressableProps & { haptic?: boolean; style?: StyleProp<ViewStyle> }) {
   return (
     <Pressable
+      accessibilityRole={onPress ? 'button' : undefined}
       {...rest}
       onPress={(e) => {
         if (haptic) hapticTap();
@@ -335,7 +352,7 @@ export function Button({
   return (
     <View style={style}>
       <GlassPress tint={fill} disabled={disabled || loading} haptic="impact" onPress={onPress} accessibilityLabel={title} style={{ borderRadius: radius.pill }}>
-        <View style={[st.btnInner, { height: h, paddingHorizontal: compact ? 14 : 20 }]}>
+        <View style={[st.btnInner, { minHeight: h, paddingHorizontal: compact ? 14 : 20, paddingVertical: 6 }]}>
           {loading ? <ActivityIndicator color={fg} /> : icon ? <Icon name={icon} color={fg} size={compact ? 15 : 17} /> : null}
           <Label color={fg} small={compact}>
             {title}
@@ -449,7 +466,7 @@ export function OptionTiles<K extends string | number>({
             <GlassPress
               onPress={() => onChange(it.key)}
               tint={on ? it.color : surface.well}
-              style={[st.option, { height: compact ? 70 : 80 }]}
+              style={[st.option, { minHeight: compact ? 70 : 80, paddingVertical: 8 }]}
               accessibilityLabel={it.label}
             >
               <Text style={{ fontSize: compact ? 22 : 26 }}>{it.emoji}</Text>
@@ -539,8 +556,8 @@ export const st = StyleSheet.create({
     padding: size.pad,
   },
   btnInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  chip: { height: 36, paddingHorizontal: 12, borderRadius: radius.pill, justifyContent: 'center', flexDirection: 'row', alignItems: 'center' },
-  segment: { height: 36, borderRadius: radius.md - 3, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 4 },
+  chip: { minHeight: 36, paddingVertical: 6, paddingHorizontal: 12, borderRadius: radius.pill, justifyContent: 'center', flexDirection: 'row', alignItems: 'center' },
+  segment: { minHeight: 36, paddingVertical: 6, borderRadius: radius.md - 3, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 4 },
   segmentOn: {
     backgroundColor: isDark ? '#3A3F3C' : '#FFFFFF',
     shadowColor: '#000',
@@ -549,7 +566,7 @@ export const st = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
   },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
-  scaleDot: { height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  scaleDot: { minHeight: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   choice: { minHeight: 64, borderRadius: radius.md, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 10 },
   choiceIcon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   option: { borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 6 },

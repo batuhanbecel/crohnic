@@ -282,7 +282,7 @@ function LinkRow({ icon, title, onPress }: { icon: 'pills.fill' | 'doc.text.fill
   return (
     <Tap onPress={onPress}>
       <Row gap={12} style={{ paddingVertical: 10 }}>
-        <Icon name={icon} color={palette.peri} />
+        <Icon name={icon} color={icon === 'pills.fill' ? palette.peri : palette.sky} />
         <T v="callout" style={{ flex: 1 }}>
           {title}
         </T>

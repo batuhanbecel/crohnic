@@ -248,7 +248,22 @@ export default function Insights() {
             </T>
           </View>
         </Row>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 110, gap: 4 }}>
+        <View
+          accessible
+          accessibilityRole="image"
+          accessibilityLabel={`Son 14 günün tuvalet grafiği. ${last14.filter((d) => d.count).length} günde kayıt var, en çok ${Math.max(0, ...last14.map((d) => d.count))} kez. ${last14.filter((d) => d.bristol != null && d.bristol >= 5.5).length} günde ortalama kıvam sulu.`}
+        >
+          <Row style={{ justifyContent: 'space-between' }}>
+            <T v="caption" color={palette.inkFaint}>
+              Günlük sayı (en çok {maxCount})
+            </T>
+            <T v="caption" color={palette.inkFaint}>
+              Renk: ortalama kıvam
+            </T>
+          </Row>
+          <View style={{ height: 1, backgroundColor: palette.hairline, marginTop: 6 }} />
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 110, gap: 4 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           {last14.map((d) => (
             <View key={d.key} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
               <T v="caption" color={palette.inkSoft} style={{ fontSize: 10 }}>
@@ -277,7 +292,7 @@ export default function Insights() {
       </Card>
 
       {monthBowel.length ? (
-        <Card style={{ gap: 10 }}>
+        <Card style={{ gap: 10 }} accessible accessibilityLabel={`Son 30 günde tuvalet saatleri: ${slots.map((s) => `${s.label} ${s.n}`).join(', ')}.`}>
           <T v="h3">Günün hangi saatinde</T>
           {slots.map((s) => (
             <Row key={s.label} gap={10}>
@@ -296,7 +311,14 @@ export default function Insights() {
       ) : null}
 
       {last14.some((d) => d.pain != null) ? (
-        <Card style={{ gap: 8 }}>
+        <Card
+          style={{ gap: 8 }}
+          accessible
+          accessibilityLabel={`Son 14 günün en yüksek ağrısı, 0 ile 5 arası: ${last14
+            .filter((d) => d.pain != null)
+            .map((d) => `${d.label} ${d.pain}`)
+            .join(', ')}.`}
+        >
           <T v="h3">En yüksek ağrı</T>
           <View style={{ flexDirection: 'row', gap: 4 }}>
             {last14.map((d) => (
@@ -306,19 +328,31 @@ export default function Insights() {
                   flex: 1,
                   height: 24,
                   borderRadius: 6,
-                  backgroundColor: d.pain == null ? surface.well : d.pain >= 4 ? palette.bad : d.pain >= 2 ? palette.peri : palette.periSoft,
+                  backgroundColor: d.pain == null ? surface.well : d.pain >= 4 ? palette.bad : d.pain >= 2 ? palette.warn : palette.goodSoft,
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
                 {d.pain != null ? (
-                  <T v="caption" color={d.pain >= 2 ? onTint(d.pain >= 4 ? palette.bad : palette.peri) : palette.peri} style={{ fontSize: 10 }}>
+                  <T v="caption" color={d.pain >= 2 ? onTint(d.pain >= 4 ? palette.bad : palette.warn) : palette.good} style={{ fontSize: 10 }}>
                     {d.pain}
                   </T>
                 ) : null}
               </View>
             ))}
           </View>
+          <View style={{ flexDirection: 'row', gap: 4 }}>
+            {last14.map((d) => (
+              <T key={d.key} v="caption" color={palette.inkFaint} style={{ flex: 1, textAlign: 'center', fontSize: 10 }}>
+                {d.label}
+              </T>
+            ))}
+          </View>
+          <Row gap={14} style={{ flexWrap: 'wrap' }}>
+            <Legend c={palette.good} l="0–1" />
+            <Legend c={palette.warn} l="2–3" />
+            <Legend c={palette.bad} l="4–5" />
+          </Row>
         </Card>
       ) : null}
 

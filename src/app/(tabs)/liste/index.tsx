@@ -3,6 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { setRowTouch } from '../../../components/gesture-lock';
 import { TabSwipe } from '../../../components/TabSwipe';
 import { ThinkingOverlay } from '../../../components/ThinkingOverlay';
 import { Text } from '../../../components/text';
@@ -61,7 +62,7 @@ export default function FoodList() {
     { key: 'iyi', label: 'İyi gelir', color: palette.good },
     { key: 'dikkat', label: 'Dikkat', color: palette.warn },
     { key: 'riskli', label: 'Riskli', color: palette.bad },
-    { key: 'denedim', label: 'Denediklerim', color: palette.peri },
+    { key: 'denedim', label: 'Denediklerim', color: palette.lettuce },
   ];
 
   const explain = () =>
@@ -81,7 +82,8 @@ export default function FoodList() {
           <Icon name="info.circle" size={15} color={palette.inkSoft} fallback="ⓘ" />
         </Row>
       </Tap>
-      <View style={{ gap: 8 }}>
+      {/* chip rows scroll sideways themselves; keep the tab swipe out of them */}
+      <View style={{ gap: 8 }} onTouchStart={() => setRowTouch(true)} onTouchEnd={() => setRowTouch(false)} onTouchCancel={() => setRowTouch(false)}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -18 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 18 }}>
           {filters.map((x) => (
             <Chip key={x.key} label={`${x.label} ${counts[x.key]}`} active={vf === x.key} color={x.color} onPress={() => setVf(x.key)} />

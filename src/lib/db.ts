@@ -356,6 +356,17 @@ export async function addSymptom(db: SQLiteDatabase, s: Omit<SymptomLog, 'id'>) 
   );
 }
 
+export async function getSymptom(db: SQLiteDatabase, id: number) {
+  return db.getFirstAsync<SymptomLog>('SELECT * FROM symptoms WHERE id = ?', id);
+}
+
+export async function updateSymptom(db: SQLiteDatabase, s: SymptomLog) {
+  await db.runAsync(
+    'UPDATE symptoms SET at = ?, pain = ?, bloating = ?, gas = ?, fatigue = ?, note = ? WHERE id = ?',
+    s.at, s.pain, s.bloating, s.gas, s.fatigue, s.note, s.id,
+  );
+}
+
 export async function listSymptoms(db: SQLiteDatabase, limit = 200) {
   return db.getAllAsync<SymptomLog>('SELECT * FROM symptoms ORDER BY at DESC LIMIT ?', limit);
 }
@@ -374,6 +385,14 @@ export async function addBowel(db: SQLiteDatabase, b: Omit<BowelLog, 'id'>) {
     b.urgency,
     b.note,
   );
+}
+
+export async function getBowel(db: SQLiteDatabase, id: number) {
+  return db.getFirstAsync<BowelLog>('SELECT * FROM bowel WHERE id = ?', id);
+}
+
+export async function updateBowel(db: SQLiteDatabase, b: BowelLog) {
+  await db.runAsync('UPDATE bowel SET at = ?, bristol = ?, blood = ?, urgency = ?, note = ? WHERE id = ?', b.at, b.bristol, b.blood, b.urgency, b.note, b.id);
 }
 
 export async function listBowel(db: SQLiteDatabase, limit = 200) {

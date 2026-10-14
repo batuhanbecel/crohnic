@@ -62,7 +62,7 @@ export default function Ask() {
         title="Menüyü çek"
         sub="Restoran menüsündeki yemekleri tek tek işaretlerim, hangisini söyleyeceğini seçersin."
         icon="list.bullet.rectangle"
-        color={palette.peri}
+        color={palette.sky}
         onCamera={() => fromPhoto('menu', 'camera')}
         onLibrary={() => fromPhoto('menu', 'library')}
       />

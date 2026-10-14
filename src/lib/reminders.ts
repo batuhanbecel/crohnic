@@ -31,6 +31,7 @@ let handlerSet = false;
 export function setupNotifications() {
   if (!supported || handlerSet) return;
   handlerSet = true;
+  setupCategories();
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowBanner: true,
@@ -39,6 +40,51 @@ export function setupNotifications() {
       shouldSetBadge: false,
     }),
   });
+}
+
+// ---------- quick actions on the notification itself ----------
+// Actions open the app (opensAppToForeground): with the app closed iOS only delivers
+// the answer when the app launches, so a background-only action could be lost.
+const CATEGORY = { meal: 'mealCheck', med: 'medDose' } as const;
+
+let categoriesSet = false;
+async function setupCategories() {
+  if (!supported || categoriesSet) return;
+  categoriesSet = true;
+  try {
+    await Notifications.setNotificationCategoryAsync(CATEGORY.meal, [
+      { identifier: 'r0', buttonTitle: '😌 İyi geldi' },
+      { identifier: 'r1', buttonTitle: '😕 Biraz dokundu' },
+      { identifier: 'r2', buttonTitle: '😣 Çok dokundu' },
+    ]);
+    await Notifications.setNotificationCategoryAsync(CATEGORY.med, [{ identifier: 'taken', buttonTitle: '✓ Aldım' }]);
+  } catch {
+    categoriesSet = false;
+  }
+}
+
+/** Apply a quick action from a notification. Returns true when it was one. */
+export async function handleNotificationAction(sql: SQLiteDatabase, r: Notifications.NotificationResponse) {
+  const action = r.actionIdentifier;
+  if (!action || action === Notifications.DEFAULT_ACTION_IDENTIFIER) return false;
+  const data = (r.notification.request.content.data ?? {}) as Record<string, unknown>;
+  if (data.kind === 'meal' && /^r[012]$/.test(action)) {
+    const group = await db.getMealGroup(sql, Number(data.mealId));
+    if (group.length) await db.setGroupReaction(sql, group.map((m) => m.id), Number(action[1]) as db.Reaction, null);
+    return true;
+  }
+  if (data.kind === 'med' && action === 'taken') {
+    let due = typeof data.due === 'number' ? data.due : null;
+    if (due == null && typeof data.time === 'string') {
+      // daily reminders repeat, so the dose is the one at this time on the day it fired
+      const [h, m] = data.time.split(':').map(Number);
+      const d = new Date(r.notification.date);
+      due = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m).getTime();
+    }
+    if (due != null) await db.logDose(sql, Number(data.medId), due, true);
+    return true;
+  }
+  return false;
 }
 
 export type PermissionState = 'granted' | 'denied' | 'undetermined';
@@ -72,10 +118,10 @@ async function canNotify(sql: SQLiteDatabase, key: string) {
   return supported && (await isOn(sql, key)) && (await permission()) === 'granted';
 }
 
-async function schedule(id: string, title: string, body: string, when: number, url: string) {
+async function schedule(id: string, title: string, body: string, when: number, url: string, extra?: { category?: string; data?: Record<string, unknown> }) {
   await Notifications.scheduleNotificationAsync({
     identifier: id,
-    content: { title, body, data: { url }, sound: 'default' },
+    content: { title, body, data: { url, ...extra?.data }, sound: 'default', categoryIdentifier: extra?.category },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: when },
   });
 }
@@ -99,7 +145,10 @@ export async function scheduleMealReminder(sql: SQLiteDatabase, meal: { firstId:
     if (at < Date.now() + 5 * 60000) return;
     const name = meal.name.length > 60 ? `${meal.name.slice(0, 57)}…` : meal.name;
     const body = moved ? `Dün akşam yediğin ${name} nasıl geçti?` : `${name} yiyeli birkaç saat oldu. Nasıl geçti?`;
-    await schedule(mealId(meal.firstId), 'Kıvırcık soruyor', body, at, `/ogun/${meal.firstId}`);
+    await schedule(mealId(meal.firstId), 'Kıvırcık soruyor', body, at, `/ogun/${meal.firstId}`, {
+      category: CATEGORY.meal,
+      data: { kind: 'meal', mealId: meal.firstId },
+    });
   } catch {
     // reminders are best effort
   }
@@ -146,7 +195,13 @@ export async function syncReminders(sql: SQLiteDatabase) {
         for (const [h, min] of parseTimes(m.times)) {
           await Notifications.scheduleNotificationAsync({
             identifier: `med-${m.id}-${fmtTime([h, min]).replace(':', '')}`,
-            content: { title: 'İlaç saati', body: `${title} zamanı geldi.`, data: { url: '/' }, sound: 'default' },
+            content: {
+              title: 'İlaç saati',
+              body: `${title} zamanı geldi.`,
+              data: { url: '/', kind: 'med', medId: m.id, time: fmtTime([h, min]) },
+              sound: 'default',
+              categoryIdentifier: CATEGORY.med,
+            },
             trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: h, minute: min },
           });
         }
@@ -155,7 +210,7 @@ export async function syncReminders(sql: SQLiteDatabase) {
           .filter((t) => !done.has(`${m.id}:${t}`))
           .slice(0, 4);
         for (const t of next) {
-          await schedule(`med-${m.id}-${t}`, 'İlaç günü', `Bugün ${title} günü.`, t, '/');
+          await schedule(`med-${m.id}-${t}`, 'İlaç günü', `Bugün ${title} günü.`, t, '/', { category: CATEGORY.med, data: { kind: 'med', medId: m.id, due: t } });
         }
       }
     }

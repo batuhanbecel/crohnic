@@ -105,7 +105,7 @@ export default function FoodDetail() {
           </Row>
         </Card>
       ) : (
-        <Card tint={palette.periSoft}>
+        <Card tint={palette.lettuceSoft}>
           <T v="small">Bunu henüz kaydetmedin. Yiyip nasıl geçtiğini yazarsan bir dahaki sefere sana göre söylerim.</T>
         </Card>
       )}

@@ -79,8 +79,8 @@ export function MealRow({ group }: { group: MealGroup }) {
               <Text style={{ fontSize: 20 }}>{r.emoji}</Text>
             </View>
           ) : (
-            <View style={{ backgroundColor: palette.periSoft, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6 }}>
-              <T v="caption" color={palette.peri}>
+            <View style={{ backgroundColor: palette.warnSoft, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6 }}>
+              <T v="caption" color={palette.warn}>
                 Nasıldı?
               </T>
             </View>

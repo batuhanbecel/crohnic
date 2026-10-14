@@ -5,7 +5,7 @@ import * as Updates from 'expo-updates';
 import { useEffect } from 'react';
 import { Appearance, AppState, DevSettings, Platform } from 'react-native';
 import { useApp } from '../lib/app-state';
-import { setupNotifications, syncReminders } from '../lib/reminders';
+import { handleNotificationAction, setupNotifications, syncReminders } from '../lib/reminders';
 import { scheme } from '../lib/theme';
 
 setupNotifications();
@@ -13,7 +13,7 @@ setupNotifications();
 /** Side effects that need the database: reminders, notification taps, appearance changes. */
 export function Bootstrap() {
   const sql = useSQLiteContext();
-  const { ready, dataVersion } = useApp();
+  const { ready, dataVersion, bump } = useApp();
 
   // keep rolling reminders fresh
   useEffect(() => {
@@ -23,8 +23,14 @@ export function Bootstrap() {
   // open the screen a notification points to
   useEffect(() => {
     if (!ready || Platform.OS === 'web') return;
-    const go = (r: Notifications.NotificationResponse | null) => {
-      const url = r?.notification.request.content.data?.url;
+    const go = async (r: Notifications.NotificationResponse | null) => {
+      if (!r) return;
+      // "İyi geldi" / "Aldım" pressed on the notification: save it, don't navigate
+      if (await handleNotificationAction(sql, r)) {
+        bump();
+        return;
+      }
+      const url = r.notification.request.content.data?.url;
       if (typeof url === 'string' && url !== '/') router.push(url as never);
     };
     const cold = Notifications.getLastNotificationResponse();
@@ -35,7 +41,7 @@ export function Bootstrap() {
       clearTimeout(t);
       sub.remove();
     };
-  }, [ready]);
+  }, [ready, sql, bump]);
 
   // re-sync on resume; reload if light/dark changed while the app was open
   useEffect(() => {

@@ -72,8 +72,8 @@ function PersonalNote({ stat }: { stat?: PersonalStat }) {
     .filter(Boolean)
     .join(', ');
   return (
-    <Card tint={palette.periSoft} style={{ gap: 4 }}>
-      <T v="caption" color={palette.peri}>
+    <Card tint={palette.lettuceSoft} style={{ gap: 4 }}>
+      <T v="caption" color={palette.lettuceDeep}>
         Senin kayıtların
       </T>
       <T v="callout" style={type.medium}>
@@ -246,7 +246,7 @@ function MenuResult({ a }: { a: MenuAnalysis }) {
       <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
         <Mascot mood="happy" size={80} />
         <View style={{ flex: 1, gap: 4 }}>
-          <T v="caption" color={palette.peri}>
+          <T v="caption" color={palette.lettuceDeep}>
             {a.dishes.length} yemeğe baktım
           </T>
           <T v="callout" style={type.medium}>
@@ -294,7 +294,7 @@ function MenuResult({ a }: { a: MenuAnalysis }) {
                     </T>
                   ) : null}
                   {stt?.n ? (
-                    <T v="caption" color={palette.peri}>
+                    <T v="caption" color={palette.lettuceDeep}>
                       {stt.n} kez yemişsin, {stt.bad + stt.mild ? `${stt.bad + stt.mild} kez dokunmuş` : 'hep iyi gelmiş'}
                     </T>
                   ) : null}

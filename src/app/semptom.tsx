@@ -1,6 +1,7 @@
-import { router } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 import { TextInput } from '../components/text';
 import { Mascot } from '../components/Mascot';
 import { Suspects } from '../components/Suspects';
@@ -15,7 +16,7 @@ const FIELDS = [
   { key: 'pain', label: 'Karın ağrısı', color: palette.bad },
   { key: 'bloating', label: 'Şişkinlik', color: palette.apricot },
   { key: 'gas', label: 'Gaz', color: palette.sky },
-  { key: 'fatigue', label: 'Yorgunluk', color: palette.peri },
+  { key: 'fatigue', label: 'Yorgunluk', color: palette.plum },
 ] as const;
 
 type Key = (typeof FIELDS)[number]['key'];
@@ -28,12 +29,46 @@ export default function Symptom() {
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [asking, setAsking] = useState(false);
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const editing = id ? Number(id) : null;
+
+  useEffect(() => {
+    if (!editing) return;
+    db.getSymptom(sql, editing).then((s) => {
+      if (!s) return;
+      setAt(s.at);
+      setV({ pain: s.pain, bloating: s.bloating, gas: s.gas, fatigue: s.fatigue });
+      setNote(s.note ?? '');
+    });
+  }, [sql, editing]);
+
+  const remove = () =>
+    Alert.alert('Bu kayıt silinsin mi?', undefined, [
+      { text: 'Vazgeç', style: 'cancel' },
+      {
+        text: 'Sil',
+        style: 'destructive',
+        onPress: async () => {
+          if (!editing) return;
+          await db.deleteSymptom(sql, editing);
+          app.bump();
+          router.back();
+        },
+      },
+    ]);
 
   const total = v.pain + v.bloating + v.gas + v.fatigue;
   const mood = total === 0 ? 'cheer' : v.pain >= 4 || total >= 12 ? 'worried' : total >= 6 ? 'ok' : 'happy';
 
   const save = async () => {
     setSaving(true);
+    if (editing) {
+      await db.updateSymptom(sql, { id: editing, at, ...v, note: note.trim() || null });
+      app.bump();
+      setSaving(false);
+      router.back();
+      return;
+    }
     await db.addSymptom(sql, { at, ...v, note: note.trim() || null });
     app.bump();
     setSaving(false);
@@ -51,6 +86,7 @@ export default function Symptom() {
 
   return (
     <Screen header={false}>
+      {editing ? <Stack.Screen options={{ title: 'Semptomu düzenle' }} /> : null}
       <Row gap={4}>
         <Mascot mood={mood} size={72} />
         <T v="callout" style={{ flex: 1 }} color={palette.inkSoft}>
@@ -82,7 +118,8 @@ export default function Symptom() {
           <T v="small">Şiddetli ağrı, ateş, kusma ya da kanama varsa beklemeden doktoruna veya acile başvur.</T>
         </Card>
       ) : null}
-      <Button title="Kaydet" icon="checkmark" onPress={save} loading={saving} />
+      <Button title={editing ? 'Değişiklikleri kaydet' : 'Kaydet'} icon="checkmark" onPress={save} loading={saving} />
+      {editing ? <Button title="Kaydı sil" kind="danger" icon="trash" onPress={remove} /> : null}
     </Screen>
   );
 }
