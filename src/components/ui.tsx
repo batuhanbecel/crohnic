@@ -22,7 +22,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import type { Verdict } from '../lib/foods';
 import { isDark, onTint, palette, radius, size, surface, type } from '../lib/theme';
-import { TabSwipe } from './TabSwipe';
 import { Text } from './text';
 
 /*
@@ -280,8 +279,7 @@ export function Screen({
       </ScrollView>
     </View>
   );
-  // tab pages (no native header) can be swiped sideways to the neighbouring tab
-  return header ? <TabSwipe>{page}</TabSwipe> : page;
+  return page;
 }
 
 export function Card({

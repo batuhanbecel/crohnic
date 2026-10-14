@@ -3,8 +3,6 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { setRowTouch } from '../../../components/gesture-lock';
-import { TabSwipe } from '../../../components/TabSwipe';
 import { ThinkingOverlay } from '../../../components/ThinkingOverlay';
 import { Text } from '../../../components/text';
 import { Backdrop, Button, Card, Chip, Icon, Row, T, Tap, VERDICT_UI } from '../../../components/ui';
@@ -82,8 +80,7 @@ export default function FoodList() {
           <Icon name="info.circle" size={15} color={palette.inkSoft} fallback="ⓘ" />
         </Row>
       </Tap>
-      {/* chip rows scroll sideways themselves; keep the tab swipe out of them */}
-      <View style={{ gap: 8 }} onTouchStart={() => setRowTouch(true)} onTouchEnd={() => setRowTouch(false)} onTouchCancel={() => setRowTouch(false)}>
+      <View style={{ gap: 8 }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -18 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 18 }}>
           {filters.map((x) => (
             <Chip key={x.key} label={`${x.label} ${counts[x.key]}`} active={vf === x.key} color={x.color} onPress={() => setVf(x.key)} />
@@ -116,7 +113,6 @@ export default function FoodList() {
     ) : null;
 
   return (
-    <TabSwipe>
     <View style={{ flex: 1, backgroundColor: palette.paper }}>
       <Backdrop tone={app.phase === 'atak' ? 'flare' : 'calm'} />
       <ThinkingOverlay mode={busy} />
@@ -170,6 +166,5 @@ export default function FoodList() {
         }}
       />
     </View>
-    </TabSwipe>
   );
 }

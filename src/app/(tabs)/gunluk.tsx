@@ -1,7 +1,8 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
+import Reanimated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AddMenu } from '../../components/AddMenu';
 import { BRISTOL, bristolTone } from '../../components/bristol';
@@ -272,7 +273,7 @@ export default function Journal() {
                 {list.map((e, i) => {
                   const d = describe(e);
                   return (
-                    <Fragment key={e.key}>
+                    <Reanimated.View key={e.key} layout={LinearTransition.duration(220)} entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
                       {i > 0 ? <View style={{ height: 1, backgroundColor: palette.hairline, marginLeft: 66 }} /> : null}
                       <SwipeRow onPress={() => open(e)} onDelete={() => remove(e)} label={`${timeLabel(e.at)}, ${d.title}, ${d.sub}`}>
                         <Row gap={12} style={{ paddingVertical: 11, paddingHorizontal: 14, backgroundColor: surface.card }}>
@@ -296,7 +297,7 @@ export default function Journal() {
                           </T>
                         </Row>
                       </SwipeRow>
-                    </Fragment>
+                    </Reanimated.View>
                   );
                 })}
               </View>
