@@ -1,7 +1,24 @@
+import * as QuickActions from 'expo-quick-actions';
+import { useQuickActionRouting, type RouterAction } from 'expo-quick-actions/router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { palette } from '../../lib/theme';
 
+/** Long-press the app icon: the most common logs in one tap. */
+const SHORTCUTS: RouterAction[] = [
+  { id: 'tuvalet', title: 'Tuvalet kaydet', icon: 'symbol:drop.fill', params: { href: '/tuvalet' } },
+  { id: 'ogun', title: 'Öğün ekle', icon: 'symbol:fork.knife', params: { href: '/yemek-ekle' } },
+  { id: 'semptom', title: 'Semptom kaydet', icon: 'symbol:waveform.path.ecg', params: { href: '/semptom' } },
+  { id: 'sor', title: 'Bunu yesem mi?', icon: 'symbol:camera.fill', params: { href: '/sor' } },
+];
+
 export default function TabsLayout() {
+  useQuickActionRouting();
+  useEffect(() => {
+    if (Platform.OS !== 'web') QuickActions.setItems(SHORTCUTS).catch(() => {});
+  }, []);
+
   return (
     <NativeTabs tintColor={palette.lettuceDeep} minimizeBehavior="onScrollDown" labelStyle={{ fontFamily: 'Nunito_700Bold' }}>
       <NativeTabs.Trigger name="index">

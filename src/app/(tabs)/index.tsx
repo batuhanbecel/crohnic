@@ -62,6 +62,7 @@ export default function Home() {
   const [perm, setPerm] = useState<PermissionState>('granted');
   const [promptSeen, setPromptSeen] = useState(true);
   const [backupDue, setBackupDue] = useState(false);
+  const [factorsSeen, setFactorsSeen] = useState(true);
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
@@ -71,7 +72,7 @@ export default function Home() {
   const load = useCallback(async () => {
     const t = now();
     const today = startOfDay(t);
-    const [p, mealRows, bowelRows, symptomRows, meds, logs, d, p2, seen, last, count] = await Promise.all([
+    const [p, mealRows, bowelRows, symptomRows, meds, logs, d, p2, seen, last, count, factorsSeenV] = await Promise.all([
       db.pendingReactions(sql),
       db.listMeals(sql, 60),
       db.listBowel(sql, 60),
@@ -83,7 +84,9 @@ export default function Home() {
       db.getSetting(sql, 'notif_prompt_seen'),
       lastBackup(sql),
       db.countMeals(sql),
+      db.getSetting(sql, 'factors_seen'),
     ]);
+    setFactorsSeen(!!factorsSeenV);
     const k = dayKey(t);
     setPendingMeals(db.groupMeals(p));
     setMeals(db.groupMeals(mealRows.filter((m) => dayKey(m.eaten_at) === k)));
@@ -93,7 +96,7 @@ export default function Home() {
     setDaily(d);
     setPerm(p2);
     setPromptSeen(!!seen);
-    setBackupDue(count >= 20 && (!last || t - last > 30 * 86400000));
+    setBackupDue(count >= 20 && (!last || t - last > 90 * 86400000));
     const week = t - 7 * 86400000;
     const recent = bowelRows.filter((b) => b.at >= week);
     const severePain = symptomRows.some((s) => s.at >= t - 2 * 86400000 && s.pain >= 5);
@@ -159,6 +162,12 @@ export default function Home() {
     app.bump();
   };
 
+  const dismissFactors = async (open: boolean) => {
+    await db.setSetting(sql, 'factors_seen', '1');
+    setFactorsSeen(true);
+    if (open) router.push('/ayarlar');
+  };
+
   const enableNotifs = async () => {
     await askPermission();
     await db.setSetting(sql, 'notif_prompt_seen', '1');
@@ -220,6 +229,23 @@ export default function Home() {
               <Icon name="chevron.right" size={14} color={palette.inkFaint} fallback="›" />
             </Row>
           </Tap>,
+        ]
+      : []),
+    ...(!factorsSeen
+      ? [
+          <Row key="factors" gap={12} style={{ paddingVertical: 12 }}>
+            <IconBubble name="person.fill" color={palette.plum} dim={40} fallback="🩺" />
+            <View style={{ flex: 1 }}>
+              <T v="h3">Darlık, stoma ya da laktoz?</T>
+              <T v="small" color={palette.inkSoft}>
+                Varsa söyle, yemekleri sana göre değerlendireyim
+              </T>
+            </View>
+            <View style={{ gap: 4, alignItems: 'flex-end' }}>
+              <Button title="Ayarla" compact onPress={() => dismissFactors(true)} />
+              <Button title="Yok" kind="plain" compact onPress={() => dismissFactors(false)} />
+            </View>
+          </Row>,
         ]
       : []),
     ...(askNotifs
@@ -445,7 +471,7 @@ export default function Home() {
           <Row gap={10} style={{ paddingHorizontal: 6, paddingVertical: 4 }}>
             <Icon name="icloud.and.arrow.up" size={16} color={palette.warn} fallback="☁️" />
             <T v="small" color={palette.inkSoft} style={{ flex: 1 }}>
-              Bir aydır yedek almadın. Ayarlar’dan bir dokunuşla yedekle.
+              Kayıtların iPhone’un iCloud Yedeklemesi açıksa güvende. Emin değilsen Ayarlar’dan ayrı bir kopya al.
             </T>
           </Row>
         </Tap>

@@ -1,6 +1,6 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { DEFAULT_AI, type AiConfig, type Analysis } from './ai';
+import { DEFAULT_AI, newInstallId, setInstallId, type AiConfig, type Analysis } from './ai';
 import * as db from './db';
 import { setLactose, setStoma, setStricture, setTagHistory } from './tolerance';
 import type { Phase } from './foods';
@@ -44,6 +44,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     (async () => {
+      let install = await db.getSetting(sql, 'install_id');
+      if (!install) {
+        install = newInstallId();
+        await db.setSetting(sql, 'install_id', install);
+      }
+      setInstallId(install);
       setStricture((await db.getSetting(sql, 'stricture')) === '1');
       setStoma((await db.getSetting(sql, 'stoma')) === '1');
       setLactose((await db.getSetting(sql, 'lactose')) === '1');

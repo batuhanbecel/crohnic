@@ -85,6 +85,18 @@ function sanitize(raw: any): Analysis {
   };
 }
 
+/** Random id for this install. The server counts daily requests per install with it. */
+let installId = '';
+export function setInstallId(id: string) {
+  installId = id;
+}
+export function newInstallId() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 export async function analyze(cfg: AiConfig, input: AnalyzeInput): Promise<Analysis> {
   const base = cfg.url.replace(/\/+$/, '');
   const endpoint = base.endsWith('/api/analyze') ? base : `${base}/api/analyze`;
@@ -93,7 +105,7 @@ export async function analyze(cfg: AiConfig, input: AnalyzeInput): Promise<Analy
   try {
     const res = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-crohnic-token': cfg.token },
+      headers: { 'Content-Type': 'application/json', 'x-crohnic-token': cfg.token, 'x-crohnic-device': installId },
       body: JSON.stringify(input),
       signal: controller.signal,
     });

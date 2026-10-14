@@ -496,7 +496,7 @@ export async function listDaily(db: SQLiteDatabase, limit = 400) {
 // ---------- backup ----------
 const BACKUP_TABLES = ['meals', 'symptoms', 'bowel', 'phases', 'meds', 'med_logs', 'daily', 'settings'] as const;
 /** Settings that belong to this phone/build and are never restored. */
-const LOCAL_SETTINGS = ['ai_url', 'ai_token', 'onboarded', 'last_backup'];
+const LOCAL_SETTINGS = ['ai_url', 'ai_token', 'onboarded', 'last_backup', 'install_id', 'last_auto_backup'];
 
 export async function exportAll(db: SQLiteDatabase) {
   const out: Record<string, unknown> = { app: 'Crohnic', format: 2, exported_at: new Date().toISOString() };

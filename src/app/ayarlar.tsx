@@ -9,7 +9,7 @@ import { Logo } from '../components/Mascot';
 import { Button, Card, Icon, Row, Screen, T, Tap, st } from '../components/ui';
 import { DEFAULT_AI, analyze, type AiConfig } from '../lib/ai';
 import { useApp } from '../lib/app-state';
-import { applyBackup, lastBackup, pickBackup, shareBackup } from '../lib/backup';
+import { applyBackup, lastBackup, latestSnapshot, pickBackup, shareBackup } from '../lib/backup';
 import { daysSince, relative } from '../lib/dates';
 import * as db from '../lib/db';
 import { SETTINGS, askPermission, isOn, permission, syncReminders, type PermissionState } from '../lib/reminders';
@@ -36,6 +36,7 @@ export default function Settings() {
     setFactors((f) => ({ ...f, [key]: on }));
     SETTERS[key](on);
     await db.setSetting(sql, key, on ? '1' : '0');
+    await db.setSetting(sql, 'factors_seen', '1');
     app.bump();
   };
 
@@ -79,8 +80,19 @@ export default function Settings() {
   };
 
   const restore = async () => {
+    const snap = await latestSnapshot();
+    if (!snap) return restoreFrom(pickBackup);
+    const when = snap.summary.exported_at ? new Date(snap.summary.exported_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' }) : '';
+    Alert.alert('Nereden geri yükleyeyim?', undefined, [
+      { text: `Otomatik yedek (${when})`, onPress: () => restoreFrom(async () => snap) },
+      { text: 'Dosya seç', onPress: () => restoreFrom(pickBackup) },
+      { text: 'Vazgeç', style: 'cancel' },
+    ]);
+  };
+
+  const restoreFrom = async (source: () => Promise<Awaited<ReturnType<typeof pickBackup>>>) => {
     try {
-      const picked = await pickBackup();
+      const picked = await source();
       if (!picked) return;
       const { summary } = picked;
       const when = summary.exported_at ? new Date(summary.exported_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'tarihi bilinmeyen';
@@ -261,10 +273,10 @@ export default function Settings() {
       <Card style={{ gap: 10 }}>
         <T v="h3">Yedek</T>
         <T v="small" color={palette.inkSoft}>
-          Kayıtların sadece bu telefonda. Yedeği “Dosyalar’a Kaydet” ile iCloud Drive’a koy; telefon değişirse buradan geri yüklersin. Yemek fotoğrafları yedeğe girmez.
+          Kayıtların ve fotoğrafların bu telefonda durur ve iPhone’un iCloud Yedeklemesi açıksa her gece otomatik yedeklenir. Yeni telefonu bu yedekten kurunca hepsi geri gelir. Açık mı diye bakmak için: Ayarlar › adın › iCloud › iCloud Yedeklemesi.{'\n\n'}Ayrıca her hafta uygulamanın içine otomatik bir kopya alırım. Elle yedek ise başka bir yere (iCloud Drive, e-posta) ayrı bir kopya koymak içindir.
         </T>
         <T v="small" color={backupAt && daysSince(backupAt) < 30 ? palette.good : palette.warn}>
-          {backupAt ? `Son yedek: ${relative(backupAt)}` : 'Henüz yedek almadın'}
+          {backupAt ? `Son elle yedek: ${relative(backupAt)}` : 'Henüz elle yedek almadın'}
         </T>
         <Row gap={8}>
           <Button title="Yedekle" icon="icloud.and.arrow.up" onPress={backup} loading={backingUp} style={{ flex: 1 }} />

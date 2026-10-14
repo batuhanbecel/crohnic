@@ -1,5 +1,7 @@
 // Crohnic AI endpoint — Vercel Function.
 // Env: ANTHROPIC_API_KEY (zorunlu), APP_TOKEN (zorunlu), CLAUDE_MODEL (opsiyonel)
+// Kötüye kullanım sınırları (opsiyonel): DEVICE_DAILY_LIMIT (30), IP_DAILY_LIMIT (60), GLOBAL_DAILY_LIMIT (500)
+// Kalıcı sayaç için: UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN (yoksa sayaç sunucu belleğinde tutulur)
 
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
 
@@ -130,6 +132,51 @@ function safeEqual(a: string, b: string) {
   return r === 0;
 }
 
+// ---------- abuse limits ----------
+// The app token ships inside the app, so it can be extracted. These limits cap what a leaked
+// token can cost: per install, per IP and for the whole service, per UTC day.
+const LIMITS = {
+  device: Number(process.env.DEVICE_DAILY_LIMIT) || 30,
+  ip: Number(process.env.IP_DAILY_LIMIT) || 60,
+  global: Number(process.env.GLOBAL_DAILY_LIMIT) || 500,
+};
+const memory = new Map<string, number>();
+
+async function hit(key: string): Promise<number> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (url && token) {
+    try {
+      const r = await fetch(`${url}/pipeline`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify([
+          ['INCR', key],
+          ['EXPIRE', key, '90000'],
+        ]),
+      });
+      const out: any = await r.json();
+      const n = Number(out?.[0]?.result);
+      if (Number.isFinite(n)) return n;
+    } catch (e) {
+      console.error('rate store error', e);
+    }
+  }
+  const n = (memory.get(key) ?? 0) + 1;
+  memory.set(key, n);
+  return n;
+}
+
+async function overLimit(request: Request): Promise<string | null> {
+  const day = new Date().toISOString().slice(0, 10);
+  const device = (request.headers.get('x-crohnic-device') ?? '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 64) || 'none';
+  const ip = (request.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown';
+  const [d, i, g] = await Promise.all([hit(`rl:${day}:d:${device}`), hit(`rl:${day}:ip:${ip}`), hit(`rl:${day}:all`)]);
+  if (g > LIMITS.global) return 'Bugünlük analiz kapasitesi doldu. Yarın tekrar dene, listeden seçerek değerlendirme her zaman çalışır.';
+  if (d > LIMITS.device || i > LIMITS.ip) return `Bugün ${LIMITS.device} analiz hakkını kullandın. Yarın yenilenir, listeden seçerek değerlendirme her zaman çalışır.`;
+  return null;
+}
+
 export async function GET() {
   return json({ ok: true, app: 'crohnic', model: MODEL });
 }
@@ -142,6 +189,9 @@ export async function POST(request: Request) {
   const token = request.headers.get('x-crohnic-token') ?? '';
   if (!safeEqual(token, appToken)) return json({ error: 'Yetkisiz' }, 401);
 
+  const limited = await overLimit(request);
+  if (limited) return json({ error: limited }, 429);
+
   let body: Body;
   try {
     body = (await request.json()) as Body;
@@ -152,7 +202,9 @@ export async function POST(request: Request) {
   const mode = body.mode ?? 'meal';
   if ((mode === 'meal' || mode === 'menu') && !body.imageBase64) return json({ error: 'Fotoğraf eksik' }, 400);
   if (mode === 'food' && !body.foodName?.trim()) return json({ error: 'Yemek adı eksik' }, 400);
-  if (body.imageBase64 && body.imageBase64.length > 6_000_000) return json({ error: 'Fotoğraf çok büyük' }, 413);
+  if (body.imageBase64 && body.imageBase64.length > 3_000_000) return json({ error: 'Fotoğraf çok büyük' }, 413);
+  // the app sends a short summary; anything bigger is not from the app
+  if (JSON.stringify(body.history ?? {}).length > 20_000 || (body.recent ?? '').length > 2_000) return json({ error: 'Geçersiz istek' }, 400);
 
   const phase = body.phase === 'atak' ? 'atak' : 'remisyon';
   const context = [

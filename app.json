@@ -54,7 +54,8 @@
         }
       ],
       "expo-updates",
-      "./plugins/local-notifications-only.js"
+      "./plugins/local-notifications-only.js",
+      "expo-quick-actions"
     ],
     "experiments": {
       "typedRoutes": false

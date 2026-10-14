@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import * as Updates from 'expo-updates';
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, Switch, View } from 'react-native';
 import { TextInput } from '../components/text';
 import { Logo, Mascot, type Mood } from '../components/Mascot';
 import { Button, Card, IconBubble, Row, Screen, Segmented, T, st, type SymbolName } from '../components/ui';
@@ -11,6 +11,7 @@ import { applyBackup, pickBackup } from '../lib/backup';
 import * as db from '../lib/db';
 import type { Phase } from '../lib/foods';
 import { askPermission, syncReminders } from '../lib/reminders';
+import { setLactose, setStoma, setStricture } from '../lib/tolerance';
 import { palette, type } from '../lib/theme';
 
 const POINTS: { icon: SymbolName; color: string; title: string; text: string }[] = [
@@ -19,7 +20,14 @@ const POINTS: { icon: SymbolName; color: string; title: string; text: string }[]
   { icon: 'chart.bar.fill', color: palette.plum, title: 'Neyin iyi geldiğini birlikte bulalım', text: 'Kayıtlar biriktikçe örüntüleri çıkarırım, kontrole hazır gidersin.' },
 ];
 
-const STEPS = 3;
+const STEPS = 4;
+
+const FACTORS = [
+  { key: 'stricture', title: 'Bağırsakta darlık (striktür)', text: 'Lifli, kabuklu ve çekirdekli yiyecekleri hep temkinli değerlendiririm.' },
+  { key: 'stoma', title: 'Stoma (ileostomi)', text: 'Tıkanma riskine karşı posalı yiyeceklerde dikkatli olurum.' },
+  { key: 'lactose', title: 'Laktoz intoleransı', text: 'Süt ve sütlü tatlıları daha riskli sayarım, yoğurt ve kefir genelde sorun olmaz.' },
+] as const;
+type FactorKey = (typeof FACTORS)[number]['key'];
 
 export default function Welcome() {
   const sql = useSQLiteContext();
@@ -28,12 +36,18 @@ export default function Welcome() {
   const [name, setName] = useState('');
   const [phase, setPhase] = useState<Phase>('remisyon');
   const [busy, setBusy] = useState(false);
+  const [factors, setFactors] = useState<Record<FactorKey, boolean>>({ stricture: false, stoma: false, lactose: false });
 
   const finish = async (notify: boolean) => {
     setBusy(true);
     try {
       await app.saveName(name);
       await app.changePhase(phase);
+      setStricture(factors.stricture);
+      setStoma(factors.stoma);
+      setLactose(factors.lactose);
+      for (const f of FACTORS) await db.setSetting(sql, f.key, factors[f.key] ? '1' : '0');
+      await db.setSetting(sql, 'factors_seen', '1');
       if (notify) await askPermission();
       await db.setSetting(sql, 'notif_prompt_seen', '1');
       await app.finishOnboarding();
@@ -64,7 +78,7 @@ export default function Welcome() {
     }
   };
 
-  const mood: Mood = step === 0 ? 'merhaba' : step === 1 ? 'mutlu' : 'kayit';
+  const mood: Mood = step === 0 ? 'merhaba' : step === 1 ? 'mutlu' : step === 2 ? 'doktor' : 'kayit';
 
   return (
     <Screen tone={phase === 'atak' && step === 1 ? 'flare' : 'calm'} contentStyle={{ paddingTop: 24, gap: 16 }}>
@@ -140,6 +154,36 @@ export default function Welcome() {
           </Card>
           <Button title="Devam" icon="arrow.right" onPress={() => setStep(2)} />
           <Button title="Eski telefonumdan yedeğim var" kind="plain" compact onPress={restore} />
+        </>
+      ) : step === 2 ? (
+        <>
+          <View style={{ gap: 6 }}>
+            <T v="title" style={{ textAlign: 'center' }}>
+              Bunlardan biri var mı?
+            </T>
+            <T v="callout" color={palette.inkSoft} style={{ textAlign: 'center' }}>
+              Yemekleri sana göre değerlendirmem için. Emin değilsen kapalı bırak, sonra Ayarlar’dan açarsın.
+            </T>
+          </View>
+          <Card style={{ gap: 16 }}>
+            {FACTORS.map((f) => (
+              <Row key={f.key} gap={12}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <T v="h3">{f.title}</T>
+                  <T v="small" color={palette.inkSoft}>
+                    {f.text}
+                  </T>
+                </View>
+                <Switch
+                  value={factors[f.key]}
+                  onValueChange={(on) => setFactors((x) => ({ ...x, [f.key]: on }))}
+                  trackColor={{ true: palette.lettuce }}
+                  accessibilityLabel={f.title}
+                />
+              </Row>
+            ))}
+          </Card>
+          <Button title="Devam" icon="arrow.right" onPress={() => setStep(3)} />
         </>
       ) : (
         <>

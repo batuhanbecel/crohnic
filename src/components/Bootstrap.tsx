@@ -5,6 +5,7 @@ import * as Updates from 'expo-updates';
 import { useEffect } from 'react';
 import { Appearance, AppState, DevSettings, Platform } from 'react-native';
 import { useApp } from '../lib/app-state';
+import { autoSnapshot } from '../lib/backup';
 import { handleNotificationAction, setupNotifications, syncReminders } from '../lib/reminders';
 import { scheme } from '../lib/theme';
 
@@ -19,6 +20,11 @@ export function Bootstrap() {
   useEffect(() => {
     if (ready) syncReminders(sql);
   }, [sql, ready, dataVersion]);
+
+  // weekly automatic copy (cheap: one small JSON, skipped when the last one is recent)
+  useEffect(() => {
+    if (ready && Platform.OS !== 'web') autoSnapshot(sql);
+  }, [sql, ready]);
 
   // open the screen a notification points to
   useEffect(() => {
