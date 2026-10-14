@@ -12,7 +12,7 @@ import * as db from '../../lib/db';
 import { afterMealSaved } from '../../lib/reminders';
 import { FOOD_BY_ID, FOODS, TAGS } from '../../lib/foods';
 import { palette, radius, surface, type } from '../../lib/theme';
-import { assessFood, generalVerdict } from '../../lib/tolerance';
+import { assessFood, generalVerdict, setTagHistory } from '../../lib/tolerance';
 import { useAnalyze } from '../../lib/use-analyze';
 
 export default function FoodDetail() {
@@ -24,14 +24,19 @@ export default function FoodDetail() {
   const [meals, setMeals] = useState<db.Meal[]>([]);
 
   useEffect(() => {
-    db.allRatedMeals(sql).then(setMeals);
+    db.allRatedMeals(sql).then((m) => {
+      setTagHistory(m);
+      setMeals(m);
+    });
   }, [sql, app.dataVersion]);
 
   /** Gentler foods from the same category, for the "instead" row. */
   const alternatives = useMemo(() => {
     if (!food) return [];
     return FOODS.filter((f) => f.cat === food.cat && f.id !== food.id && generalVerdict(f.tags, app.phase).verdict === 'iyi').slice(0, 4);
-  }, [food, app.phase]);
+    // meals feed the per-tag history that generalVerdict reads
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [food, app.phase, meals]);
 
   if (!food) return null;
   const a = assessFood(food, app.phase, meals);

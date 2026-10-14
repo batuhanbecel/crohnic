@@ -1,5 +1,5 @@
 import type { Meal } from './db';
-import { FOOD_BY_ID, STRICTURE_TAGS, TAGS, isTag, normalizeName, type Food, type Phase, type Tag, type Verdict } from './foods';
+import { FOOD_BY_ID, LACTOSE_WEIGHTS, STRICTURE_TAGS, TAGS, isTag, normalizeName, type Food, type Phase, type Tag, type Verdict } from './foods';
 
 export const VERDICT_RANK: Record<Verdict, number> = { iyi: 0, dikkat: 1, riskli: 2 };
 
@@ -9,26 +9,82 @@ export function tagsOf(meal: Pick<Meal, 'tags' | 'food_id'>): Tag[] {
   return meal.food_id && FOOD_BY_ID[meal.food_id] ? FOOD_BY_ID[meal.food_id].tags : [];
 }
 
-let stricture = false;
-/** Set from Ayarlar: with a stricture, fibre-type tags keep their flare weight in remission too. */
+/**
+ * Personal factors from Ayarlar. Each one moves the general weights towards what the
+ * guidelines say for that situation.
+ * - stricture / stoma: insoluble fibre, skins, seeds and nuts keep their flare weight in
+ *   remission too (risk of blockage).
+ * - lactose intolerance: lactose gets a real weight instead of the small default.
+ */
+const profile = { stricture: false, stoma: false, lactose: false };
+
 export function setStricture(on: boolean) {
-  stricture = on;
+  profile.stricture = on;
 }
 export function hasStricture() {
-  return stricture;
+  return profile.stricture;
+}
+export function setStoma(on: boolean) {
+  profile.stoma = on;
+}
+export function hasStoma() {
+  return profile.stoma;
+}
+export function setLactose(on: boolean) {
+  profile.lactose = on;
+}
+export function hasLactose() {
+  return profile.lactose;
+}
+
+/**
+ * The user's own reactions per tag (from rated meals). A tag that keeps causing trouble
+ * weighs more on every food that has it, even ones never logged; one the user clearly
+ * tolerates stops counting against them.
+ */
+let tagHistory = new Map<Tag, PersonalStat>();
+export function setTagHistory(meals: Meal[]) {
+  tagHistory = statsByTag(meals);
+}
+
+const TAG_MIN_N = 3;
+
+function tagRate(t: Tag) {
+  const s = tagHistory.get(t);
+  if (t === 'hafif' || !s || s.n < TAG_MIN_N) return null;
+  return { s, rate: (s.mild * 0.5 + s.bad) / s.n };
+}
+
+function baseWeight(t: Tag, phase: Phase) {
+  const lactose = profile.lactose ? LACTOSE_WEIGHTS[t] : undefined;
+  if (lactose) return lactose[phase];
+  if ((profile.stricture || profile.stoma) && STRICTURE_TAGS.includes(t)) return TAGS[t].w.atak;
+  return TAGS[t].w[phase];
 }
 
 function weight(t: Tag, phase: Phase) {
-  return stricture && STRICTURE_TAGS.includes(t) ? TAGS[t].w.atak : TAGS[t].w[phase];
+  const w = baseWeight(t, phase);
+  const r = tagRate(t);
+  if (!r) return w;
+  if (r.rate >= 0.5) return w + 1; // a personal trigger
+  if (r.rate < 0.2) return Math.min(w, 0); // tolerated well, again and again
+  return w;
 }
 
-/** General (non-personal) verdict from tags and current phase. */
+function reasonFor(t: Tag) {
+  const r = tagRate(t);
+  const label = TAGS[t].label.toLocaleLowerCase('tr-TR');
+  if (r && r.rate >= 0.5) return `${TAGS[t].reason}. Kayıtlarında ${label} içeren yemekler ${r.s.n} kezden ${r.s.mild + r.s.bad}'inde dokundu`;
+  if (r && r.rate < 0.2) return `${TAGS[t].label} içeren yemekler sana ${r.s.n} kezdir iyi geldi`;
+  return TAGS[t].reason;
+}
+
+/** General verdict from tags and phase, adjusted by personal factors and per-tag history. */
 export function generalVerdict(tags: Tag[], phase: Phase): { verdict: Verdict; reasons: string[] } {
-  const score = tags.reduce((s, t) => s + weight(t, phase), 0);
+  // rounded so 0.3 + 0.6 lands on the 0.9 boundary instead of 0.8999…
+  const score = Math.round(tags.reduce((s, t) => s + weight(t, phase), 0) * 100) / 100;
   const verdict: Verdict = score < 0.9 ? 'iyi' : score < 2 ? 'dikkat' : 'riskli';
-  const reasons = [...tags]
-    .sort((a, b) => weight(b, phase) - weight(a, phase))
-    .map((t) => TAGS[t].reason);
+  const reasons = [...tags].sort((a, b) => weight(b, phase) - weight(a, phase)).map(reasonFor);
   if (!reasons.length) reasons.push('Bilinen bir tetikleyici içermiyor');
   return { verdict, reasons };
 }

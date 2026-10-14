@@ -10,7 +10,7 @@ import { useApp } from '../../../lib/app-state';
 import * as db from '../../../lib/db';
 import { CATEGORIES, FOODS, searchFoods, type Category, type Verdict } from '../../../lib/foods';
 import { palette, radius, surface, type } from '../../../lib/theme';
-import { assessFood, statsByName } from '../../../lib/tolerance';
+import { assessFood, setTagHistory, statsByName } from '../../../lib/tolerance';
 import { useAnalyze } from '../../../lib/use-analyze';
 
 type VF = Verdict | 'hepsi' | 'denedim';
@@ -33,6 +33,7 @@ export default function FoodList() {
   );
 
   const assessed = useMemo(() => {
+    setTagHistory(meals);
     const stats = statsByName(meals);
     return FOODS.map((f) => ({ f, a: assessFood(f, app.phase, meals, stats) }));
   }, [app.phase, meals]);
@@ -66,7 +67,7 @@ export default function FoodList() {
   const explain = () =>
     Alert.alert(
       'Bu değerlendirme nasıl yapılıyor?',
-      'Her yemeğin içeriği (lif, yağ, acı, laktoz, kafein gibi) etiketlenir ve dönemine göre puanlanır. Atakta kısa süreli düşük posalı beslenme, remisyonda ise ECCO ve IOIBD kılavuzlarına uygun olarak gereksiz lif kısıtlaması yapılmaz.\n\nBunlar genel bilgidir, kişiden kişiye değişir. Bir yemeği 2 kez kaydedip nasıl geçtiğini yazınca senin sonuçların genel değerlendirmenin önüne geçer. Diyetini değiştirmeden önce doktorun ya da diyetisyeninle konuş.',
+      'Üç katmanda değerlendiririm:\n\n1. Genel kural: Her yemeğin içeriği (lif, yağ, acı, laktoz, kafein, katkı gibi) etiketlenir ve dönemine göre puanlanır. Ağırlıklar IOIBD (2020) ve ESPEN (2023) beslenme önerilerine göre: doymuş yağ, işlenmiş et ve çok işlenmiş gıdalar azaltılır; lif yalnızca darlık varsa ya da atakta kısıtlanır; çiğ hayvansal gıdalar enfeksiyon riski yüzünden temkinli sayılır.\n\n2. Sana özel durumlar: Ayarlar’da darlık, stoma ya da laktoz intoleransını açarsan puanlar ona göre değişir.\n\n3. Senin kayıtların: Bir yemeği 2 kez yiyip nasıl geçtiğini yazınca senin sonucun geçerli olur. Bir içerik (örneğin baklagil) sana 3 kayıtta tekrar tekrar dokunursa, hiç denemediğin benzer yemekler de daha riskli görünür.\n\nCrohn’da herkese uyan tek bir liste yok. Kılavuzlar da bunu söylüyor; en doğru sonucu senin kayıtların verir. Diyetini değiştirmeden önce doktorun ya da diyetisyeninle konuş.',
     );
 
   const header = (

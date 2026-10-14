@@ -12,6 +12,7 @@ export type Tag =
   | 'kuruyemis'
   | 'cekirdek'
   | 'baklagil'
+  | 'baklagil_az'
   | 'lahana'
   | 'yag'
   | 'yag_hafif'
@@ -28,42 +29,58 @@ export type Tag =
   | 'seker'
   | 'islenmis'
   | 'tatlandirici'
-  | 'katki';
+  | 'katki'
+  | 'cig_hayvansal';
 
 /**
- * Weights per phase. Negative = gentle on the gut.
- * Flare: short-term low-residue approach (less insoluble fibre, fat, spice, lactose).
- * Remission: ECCO 2025 / IOIBD say long-term fibre restriction isn't needed and higher
- * fibre intake goes with fewer flares, so fibre is only lightly weighted there; gas
- * makers, fat, alcohol, processed meat and ultra-processed food stay weighted.
- * A known stricture brings flare-level fibre caution back (see STRICTURE_TAGS).
+ * Weights per phase. Negative = gentle on the gut. A food's score is the sum of its tags:
+ * under 0.9 → iyi, under 2 → dikkat, otherwise riskli (see tolerance.ts).
+ *
+ * Sources and how they map:
+ * - IOIBD dietary guidance (Levine et al., Clin Gastroenterol Hepatol 2020) and ESPEN IBD
+ *   guideline (2023): no single diet for Crohn's; reduce saturated/trans fat, processed meat
+ *   and emulsifier-rich ultra-processed food; restrict insoluble fibre only in symptomatic
+ *   stricturing disease; no consensus to restrict dairy; insufficient evidence on sugar;
+ *   avoid unpasteurised/raw animal food (infection risk on immunosuppressants).
+ * - Flare: short-term low-residue practice (less insoluble fibre, skins, seeds, fat, spice).
+ * - Things without Crohn's-specific evidence (acidity, sugar, lactose without intolerance)
+ *   carry small weights; personal factors (stricture, stoma, lactose intolerance) and the
+ *   user's own reactions adjust weights in tolerance.ts.
  */
 export const TAGS: Record<Tag, { label: string; reason: string; w: Record<Phase, number> }> = {
   hafif: { label: 'Hafif', reason: 'Sade pişmiş, mideyi yormaz', w: { remisyon: -1, atak: -1 } },
-  pure: { label: 'Püre', reason: 'Püre kıvamında, lifi yumuşamış', w: { remisyon: 0.3, atak: 1 } },
+  pure: { label: 'Püre', reason: 'Püre kıvamında, lifi yumuşamış', w: { remisyon: 0, atak: 0.2 } },
   lif: { label: 'Bol lif', reason: 'Çözünmeyen lifi yüksek', w: { remisyon: 0.3, atak: 2 } },
   cig: { label: 'Çiğ sebze', reason: 'Çiğ sebze bağırsağı daha çok çalıştırır', w: { remisyon: 0.4, atak: 2 } },
   kabuk: { label: 'Kabuk', reason: 'Kabuk ve zar zor sindirilir', w: { remisyon: 0.5, atak: 2 } },
   kuruyemis: { label: 'Kuruyemiş', reason: 'Kuruyemiş ve tohum sert, lifli', w: { remisyon: 0.4, atak: 2 } },
   cekirdek: { label: 'Çekirdek', reason: 'Küçük çekirdekleri var', w: { remisyon: 0.2, atak: 1.5 } },
   baklagil: { label: 'Baklagil', reason: 'Baklagiller gaz ve şişkinlik yapabilir', w: { remisyon: 0.6, atak: 2 } },
+  baklagil_az: { label: 'Süzülmüş baklagil', reason: 'Kabuksuz ya da süzülmüş baklagil, yine de biraz gaz yapabilir', w: { remisyon: 0.1, atak: 0.9 } },
   lahana: { label: 'Gaz yapar', reason: 'Lahanagiller, soğan ve sarımsak gaz yapabilir', w: { remisyon: 0.7, atak: 1.5 } },
   yag: { label: 'Yağlı', reason: 'Yağlı ya da kızartma, ishali tetikleyebilir', w: { remisyon: 0.9, atak: 1.8 } },
-  yag_hafif: { label: 'Biraz yağlı', reason: 'Bir miktar yağ var', w: { remisyon: 0.3, atak: 1 } },
+  yag_hafif: { label: 'Biraz yağlı', reason: 'Bir miktar yağ var', w: { remisyon: 0.3, atak: 0.9 } },
   aci: { label: 'Acı', reason: 'Acı ve yoğun baharat bağırsağı tahriş edebilir', w: { remisyon: 1, atak: 2 } },
   aci_hafif: { label: 'Az baharatlı', reason: 'Hafif baharatlı', w: { remisyon: 0.3, atak: 0.9 } },
-  asit: { label: 'Asitli', reason: 'Domates, sirke ve narenciye asidi bazılarına dokunur', w: { remisyon: 0.3, atak: 1 } },
-  sut: { label: 'Laktoz', reason: 'Laktoz içeriyor', w: { remisyon: 0.9, atak: 1.4 } },
-  sut_az: { label: 'Az laktoz', reason: 'Laktozu düşük bir süt ürünü', w: { remisyon: 0.2, atak: 0.6 } },
+  asit: { label: 'Asitli', reason: 'Domates, sirke ve narenciye asidi bazılarına dokunur', w: { remisyon: 0.1, atak: 0.5 } },
+  sut: { label: 'Laktoz', reason: 'Laktoz içeriyor, laktoz intoleransı olanlarda ishal ve gaz yapar', w: { remisyon: 0.4, atak: 1 } },
+  sut_az: { label: 'Az laktoz', reason: 'Laktozu düşük bir süt ürünü', w: { remisyon: 0.1, atak: 0.4 } },
   fermente: { label: 'Fermente', reason: 'Yoğurt ve kefir çoğu kişide iyi tolere edilir', w: { remisyon: 0.2, atak: 0.8 } },
   kafein: { label: 'Kafein', reason: 'Kafein bağırsağı hızlandırır', w: { remisyon: 0.9, atak: 1.5 } },
   kafein_hafif: { label: 'Az kafein', reason: 'Biraz kafein var', w: { remisyon: 0.1, atak: 0.6 } },
   alkol: { label: 'Alkol', reason: 'Alkol bağırsak zarını tahriş eder', w: { remisyon: 1.5, atak: 2.5 } },
   gazli: { label: 'Gazlı', reason: 'Gazlı içecekler şişkinlik yapar', w: { remisyon: 0.9, atak: 1.5 } },
-  seker: { label: 'Şekerli', reason: 'Yoğun şeker ishali artırabilir', w: { remisyon: 0.4, atak: 1 } },
+  seker: { label: 'Şekerli', reason: 'Yoğun şeker ishali artırabilir', w: { remisyon: 0.3, atak: 0.7 } },
   islenmis: { label: 'İşlenmiş et', reason: 'İşlenmiş et yağlı ve katkılı', w: { remisyon: 0.9, atak: 1.6 } },
   tatlandirici: { label: 'Tatlandırıcı', reason: 'Sorbitol gibi tatlandırıcılar gaz ve ishal yapabilir', w: { remisyon: 0.9, atak: 1.5 } },
   katki: { label: 'Katkılı', reason: 'Çok işlenmiş, katkılı ürünler Crohn ile ilişkilendiriliyor', w: { remisyon: 0.6, atak: 0.9 } },
+  cig_hayvansal: { label: 'Çiğ / az pişmiş', reason: 'Çiğ ya da az pişmiş hayvansal gıda, bağışıklığı baskılayan ilaç kullananlarda enfeksiyon riski taşır', w: { remisyon: 0.9, atak: 1.5 } },
+};
+
+/** With lactose intolerance (set in Ayarlar) lactose carries real weight. */
+export const LACTOSE_WEIGHTS: Partial<Record<Tag, Record<Phase, number>>> = {
+  sut: { remisyon: 2, atak: 2.5 },
+  sut_az: { remisyon: 0.5, atak: 0.9 },
 };
 
 /** Tags that stay risky in remission when the user has a stricture (narrowing). */

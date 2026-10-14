@@ -6,7 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { analyze, prepareImage, type Mode } from './ai';
 import { useApp } from './app-state';
 import * as db from './db';
-import { historyForAI, hasStricture } from './tolerance';
+import { hasLactose, hasStoma, hasStricture, historyForAI } from './tolerance';
 
 export function useAnalyze() {
   const sql = useSQLiteContext();
@@ -31,6 +31,8 @@ export function useAnalyze() {
       s ? `Son 24 saatte ağrı ${s.pain}/5, şişkinlik ${s.bloating}/5, gaz ${s.gas}/5` : null,
       b ? `Son tuvalet Bristol tip ${b.bristol}${b.blood ? ', kan var' : ''}` : null,
       hasStricture() ? 'Bağırsakta bilinen darlık (striktür) var: posalı ve lifli yiyeceklerde temkinli ol' : null,
+      hasStoma() ? 'İleostomisi var: tıkanma riskine karşı lifli, kabuklu ve posalı yiyeceklerde temkinli ol' : null,
+      hasLactose() ? 'Laktoz intoleransı var: süt, krema ve sütlü tatlıları riskli say; yoğurt, kefir ve eski peynir genelde tolere edilir' : null,
     ]
       .filter(Boolean)
       .join('. ');

@@ -14,7 +14,7 @@ import { daysSince, relative } from '../lib/dates';
 import * as db from '../lib/db';
 import { SETTINGS, askPermission, isOn, permission, syncReminders, type PermissionState } from '../lib/reminders';
 import { palette } from '../lib/theme';
-import { hasStricture, setStricture } from '../lib/tolerance';
+import { hasLactose, hasStoma, hasStricture, setLactose, setStoma, setStricture } from '../lib/tolerance';
 
 export default function Settings() {
   const sql = useSQLiteContext();
@@ -29,12 +29,13 @@ export default function Settings() {
   const [remindDaily, setRemindDaily] = useState(true);
   const [backupAt, setBackupAt] = useState<number | null>(null);
   const [backingUp, setBackingUp] = useState(false);
-  const [stricture, setStrictureState] = useState(hasStricture());
-
-  const toggleStricture = async (on: boolean) => {
-    setStrictureState(on);
-    setStricture(on);
-    await db.setSetting(sql, 'stricture', on ? '1' : '0');
+  // personal factors that change how foods are rated
+  const [factors, setFactors] = useState({ stricture: hasStricture(), stoma: hasStoma(), lactose: hasLactose() });
+  const SETTERS = { stricture: setStricture, stoma: setStoma, lactose: setLactose };
+  const toggleFactor = async (key: keyof typeof factors, on: boolean) => {
+    setFactors((f) => ({ ...f, [key]: on }));
+    SETTERS[key](on);
+    await db.setSetting(sql, key, on ? '1' : '0');
     app.bump();
   };
 
@@ -204,16 +205,30 @@ export default function Settings() {
         <LinkRow icon="doc.text.fill" title="Doktor raporu (PDF)" onPress={() => router.push('/rapor')} />
       </Card>
 
-      <Card style={{ gap: 10 }}>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <View style={{ flex: 1 }}>
-            <T v="callout">Bağırsakta darlık (striktür) var</T>
-            <T v="small" color={palette.inkSoft}>
-              Doktorun söylediyse aç. Remisyonda da lifli, kabuklu ve posalı yiyecekleri temkinli değerlendiririm.
-            </T>
-          </View>
-          <Switch value={stricture} onValueChange={toggleStricture} trackColor={{ true: palette.lettuce }} />
-        </Row>
+      <Card style={{ gap: 14 }}>
+        <View style={{ gap: 2 }}>
+          <T v="h3">Sana özel durumlar</T>
+          <T v="small" color={palette.inkSoft}>
+            Yemek değerlendirmeleri bunlara göre değişir. Doktorunun söylediklerini aç.
+          </T>
+        </View>
+        {(
+          [
+            { key: 'stricture', title: 'Bağırsakta darlık (striktür) var', text: 'Remisyonda da lifli, kabuklu, çekirdekli ve posalı yiyecekleri temkinli değerlendiririm.' },
+            { key: 'stoma', title: 'Stoman (ileostomi) var', text: 'Tıkanma riskine karşı lifli ve posalı yiyecekleri temkinli değerlendiririm.' },
+            { key: 'lactose', title: 'Laktoz intoleransım var', text: 'Süt, krema ve sütlü tatlıları daha riskli sayarım. Yoğurt, kefir ve eski peynirler genelde daha iyi tolere edilir.' },
+          ] as const
+        ).map((x) => (
+          <Row key={x.key} style={{ justifyContent: 'space-between' }}>
+            <View style={{ flex: 1 }}>
+              <T v="callout">{x.title}</T>
+              <T v="small" color={palette.inkSoft}>
+                {x.text}
+              </T>
+            </View>
+            <Switch value={factors[x.key]} onValueChange={(on) => toggleFactor(x.key, on)} trackColor={{ true: palette.lettuce }} accessibilityLabel={x.title} />
+          </Row>
+        ))}
       </Card>
 
       <Card style={{ gap: 14 }}>

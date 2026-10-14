@@ -6,10 +6,10 @@
 
 export const FOOD_SOURCE = `
 # Çorba
-Mercimek çorbası|🍲|pure
-Ezogelin çorbası|🍲|pure aci_hafif
+Mercimek çorbası|🍲|pure baklagil_az
+Ezogelin çorbası|🍲|pure baklagil_az aci_hafif
 Yeşil mercimek çorbası|🍲|baklagil lif
-Mercimekli bulgur çorbası|🍲|pure lif
+Mercimekli bulgur çorbası|🍲|pure baklagil_az lif
 Süzme sebze çorbası|🥕|hafif
 Sebze çorbası (parçalı)|🥕|lif
 Tavuk suyu çorba|🍜|hafif
@@ -36,7 +36,7 @@ Tutmaç çorbası|🥣|fermente baklagil
 Tarhana çorbası|🥣|fermente asit aci_hafif
 Arabaşı çorbası|🍲|aci asit yag_hafif
 Analı kızlı|🍲|baklagil aci
-Mahluta|🍲|pure baklagil
+Mahluta|🍲|pure baklagil_az
 Nohut çorbası|🍲|baklagil
 Börülce çorbası|🍲|baklagil
 Yarma çorbası|🥣|lif fermente
@@ -56,7 +56,7 @@ Zencefilli havuç çorbası|🥕|pure aci_hafif
 Kabak çorbası|🥒|pure
 Kabak çiçeği çorbası|🌼|pure
 Kereviz çorbası|🥣|pure
-Bezelye çorbası|🫛|pure baklagil
+Bezelye çorbası|🫛|pure baklagil_az
 Ispanak çorbası|🥬|pure lif
 Kuşkonmaz çorbası|🌱|pure sut_az
 Enginar çorbası|🌼|pure
@@ -146,7 +146,7 @@ Kuzu haşlama|🍲|yag_hafif
 Dana bonfile|🥩|hafif
 Antrikot|🥩|yag_hafif
 Biftek|🥩|yag_hafif
-Steak (az pişmiş)|🥩|yag_hafif
+Steak (az pişmiş)|🥩|yag_hafif cig_hayvansal
 Rosto|🥩|yag_hafif
 Rosto dana (ince dilim)|🥩|hafif
 Haşlama et|🍲|yag_hafif
@@ -213,7 +213,7 @@ Tirit|🍖|yag fermente
 Izgara somon|🐟|hafif
 Fırın somon|🐟|hafif
 Somon buğulama|🐟|hafif
-Somon füme|🐟|islenmis
+Somon füme|🐟|islenmis cig_hayvansal
 Buğulama levrek|🐟|hafif
 Izgara levrek|🐟|hafif
 Fırın levrek|🐟|hafif
@@ -246,7 +246,7 @@ Barbunya tava|🐟|yag
 Kılıç şiş|🍢|yag_hafif
 Balık şiş|🍢|hafif
 Balık köftesi|🐟|yag
-Lakerda|🐟|yag_hafif
+Lakerda|🐟|yag_hafif cig_hayvansal
 Fish and chips|🐟|yag
 Kalamar tava|🦑|yag
 Kalamar ızgara|🦑|kabuk
@@ -260,14 +260,14 @@ Karides güveç|🦐|yag sut_az aci
 Midye dolma|🦪|aci_hafif
 Midye tava|🦪|yag
 Midye buğulama|🦪|hafif
-İstiridye|🦪|hafif
+İstiridye|🦪|cig_hayvansal
 Yengeç|🦀|hafif
 Istakoz|🦞|hafif
-Sushi (çiğ balık)|🍣|hafif
+Sushi (çiğ balık)|🍣|cig_hayvansal
 Sushi (pişmiş)|🍣|hafif
-Somon sushi roll|🍣|hafif
+Somon sushi roll|🍣|cig_hayvansal
 California roll|🍣|yag_hafif
-Sashimi|🍣|hafif
+Sashimi|🍣|cig_hayvansal
 Tempura|🍤|yag
 Balık ekmek|🥙|yag_hafif cig lahana
 
@@ -359,7 +359,7 @@ Kereviz püresi|🥕|pure
 Balkabağı püresi|🎃|pure
 Havuç püresi|🥕|pure
 Kabak püresi|🥒|pure
-Bezelye püresi|🫛|pure baklagil
+Bezelye püresi|🫛|pure baklagil_az
 Ispanak püresi|🥬|pure
 Sebze püresi|🥣|pure
 Buharda brokoli ve havuç|🥦|lahana
@@ -434,16 +434,16 @@ Etli barbunya|🫘|baklagil yag_hafif
 Nohut yemeği|🫘|baklagil
 Nohutlu ıspanak|🥬|baklagil lif
 Nohut (haşlama)|🫘|baklagil kabuk
-Kırmızı mercimek yemeği|🍲|pure
+Kırmızı mercimek yemeği|🍲|pure baklagil_az
 Yeşil mercimek yemeği|🫘|baklagil lif
-Mercimek püresi|🍲|pure
+Mercimek püresi|🍲|pure baklagil_az
 Mercimekli bulgur|🍲|baklagil lif
-Kırmızı mercimek köftesi|🧆|pure aci cig
-Mercimek köftesi (acısız)|🧆|pure cig
-Humus|🫘|baklagil kuruyemis
-Süzme nohut püresi|🫘|pure baklagil
-Fava|🫘|pure baklagil
-Fasulye ezmesi|🫘|pure baklagil
+Kırmızı mercimek köftesi|🧆|baklagil_az lif aci cig
+Mercimek köftesi (acısız)|🧆|baklagil_az lif cig
+Humus|🫘|baklagil_az kuruyemis
+Süzme nohut püresi|🫘|pure baklagil_az
+Fava|🫘|pure baklagil_az
+Fasulye ezmesi|🫘|pure baklagil_az
 Falafel|🧆|baklagil yag
 Bakla|🫛|baklagil kabuk
 Maş fasulyesi|🫘|baklagil
@@ -1025,7 +1025,7 @@ Tavuk tikka masala|🍛|aci sut yag
 Butter chicken|🍛|sut yag aci_hafif
 Palak paneer|🍛|sut lif aci_hafif
 Chana masala|🍛|baklagil aci
-Dal (Hint mercimeği)|🍛|pure aci_hafif
+Dal (Hint mercimeği)|🍛|pure baklagil_az aci_hafif
 Biryani|🍛|aci yag_hafif
 Samosa|🥟|yag baklagil aci_hafif
 Naan|🫓|hafif sut_az
@@ -1043,7 +1043,7 @@ Pekin ördeği|🦆|yag seker
 Chow mein|🍜|yag lahana
 Dim sum|🥟|yag_hafif
 Gyoza|🥟|yag_hafif lahana
-Poke bowl|🥗|cig
+Poke bowl|🥗|cig cig_hayvansal
 Onigiri|🍙|hafif
 Yakitori|🍢|seker yag_hafif
 Tonkatsu|🍖|yag
