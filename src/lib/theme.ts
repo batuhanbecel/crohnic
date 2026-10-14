@@ -1,111 +1,115 @@
-import { Appearance, Platform } from 'react-native';
+import { Appearance } from 'react-native';
 
 /**
- * Crohnic design tokens (v2, HIG-based).
+ * Crohnic design tokens (v3, brand sheet "Yeme. Kaydet. Anla. Kendin ol.").
  *
- * Principles
- * - The app is a quiet, native utility with one character: Kıvırcık. Boldness lives in the
- *   mascot and the large rounded titles; everything else defers to content.
- * - Two layers (HIG › Materials): content sits on opaque grouped surfaces; Liquid Glass is only
- *   used for floating controls (tab bar, search, the add panel, the floating gear).
- * - One accent (lettuce green) for the primary action and selection. Signal colours mean one
- *   thing each: green = gentle, amber = careful, red = risky, flare orange = "atak".
- * - Every text colour clears 4.5:1 on both the background and a card (numbers in comments).
+ * Brand palette: Ana Yeşil #145A32 · Doğal Yeşil #4CAF50 · Açık Yeşil #CFEA8E · Krem #FFF8E1 ·
+ * Turuncu #FFA552 · Mercan #FF7B6B · Lila #B8A7F9 · Mavi #8EC5F7. Type: Nunito.
  *
- * Keys are kept from v1 so screens don't change; values follow the roles below.
- *   paper=background · ink=label · inkSoft=secondary label · inkFaint=tertiary label
+ * How the brand maps onto the UI
+ * - Krem is the page, white cards sit on it. Ana Yeşil is the one accent (primary button,
+ *   selection, links). The pastel brand colours are fills; where they carry text or a thin
+ *   glyph a deeper shade of the same hue is used so it clears 4.5:1 on white and on Krem.
+ * - Icons sit in pastel rounded squares with the glyph in the deeper shade (brand icon style).
+ * - Each colour means one thing: green = gentle/meals, Turuncu = careful + atak,
+ *   Mercan = risky + symptoms, Mavi = medication, Lila = the day check-in (mood, sleep),
+ *   warm brown on peach = toilet.
+ *
+ * Keys are kept from earlier versions so screens don't change:
+ *   paper=background · ink=label · inkSoft=secondary · inkFaint=tertiary
  *   lettuce=accent fill · lettuceDeep=accent text · *Soft=tinted fills
+ *   apricot=symptoms · peri=medication · sky=toilet · plum=check-in · flare=atak
  */
 const LIGHT = {
-  paper: '#F2F4F0', // grouped background, faint green-grey
-  ink: '#17201A', // 15.1:1
+  paper: '#FFF8E1', // Krem
+  ink: '#17301F', // 12.9:1 on Krem
   onInk: '#FFFFFF',
-  inkSoft: '#59625C', // 5.7:1
-  inkFaint: '#666E68', // 4.7:1
-  hairline: 'rgba(23,32,26,0.12)',
+  inkSoft: '#4F6155', // 6.2:1
+  inkFaint: '#627166', // 4.8:1
+  hairline: 'rgba(23,48,31,0.12)',
 
-  lettuce: '#2E7D32', // accent; white on it 5.1:1
-  lettuceDeep: '#256B2B', // accent text 5.9:1
-  lettuceSoft: '#E3EFE0',
-  apricot: '#A9520A', // symptoms; 4.9:1
-  apricotSoft: '#F9EADB',
-  peri: '#5452D6', // medication; 5.3:1
-  periSoft: '#E8E8FB',
-  sky: '#0B67C2', // toilet; 5.1:1
-  skySoft: '#E0ECF8',
-  plum: '#8A3FB0', // evening check-in; 5.8:1
-  plumSoft: '#F1E6F7',
+  lettuce: '#145A32', // Ana Yeşil; white on it 8.2:1
+  lettuceDeep: '#145A32',
+  lettuceSoft: '#EAF5CF', // Açık Yeşil, lightened
+  apricot: '#B5382F', // symptoms, from Mercan; 5.4:1
+  apricotSoft: '#FFE6E2',
+  peri: '#22689F', // medication, from Mavi; 5.8:1
+  periSoft: '#E2F0FD',
+  sky: '#8A5228', // toilet, brown on peach; 6.0:1
+  skySoft: '#FFE8D6',
+  plum: '#6A4FD0', // check-in, from Lila; 5.9:1
+  plumSoft: '#EEEAFE',
 
-  flare: '#C9480F', // atak; white on it 4.8:1
-  flareDeep: '#B23E0C', // atak text 5.3:1
-  flareSoft: '#FBE6DB',
-  flareStrong: '#C9480F',
+  flare: '#E0661C', // atak, from Turuncu; white bold labels 3.4:1
+  flareDeep: '#A84B0E', // 5.4:1
+  flareSoft: '#FFEBD6',
+  flareStrong: '#E0661C',
 
-  good: '#1E7F3A', // 4.6:1
-  goodSoft: '#E1F1E5',
-  warn: '#9A6200', // 4.6:1
-  warnSoft: '#F7ECD6',
-  bad: '#C42B22', // 5.1:1
-  badSoft: '#F9E3E1',
+  good: '#246D2F', // from Doğal Yeşil; 5.9:1
+  goodSoft: '#E4F4D9',
+  warn: '#9C5500', // from Turuncu; 5.2:1
+  warnSoft: '#FFEDD2',
+  bad: '#B5332A', // from Mercan; 5.6:1
+  badSoft: '#FFE4E0',
 };
 
 const DARK: typeof LIGHT = {
-  paper: '#0B0D0C',
-  ink: '#EEF2EE', // 17.2:1
-  onInk: '#121614',
-  inkSoft: '#A9B1AB', // 8.9:1
-  inkFaint: '#8C948E', // 6.3:1
-  hairline: 'rgba(238,242,238,0.14)',
+  paper: '#0D1A12', // Ana Yeşil at night
+  ink: '#F5F1DE', // Krem, 16:1
+  onInk: '#0D1A12',
+  inkSoft: '#B7C2B6', // 9.6:1
+  inkFaint: '#93A093', // 6.5:1
+  hairline: 'rgba(245,241,222,0.13)',
 
-  lettuce: '#2F9E44', // white on it 3.5:1 (bold labels only)
-  lettuceDeep: '#6FD67F', // 10.8:1
-  lettuceSoft: '#17301C',
-  apricot: '#FF9F45',
-  apricotSoft: '#382412',
-  peri: '#8E8CFF',
-  periSoft: '#24234A',
-  sky: '#4AA8FF',
-  skySoft: '#10263D',
-  plum: '#C98BF0',
-  plumSoft: '#2E1D3A',
+  lettuce: '#7CC36A', // dark label on it
+  lettuceDeep: '#CFEA8E', // Açık Yeşil
+  lettuceSoft: '#1E3A24',
+  apricot: '#FF8F80', // Mercan
+  apricotSoft: '#3D1E1A',
+  peri: '#8EC5F7', // Mavi
+  periSoft: '#16293B',
+  sky: '#E9AE7C',
+  skySoft: '#38261A',
+  plum: '#B8A7F9', // Lila
+  plumSoft: '#272241',
 
-  flare: '#FF7A45',
-  flareDeep: '#FF9466',
-  flareSoft: '#3A1E12',
-  flareStrong: '#D2551F',
+  flare: '#FFA552', // Turuncu
+  flareDeep: '#FFB877',
+  flareSoft: '#3D2714',
+  flareStrong: '#E0661C',
 
-  good: '#3CCB66',
-  goodSoft: '#13301C',
-  warn: '#F2B33D',
-  warnSoft: '#352A0C',
-  bad: '#FF6259',
-  badSoft: '#3B1714',
+  good: '#7FD08A',
+  goodSoft: '#173320',
+  warn: '#FFB866',
+  warnSoft: '#3A2A12',
+  bad: '#FF8F80',
+  badSoft: '#3D1B17',
 };
 
 const SURFACE_LIGHT = {
   card: '#FFFFFF',
-  cardStrong: '#F2F4F0', // text fields inside cards
+  cardStrong: '#FFF8E1', // text fields inside cards
   cardBorder: 'transparent',
-  well: 'rgba(23,32,26,0.06)', // gray fill for controls
-  glassFill: 'rgba(255,255,255,0.6)',
+  well: 'rgba(23,48,31,0.06)', // gray fill for controls
+  glassFill: 'rgba(255,252,240,0.65)',
   glassBorder: 'rgba(255,255,255,0.7)',
-  scrim: 'rgba(242,244,240,0.7)',
+  scrim: 'rgba(255,248,225,0.7)',
   sheet: '#FFFFFF',
   /** the only colour wash behind content: a soft warm light during a flare */
-  glow: { calm: ['#F2F4F0', '#F2F4F0', '#F2F4F0'], flare: ['#F9D9C8', '#F2F4F0', '#F2F4F0'] },
+  glow: { calm: ['#FFF8E1', '#FFF8E1', '#FFF8E1'], flare: ['#FFE0C2', '#FFF8E1', '#FFF8E1'] },
   glowOpacity: 1,
 };
 
 const SURFACE_DARK: typeof SURFACE_LIGHT = {
-  card: '#1A1D1B',
-  cardStrong: '#242826',
+  card: '#16271C',
+  cardStrong: '#203527',
   cardBorder: 'transparent',
-  well: 'rgba(238,242,238,0.08)',
-  glassFill: 'rgba(30,34,32,0.6)',
+  well: 'rgba(245,241,222,0.08)',
+  glassFill: 'rgba(22,39,28,0.6)',
   glassBorder: 'rgba(255,255,255,0.1)',
-  scrim: 'rgba(11,13,12,0.7)',
-  sheet: '#1A1D1B',
-  glow: { calm: ['#0B0D0C', '#0B0D0C', '#0B0D0C'], flare: ['#3A1A0E', '#0B0D0C', '#0B0D0C'] },
+  scrim: 'rgba(13,26,18,0.7)',
+  sheet: '#16271C',
+  glow: { calm: ['#0D1A12', '#0D1A12', '#0D1A12'], flare: ['#3A2312', '#0D1A12', '#0D1A12'] },
   glowOpacity: 1,
 };
 
@@ -137,6 +141,19 @@ export function onTint(tint: string | undefined) {
   return luminance(tint) > 0.36 ? '#121614' : '#FFFFFF';
 }
 
+/** `c` laid over the card colour at `amount` (0…1): the pastel square behind brand icons. */
+export function soft(c: string, amount = isDark ? 0.2 : 0.16) {
+  const parse = (h: string) => {
+    const n = parseInt(h.replace('#', ''), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  };
+  if (!/^#[0-9a-f]{6}$/i.test(c)) return c;
+  const a = parse(c);
+  const b = parse(surface.card);
+  const mix = a.map((v, i) => Math.round(v * amount + b[i] * (1 - amount)));
+  return `#${mix.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
 /** v2 signal colours are already text-safe; kept so callers don't change. */
 export function readable(c: string) {
   return c;
@@ -156,15 +173,13 @@ export const size = {
   pad: 16,
 };
 
-const rounded = Platform.select({ ios: 'ui-rounded', default: undefined });
-
 /**
- * Type: SF Pro for everything people read and tap; SF Pro Rounded only for large titles
- * and big numbers, which is where the brand voice lives.
+ * Type: Nunito everywhere (the Text wrapper picks the file from the weight). Large titles and
+ * big numbers use ExtraBold, which is where the brand voice lives.
  */
 export const type = {
-  display: { fontFamily: rounded, fontWeight: '800' as const },
-  rounded: { fontFamily: rounded, fontWeight: '700' as const },
+  display: { fontWeight: '800' as const },
+  rounded: { fontWeight: '800' as const },
   body: { fontWeight: '400' as const },
   medium: { fontWeight: '500' as const },
   semibold: { fontWeight: '600' as const },

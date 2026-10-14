@@ -269,7 +269,7 @@ export default function Settings() {
       </Card>
 
       <View style={{ alignItems: 'center', marginTop: 12 }}>
-        <Logo size={24} color={palette.lettuceDeep} />
+        <Logo size={30} tagline />
       </View>
       <T v="caption" color={palette.inkFaint} style={{ textAlign: 'center', lineHeight: 17, fontWeight: '400' }}>
         Crohnic tıbbi tavsiye vermez. Acil durumda 112.

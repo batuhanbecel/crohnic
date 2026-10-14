@@ -4,7 +4,7 @@ import * as Updates from 'expo-updates';
 import { useState } from 'react';
 import { Alert, View } from 'react-native';
 import { TextInput } from '../components/text';
-import { Mascot, type Mood } from '../components/Mascot';
+import { Logo, Mascot, type Mood } from '../components/Mascot';
 import { Button, Card, IconBubble, Row, Screen, Segmented, T, st, type SymbolName } from '../components/ui';
 import { useApp } from '../lib/app-state';
 import { applyBackup, pickBackup } from '../lib/backup';
@@ -14,9 +14,9 @@ import { askPermission, syncReminders } from '../lib/reminders';
 import { palette, type } from '../lib/theme';
 
 const POINTS: { icon: SymbolName; color: string; title: string; text: string }[] = [
-  { icon: 'fork.knife', color: palette.lettuce, title: 'Ne yedin, nasıl geçti', text: 'Öğünlerini ve sonrasını yaz. Tuvalet ve semptomlar da tek dokunuş.' },
-  { icon: 'camera.fill', color: palette.peri, title: 'Yemeden önce sor', text: 'Tabağın ya da menünün fotoğrafını çek, sana iyi gelir mi söyleyeyim.' },
-  { icon: 'chart.bar.fill', color: palette.sky, title: 'Neyin dokunduğunu bul', text: 'Kayıtlar biriktikçe tetikleyicilerini çıkarırım, doktoruna rapor hazırlarım.' },
+  { icon: 'camera.fill', color: palette.good, title: 'Bunu yesem mi?', text: 'Tabağın ya da menünün fotoğrafını çek, sor. Daha güvenle seç.' },
+  { icon: 'fork.knife', color: palette.flareDeep, title: 'Yediklerini kolayca kaydet', text: 'Öğün, tuvalet, semptom ve ilaç, her biri birkaç dokunuş.' },
+  { icon: 'chart.bar.fill', color: palette.plum, title: 'Neyin iyi geldiğini birlikte bulalım', text: 'Kayıtlar biriktikçe örüntüleri çıkarırım, kontrole hazır gidersin.' },
 ];
 
 const STEPS = 3;
@@ -69,6 +69,7 @@ export default function Welcome() {
   return (
     <Screen tone={phase === 'atak' && step === 1 ? 'flare' : 'calm'} contentStyle={{ paddingTop: 24, gap: 16 }}>
       <View style={{ alignItems: 'center', gap: 6 }}>
+        {step === 0 ? <Logo size={40} tagline /> : null}
         <Mascot mood={mood} size={step === 0 ? 150 : 110} />
         <Row gap={6}>
           {Array.from({ length: STEPS }, (_, i) => (
@@ -81,10 +82,10 @@ export default function Welcome() {
         <>
           <View style={{ gap: 6 }}>
             <T v="large" style={{ textAlign: 'center' }}>
-              Selam, ben Kıvırcık
+              Merhaba, ben Kıvırcık!
             </T>
             <T v="callout" color={palette.inkSoft} style={{ textAlign: 'center' }}>
-              Crohn’la yemek yemeyi biraz daha kolay hale getirmeye çalışan bir marulum.
+              Yemek seçerken, günlük kayıt tutarken ve bağırsağını daha iyi tanırken her zaman yanındayım.
             </T>
           </View>
           <Card style={{ gap: 16 }}>

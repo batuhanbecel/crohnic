@@ -144,8 +144,9 @@ export async function scheduleMealReminder(sql: SQLiteDatabase, meal: { firstId:
     const { at, moved } = outOfQuietHours(meal.eatenAt + MEAL_AFTER_H * 3600000);
     if (at < Date.now() + 5 * 60000) return;
     const name = meal.name.length > 60 ? `${meal.name.slice(0, 57)}…` : meal.name;
-    const body = moved ? `Dün akşam yediğin ${name} nasıl geçti?` : `${name} yiyeli birkaç saat oldu. Nasıl geçti?`;
-    await schedule(mealId(meal.firstId), 'Kıvırcık soruyor', body, at, `/ogun/${meal.firstId}`, {
+    const title = moved ? 'Günaydın 🌱' : `${MEAL_AFTER_H} saat oldu 🌱`;
+    const body = moved ? `Dün akşam yediğin ${name} nasıl geçti?` : `Yediğin ${name} nasıl geçti?`;
+    await schedule(mealId(meal.firstId), title, body, at, `/ogun/${meal.firstId}`, {
       category: CATEGORY.meal,
       data: { kind: 'meal', mealId: meal.firstId },
     });

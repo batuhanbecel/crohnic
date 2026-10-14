@@ -61,7 +61,7 @@ export default function Report() {
       <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
         <Mascot mood="happy" size={80} />
         <T v="callout" style={{ flex: 1 }}>
-          Kontrole giderken tek sayfalık özetini PDF olarak hazırlarım. Mail, WhatsApp ya da yazıcıyla paylaşabilirsin.
+          Kontrole hazır git. Tek sayfalık özetini PDF olarak hazırlarım, mail, WhatsApp ya da yazıcıyla paylaşırsın.
         </T>
       </Card>
 

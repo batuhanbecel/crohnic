@@ -3,7 +3,7 @@ import { palette } from '../../lib/theme';
 
 export default function TabsLayout() {
   return (
-    <NativeTabs tintColor={palette.lettuceDeep} minimizeBehavior="onScrollDown">
+    <NativeTabs tintColor={palette.lettuceDeep} minimizeBehavior="onScrollDown" labelStyle={{ fontFamily: 'Nunito_700Bold' }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Icon sf={{ default: 'leaf', selected: 'leaf.fill' }} md="eco" />
         <NativeTabs.Trigger.Label>Bugün</NativeTabs.Trigger.Label>

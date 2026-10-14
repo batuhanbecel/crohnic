@@ -21,7 +21,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import type { Verdict } from '../lib/foods';
-import { isDark, onTint, palette, radius, size, surface, type } from '../lib/theme';
+import { isDark, onTint, palette, radius, size, soft, surface, type } from '../lib/theme';
 import { Text } from './text';
 
 /*
@@ -174,18 +174,17 @@ export function Backdrop({ tone = 'calm' }: { tone?: 'calm' | 'flare' }) {
 }
 
 // ---------- text ----------
-// iOS text styles: Large Title 34, Title 2 22, Headline 17, Body 17, Callout 16, Subheadline 15, Caption 12.
+// iOS text-style sizes (Large Title 34 … Caption 12) set in Nunito; Nunito brings its own spacing.
 type Variant = 'large' | 'title' | 'h2' | 'h3' | 'body' | 'callout' | 'small' | 'caption';
 const variantStyle: Record<Variant, TextStyle> = {
-  // tracking tightens as size grows, small text stays open
-  large: { ...type.display, fontSize: 34, lineHeight: 41, letterSpacing: -0.4 },
-  title: { ...type.display, fontSize: 28, lineHeight: 34, letterSpacing: -0.3 },
-  h2: { fontWeight: '700', fontSize: 22, lineHeight: 28, letterSpacing: -0.26 },
-  h3: { ...type.semibold, fontSize: 17, lineHeight: 22, letterSpacing: -0.43 },
-  body: { ...type.body, fontSize: 17, lineHeight: 22, letterSpacing: -0.43 },
-  callout: { ...type.body, fontSize: 16, lineHeight: 21, letterSpacing: -0.31 },
-  small: { ...type.body, fontSize: 15, lineHeight: 20, letterSpacing: -0.23 },
-  caption: { ...type.medium, fontSize: 12, lineHeight: 16, letterSpacing: 0 },
+  large: { ...type.display, fontSize: 34, lineHeight: 41, letterSpacing: -0.3 },
+  title: { ...type.display, fontSize: 28, lineHeight: 34, letterSpacing: -0.2 },
+  h2: { fontWeight: '800', fontSize: 22, lineHeight: 28, letterSpacing: -0.1 },
+  h3: { fontWeight: '700', fontSize: 17, lineHeight: 22, letterSpacing: 0 },
+  body: { ...type.body, fontSize: 17, lineHeight: 23, letterSpacing: 0 },
+  callout: { ...type.body, fontSize: 16, lineHeight: 22, letterSpacing: 0 },
+  small: { ...type.body, fontSize: 15, lineHeight: 20, letterSpacing: 0 },
+  caption: { ...type.semibold, fontSize: 12, lineHeight: 16, letterSpacing: 0 },
 };
 
 export function T({ v = 'body', color = palette.ink, style, ...rest }: TextProps & { v?: Variant; color?: string }) {
@@ -219,9 +218,9 @@ export function IconBubble({ name, color, dim = size.icon, fallback }: { name: S
     <View
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={{ width: dim, height: dim, borderRadius: dim * 0.27, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}
+      style={{ width: dim, height: dim, borderRadius: dim * 0.3, backgroundColor: soft(color), alignItems: 'center', justifyContent: 'center' }}
     >
-      <Icon name={name} size={dim * 0.5} color={onTint(color)} fallback={fallback} />
+      <Icon name={name} size={dim * 0.52} color={color} fallback={fallback} />
     </View>
   );
 }

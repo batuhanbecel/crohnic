@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "backgroundColor": "#F4F6EE",
+    "backgroundColor": "#FFF8E1",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "tr.com.f28.crohnic",
@@ -22,7 +22,7 @@
     "android": {
       "package": "tr.com.f28.crohnic",
       "adaptiveIcon": {
-        "backgroundColor": "#F4F6EE",
+        "backgroundColor": "#FFF8E1",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -39,10 +39,10 @@
         {
           "image": "./assets/splash-icon.png",
           "imageWidth": 200,
-          "backgroundColor": "#F4F6EE",
+          "backgroundColor": "#FFF8E1",
           "dark": {
             "image": "./assets/splash-icon.png",
-            "backgroundColor": "#0E1410"
+            "backgroundColor": "#0D1A12"
           }
         }
       ],
