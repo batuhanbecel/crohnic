@@ -1,0 +1,33 @@
+# Elle tetiklenir: iOS Simülatör için build alır ve .app'i bu çalışmanın artifact'ı olarak koyar.
+# Testte kullanılır; TestFlight'a gitmez.
+name: simulator
+
+on:
+  workflow_dispatch:
+
+jobs:
+  simulator:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci
+      - name: Build for simulator
+        run: |
+          eas build --platform ios --profile simulator --non-interactive --wait --json > build.json
+          URL=$(node -e 'const b=require("./build.json");console.log((Array.isArray(b)?b[0]:b).artifacts.buildUrl)')
+          curl -sSL "$URL" -o crohnic-simulator.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: crohnic-simulator
+          path: crohnic-simulator.tar.gz
+          retention-days: 3

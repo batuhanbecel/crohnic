@@ -64,7 +64,7 @@ jobs:
       - name: Build + TestFlight if native code changed
         run: |
           COUNT=$(eas build:list --platform ios --runtime-version "${{ steps.fp.outputs.runtime }}" --limit 5 --json --non-interactive \
-            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s||"[]");console.log(l.filter(b=>!["ERRORED","CANCELED"].includes(b.status)).length)})')
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s||"[]");console.log(l.filter(b=>b.buildProfile==="production"&&!["ERRORED","CANCELED"].includes(b.status)).length)})')
           if [ "$COUNT" = "0" ]; then
             echo "Native değişiklik var, yeni build başlatılıyor."
             eas build --platform ios --profile production --auto-submit --non-interactive --no-wait
