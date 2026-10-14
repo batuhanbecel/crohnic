@@ -1,5 +1,5 @@
 import { HStack, Image, Link, Spacer, Text, VStack } from '@expo/ui/swift-ui';
-import { background, containerBackground, font, foregroundStyle, frame, padding, shapes, widgetURL } from '@expo/ui/swift-ui/modifiers';
+import { background, containerBackground, font, foregroundStyle, frame, padding, resizable, shapes, widgetURL } from '@expo/ui/swift-ui/modifiers';
 import { createWidget, type WidgetEnvironment } from 'expo-widgets';
 
 export type BugunProps = {
@@ -61,7 +61,7 @@ const Bugun = (props: BugunProps, env: WidgetEnvironment) => {
     );
   }
 
-  const mascot = p.img ? <Image uiImage={p.img} modifiers={[frame({ width: 46, height: 46 })]} /> : <Image systemName="leaf.fill" size={30} color={green} />;
+  const mascot = p.img ? <Image uiImage={p.img} modifiers={[resizable(), frame({ width: 46, height: 46 })]} /> : <Image systemName="leaf.fill" size={30} color={green} />;
 
   const stat = (n: number, label: string) => (
     <VStack alignment="leading" spacing={0}>

@@ -44,13 +44,16 @@ export async function syncWidget(sql: SQLiteDatabase) {
   }
 }
 
-/** Copies Kıvırcık into the folder the widget can read (once) and returns its file URI. */
+/**
+ * Copies a small Kıvırcık (138 px = 46 pt @3x) into the folder the widget can read (once) and
+ * returns its file URI. Widgets refuse to render oversized images, so never use the big poses here.
+ */
 function mascotFile(dir: string | null): string {
   if (!dir) return '';
   try {
-    const target = new File(dir, 'kivircik.webp');
+    const target = new File(dir, 'kivircik-46.png');
     if (!target.exists) {
-      const src = Image.resolveAssetSource(require('../../assets/kivircik/mutlu.webp'));
+      const src = Image.resolveAssetSource(require('../../assets/kivircik/widget.png'));
       new File(src.uri).copy(target);
     }
     return target.uri;
