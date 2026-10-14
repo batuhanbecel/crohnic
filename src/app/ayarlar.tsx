@@ -14,6 +14,7 @@ import { daysSince, relative } from '../lib/dates';
 import * as db from '../lib/db';
 import { SETTINGS, askPermission, isOn, permission, syncReminders, type PermissionState } from '../lib/reminders';
 import { palette } from '../lib/theme';
+import { hasStricture, setStricture } from '../lib/tolerance';
 
 export default function Settings() {
   const sql = useSQLiteContext();
@@ -28,6 +29,14 @@ export default function Settings() {
   const [remindDaily, setRemindDaily] = useState(true);
   const [backupAt, setBackupAt] = useState<number | null>(null);
   const [backingUp, setBackingUp] = useState(false);
+  const [stricture, setStrictureState] = useState(hasStricture());
+
+  const toggleStricture = async (on: boolean) => {
+    setStrictureState(on);
+    setStricture(on);
+    await db.setSetting(sql, 'stricture', on ? '1' : '0');
+    app.bump();
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -193,6 +202,18 @@ export default function Settings() {
         <LinkRow icon="pills.fill" title="İlaçlarım" onPress={() => router.push('/ilaclar')} />
         <View style={{ height: 1, backgroundColor: palette.hairline }} />
         <LinkRow icon="doc.text.fill" title="Doktor raporu (PDF)" onPress={() => router.push('/rapor')} />
+      </Card>
+
+      <Card style={{ gap: 10 }}>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <View style={{ flex: 1 }}>
+            <T v="callout">Bağırsakta darlık (striktür) var</T>
+            <T v="small" color={palette.inkSoft}>
+              Doktorun söylediyse aç. Remisyonda da lifli, kabuklu ve posalı yiyecekleri temkinli değerlendiririm.
+            </T>
+          </View>
+          <Switch value={stricture} onValueChange={toggleStricture} trackColor={{ true: palette.lettuce }} />
+        </Row>
       </Card>
 
       <Card style={{ gap: 14 }}>

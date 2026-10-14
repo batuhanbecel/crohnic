@@ -1,14 +1,14 @@
-import { router, useFocusEffect } from 'expo-router';
+import { Stack, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, ScrollView, View } from 'react-native';
-import { Text, TextInput } from '../../components/text';
-import { Backdrop, Card, Chip, Icon, Row, T, Tap, VERDICT_UI, st } from '../../components/ui';
-import { useApp } from '../../lib/app-state';
-import * as db from '../../lib/db';
-import { CATEGORIES, FOODS, searchFoods, type Category, type Verdict } from '../../lib/foods';
-import { palette, radius, surface, type } from '../../lib/theme';
-import { assessFood, statsByName } from '../../lib/tolerance';
+import { Alert, FlatList, ScrollView, View } from 'react-native';
+import { Text } from '../../../components/text';
+import { Card, Chip, Glass, Icon, Row, T, Tap, VERDICT_UI } from '../../../components/ui';
+import { useApp } from '../../../lib/app-state';
+import * as db from '../../../lib/db';
+import { CATEGORIES, FOODS, searchFoods, type Category, type Verdict } from '../../../lib/foods';
+import { palette, radius, surface, type } from '../../../lib/theme';
+import { assessFood, statsByName } from '../../../lib/tolerance';
 
 type VF = Verdict | 'hepsi' | 'denedim';
 
@@ -57,52 +57,56 @@ export default function FoodList() {
     { key: 'denedim', label: 'Denediklerim', color: palette.peri },
   ];
 
+  const explain = () =>
+    Alert.alert(
+      'Bu değerlendirme nasıl yapılıyor?',
+      'Her yemeğin içeriği (lif, yağ, acı, laktoz, kafein gibi) etiketlenir ve dönemine göre puanlanır. Atakta kısa süreli düşük posalı beslenme, remisyonda ise ECCO ve IOIBD kılavuzlarına uygun olarak gereksiz lif kısıtlaması yapılmaz.\n\nBunlar genel bilgidir, kişiden kişiye değişir. Bir yemeği 2 kez kaydedip nasıl geçtiğini yazınca senin sonuçların genel değerlendirmenin önüne geçer. Diyetini değiştirmeden önce doktorun ya da diyetisyeninle konuş.',
+    );
+
   const header = (
     <View style={{ gap: 12, marginBottom: 12 }}>
-      <View style={{ marginTop: 4 }}>
-        <T v="small" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft}>
-          {FOODS.length} yemek, {app.phase === 'atak' ? 'atak' : 'remisyon'} dönemine göre
-        </T>
-        <T v="large">Yemekler</T>
-      </View>
-      <View>
-        <TextInput
-          value={q}
-          onChangeText={setQ}
-          placeholder="Ara: köfte, çorba, kahve…"
-          placeholderTextColor={palette.inkFaint}
-          style={[st.input, { paddingLeft: 42 }]}
-          clearButtonMode="while-editing"
-          autoCorrect={false}
-        />
-        <View style={{ position: 'absolute', left: 14, top: 15 }}>
-          <Icon name="magnifyingglass" size={17} color={palette.inkFaint} fallback="🔍" />
-        </View>
-      </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -18 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 18 }}>
-        {filters.map((x) => (
-          <Chip key={x.key} label={`${x.label} ${counts[x.key]}`} active={vf === x.key} color={x.color} onPress={() => setVf(x.key)} />
-        ))}
-      </ScrollView>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -18 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 18 }}>
-        <Chip label="Tüm kategoriler" active={!cat} onPress={() => setCat(null)} />
-        {CATEGORIES.map((c) => (
-          <Chip key={c} label={c} active={cat === c} onPress={() => setCat(cat === c ? null : c)} />
-        ))}
-      </ScrollView>
+      <Tap onPress={explain} haptic={false}>
+        <Row gap={6} style={{ paddingHorizontal: 2 }}>
+          <T v="small" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft} style={{ flex: 1 }}>
+            {FOODS.length} yemek, {app.phase === 'atak' ? 'atak' : 'remisyon'} dönemine göre
+          </T>
+          <Icon name="info.circle" size={15} color={palette.inkSoft} fallback="ⓘ" />
+        </Row>
+      </Tap>
+      <Glass style={{ borderRadius: radius.lg, paddingVertical: 10, gap: 8 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 10 }}>
+          {filters.map((x) => (
+            <Chip key={x.key} label={`${x.label} ${counts[x.key]}`} active={vf === x.key} color={x.color} onPress={() => setVf(x.key)} />
+          ))}
+        </ScrollView>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 10 }}>
+          <Chip label="Tüm kategoriler" active={!cat} onPress={() => setCat(null)} />
+          {CATEGORIES.map((c) => (
+            <Chip key={c} label={c} active={cat === c} onPress={() => setCat(cat === c ? null : c)} />
+          ))}
+        </ScrollView>
+      </Glass>
     </View>
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: palette.paper }}>
-      <Backdrop tone={app.phase === 'atak' ? 'flare' : 'calm'} />
+    <>
+      <Stack.SearchBar
+        placeholder="Ara: köfte, çorba, kahve…"
+        onChangeText={(e) => setQ(e.nativeEvent.text)}
+        onCancelButtonPress={() => setQ('')}
+        hideWhenScrolling={false}
+        autoCapitalize="none"
+        placement="automatic"
+      />
       <FlatList
+        style={{ flex: 1, backgroundColor: palette.paper }}
         data={rows}
         keyExtractor={(r) => r.f.id}
         contentInsetAdjustmentBehavior="automatic"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 8, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 8, paddingBottom: 120 }}
         ListHeaderComponent={header}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         initialNumToRender={20}
@@ -127,7 +131,7 @@ export default function FoodList() {
                     {f.name}
                   </T>
                   <T v="small" color={palette.inkSoft} numberOfLines={1}>
-                    {a.confidence === 'kişisel' ? `Senin kayıtlarına göre · ${a.stat?.n} kez` : a.reasons[0] ?? f.cat}
+                    {a.confidence === 'kişisel' ? `Senin kayıtlarına göre, ${a.stat?.n} kez` : a.reasons[0] ?? f.cat}
                   </T>
                 </View>
                 <Row gap={5} style={{ backgroundColor: u.bg, borderRadius: radius.pill, paddingHorizontal: 9, paddingVertical: 5 }}>
@@ -139,6 +143,6 @@ export default function FoodList() {
           );
         }}
       />
-    </View>
+    </>
   );
 }

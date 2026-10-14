@@ -30,17 +30,24 @@ export type Tag =
   | 'tatlandirici'
   | 'katki';
 
-/** Weights per phase. Negative = gentle on the gut. */
+/**
+ * Weights per phase. Negative = gentle on the gut.
+ * Flare: short-term low-residue approach (less insoluble fibre, fat, spice, lactose).
+ * Remission: ECCO 2025 / IOIBD say long-term fibre restriction isn't needed and higher
+ * fibre intake goes with fewer flares, so fibre is only lightly weighted there; gas
+ * makers, fat, alcohol, processed meat and ultra-processed food stay weighted.
+ * A known stricture brings flare-level fibre caution back (see STRICTURE_TAGS).
+ */
 export const TAGS: Record<Tag, { label: string; reason: string; w: Record<Phase, number> }> = {
   hafif: { label: 'Hafif', reason: 'Sade pişmiş, mideyi yormaz', w: { remisyon: -1, atak: -1 } },
   pure: { label: 'Püre', reason: 'Püre kıvamında, lifi yumuşamış', w: { remisyon: 0.3, atak: 1 } },
-  lif: { label: 'Bol lif', reason: 'Çözünmeyen lifi yüksek', w: { remisyon: 0.9, atak: 2 } },
-  cig: { label: 'Çiğ sebze', reason: 'Çiğ sebze bağırsağı daha çok çalıştırır', w: { remisyon: 0.9, atak: 2 } },
-  kabuk: { label: 'Kabuk', reason: 'Kabuk ve zar zor sindirilir', w: { remisyon: 1, atak: 2 } },
-  kuruyemis: { label: 'Kuruyemiş', reason: 'Kuruyemiş ve tohum sert, lifli', w: { remisyon: 0.9, atak: 2 } },
-  cekirdek: { label: 'Çekirdek', reason: 'Küçük çekirdekleri var', w: { remisyon: 0.5, atak: 1.5 } },
-  baklagil: { label: 'Baklagil', reason: 'Baklagiller gaz ve şişkinlik yapabilir', w: { remisyon: 1, atak: 2 } },
-  lahana: { label: 'Gaz yapar', reason: 'Lahanagiller, soğan ve sarımsak gaz yapabilir', w: { remisyon: 0.9, atak: 1.5 } },
+  lif: { label: 'Bol lif', reason: 'Çözünmeyen lifi yüksek', w: { remisyon: 0.3, atak: 2 } },
+  cig: { label: 'Çiğ sebze', reason: 'Çiğ sebze bağırsağı daha çok çalıştırır', w: { remisyon: 0.4, atak: 2 } },
+  kabuk: { label: 'Kabuk', reason: 'Kabuk ve zar zor sindirilir', w: { remisyon: 0.5, atak: 2 } },
+  kuruyemis: { label: 'Kuruyemiş', reason: 'Kuruyemiş ve tohum sert, lifli', w: { remisyon: 0.4, atak: 2 } },
+  cekirdek: { label: 'Çekirdek', reason: 'Küçük çekirdekleri var', w: { remisyon: 0.2, atak: 1.5 } },
+  baklagil: { label: 'Baklagil', reason: 'Baklagiller gaz ve şişkinlik yapabilir', w: { remisyon: 0.6, atak: 2 } },
+  lahana: { label: 'Gaz yapar', reason: 'Lahanagiller, soğan ve sarımsak gaz yapabilir', w: { remisyon: 0.7, atak: 1.5 } },
   yag: { label: 'Yağlı', reason: 'Yağlı ya da kızartma, ishali tetikleyebilir', w: { remisyon: 0.9, atak: 1.8 } },
   yag_hafif: { label: 'Biraz yağlı', reason: 'Bir miktar yağ var', w: { remisyon: 0.3, atak: 1 } },
   aci: { label: 'Acı', reason: 'Acı ve yoğun baharat bağırsağı tahriş edebilir', w: { remisyon: 1, atak: 2 } },
@@ -56,8 +63,11 @@ export const TAGS: Record<Tag, { label: string; reason: string; w: Record<Phase,
   seker: { label: 'Şekerli', reason: 'Yoğun şeker ishali artırabilir', w: { remisyon: 0.4, atak: 1 } },
   islenmis: { label: 'İşlenmiş et', reason: 'İşlenmiş et yağlı ve katkılı', w: { remisyon: 0.9, atak: 1.6 } },
   tatlandirici: { label: 'Tatlandırıcı', reason: 'Sorbitol gibi tatlandırıcılar gaz ve ishal yapabilir', w: { remisyon: 0.9, atak: 1.5 } },
-  katki: { label: 'Katkılı', reason: 'Emülgatör ve katkı maddeleri bazı kişilerde sorun çıkarır', w: { remisyon: 0.4, atak: 0.8 } },
+  katki: { label: 'Katkılı', reason: 'Çok işlenmiş, katkılı ürünler Crohn ile ilişkilendiriliyor', w: { remisyon: 0.6, atak: 0.9 } },
 };
+
+/** Tags that stay risky in remission when the user has a stricture (narrowing). */
+export const STRICTURE_TAGS: Tag[] = ['lif', 'cig', 'kabuk', 'kuruyemis', 'cekirdek', 'baklagil'];
 
 export const ALL_TAGS = Object.keys(TAGS) as Tag[];
 

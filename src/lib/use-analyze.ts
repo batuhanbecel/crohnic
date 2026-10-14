@@ -6,7 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { analyze, prepareImage, type Mode } from './ai';
 import { useApp } from './app-state';
 import * as db from './db';
-import { historyForAI } from './tolerance';
+import { historyForAI, hasStricture } from './tolerance';
 
 export function useAnalyze() {
   const sql = useSQLiteContext();
@@ -30,6 +30,7 @@ export function useAnalyze() {
     const recent = [
       s ? `Son 24 saatte ağrı ${s.pain}/5, şişkinlik ${s.bloating}/5, gaz ${s.gas}/5` : null,
       b ? `Son tuvalet Bristol tip ${b.bristol}${b.blood ? ', kan var' : ''}` : null,
+      hasStricture() ? 'Bağırsakta bilinen darlık (striktür) var: posalı ve lifli yiyeceklerde temkinli ol' : null,
     ]
       .filter(Boolean)
       .join('. ');

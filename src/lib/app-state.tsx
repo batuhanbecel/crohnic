@@ -2,6 +2,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { DEFAULT_AI, type AiConfig, type Analysis } from './ai';
 import * as db from './db';
+import { setStricture } from './tolerance';
 import type { Phase } from './foods';
 
 type PendingResult = {
@@ -43,6 +44,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     (async () => {
+      setStricture((await db.getSetting(sql, 'stricture')) === '1');
       const [p, url, token, n, seen, mealCount] = await Promise.all([
         db.getPhase(sql),
         db.getSetting(sql, 'ai_url'),

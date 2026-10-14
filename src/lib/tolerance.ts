@@ -1,5 +1,5 @@
 import type { Meal } from './db';
-import { FOOD_BY_ID, TAGS, isTag, normalizeName, type Food, type Phase, type Tag, type Verdict } from './foods';
+import { FOOD_BY_ID, STRICTURE_TAGS, TAGS, isTag, normalizeName, type Food, type Phase, type Tag, type Verdict } from './foods';
 
 export const VERDICT_RANK: Record<Verdict, number> = { iyi: 0, dikkat: 1, riskli: 2 };
 
@@ -9,12 +9,25 @@ export function tagsOf(meal: Pick<Meal, 'tags' | 'food_id'>): Tag[] {
   return meal.food_id && FOOD_BY_ID[meal.food_id] ? FOOD_BY_ID[meal.food_id].tags : [];
 }
 
+let stricture = false;
+/** Set from Ayarlar: with a stricture, fibre-type tags keep their flare weight in remission too. */
+export function setStricture(on: boolean) {
+  stricture = on;
+}
+export function hasStricture() {
+  return stricture;
+}
+
+function weight(t: Tag, phase: Phase) {
+  return stricture && STRICTURE_TAGS.includes(t) ? TAGS[t].w.atak : TAGS[t].w[phase];
+}
+
 /** General (non-personal) verdict from tags and current phase. */
 export function generalVerdict(tags: Tag[], phase: Phase): { verdict: Verdict; reasons: string[] } {
-  const score = tags.reduce((s, t) => s + TAGS[t].w[phase], 0);
+  const score = tags.reduce((s, t) => s + weight(t, phase), 0);
   const verdict: Verdict = score < 0.9 ? 'iyi' : score < 2 ? 'dikkat' : 'riskli';
   const reasons = [...tags]
-    .sort((a, b) => TAGS[b].w[phase] - TAGS[a].w[phase])
+    .sort((a, b) => weight(b, phase) - weight(a, phase))
     .map((t) => TAGS[t].reason);
   if (!reasons.length) reasons.push('Bilinen bir tetikleyici içermiyor');
   return { verdict, reasons };
