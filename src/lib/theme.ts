@@ -159,18 +159,21 @@ export function readable(c: string) {
   return c;
 }
 
-/** Corner radii: controls are capsules, cards use one radius, inner wells a smaller one. */
-export const radius = { sm: 10, md: 14, lg: 20, xl: 28, pill: 999 };
+/**
+ * Corner radii follow hierarchy: the hero 32, cards 24, tiles and inner wells 16, small
+ * badges 12, controls are capsules. Nested shapes get the smaller radius so corners stay concentric.
+ */
+export const radius = { sm: 12, md: 16, lg: 24, xl: 32, pill: 999 };
 
 /** One set of sizes for the whole app (44 pt minimum touch target). */
 export const size = {
-  button: 50,
-  buttonSm: 40,
-  icon: 36,
+  button: 54,
+  buttonSm: 42,
+  icon: 38,
   tile: 128,
   stat: 86,
-  gap: 12,
-  pad: 16,
+  gap: 14,
+  pad: 18,
 };
 
 /**
@@ -178,17 +181,27 @@ export const size = {
  * big numbers use ExtraBold, which is where the brand voice lives.
  */
 export const type = {
-  display: { fontWeight: '800' as const },
-  rounded: { fontWeight: '800' as const },
+  display: { fontWeight: '900' as const },
+  rounded: { fontWeight: '900' as const },
   body: { fontWeight: '400' as const },
   medium: { fontWeight: '500' as const },
   semibold: { fontWeight: '600' as const },
 };
 
-/** Content cards don't float; separation comes from the background contrast. */
+/**
+ * Cards rest on the Krem page with a soft lift tinted in Ana Yeşil (a grey shadow looks dirty on
+ * cream). Dark mode has no shadows: separation comes from the lighter card colour.
+ */
 export const shadow = {
-  shadowColor: '#000000',
-  shadowOpacity: 0,
-  shadowRadius: 0,
-  shadowOffset: { width: 0, height: 0 },
+  shadowColor: '#145A32',
+  shadowOpacity: isDark ? 0 : 0.08,
+  shadowRadius: 18,
+  shadowOffset: { width: 0, height: 6 },
 };
+
+/** A coloured glow under a filled control (primary button, candy tiles), light mode only. */
+export function glow(color: string, strength = 0.28) {
+  return isDark
+    ? {}
+    : { shadowColor: color, shadowOpacity: strength, shadowRadius: 14, shadowOffset: { width: 0, height: 6 } };
+}

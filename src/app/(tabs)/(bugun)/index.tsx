@@ -16,13 +16,11 @@ import { dayKey, daysSince, isoDay, now, relative, startOfDay, timeLabel, todayL
 import * as db from '../../../lib/db';
 import { dosesForToday, type Dose } from '../../../lib/meds';
 import { askPermission, cancelMealReminder, permission, syncReminders, type PermissionState } from '../../../lib/reminders';
-import { palette, radius, surface, type } from '../../../lib/theme';
+import { palette, radius, shadow, soft, surface, type } from '../../../lib/theme';
 import { useDayPlan } from '../../../lib/use-day-plan';
 
 
 /** One-tap daily check-in (stored in daily.feel, 0 … 4). */
-/** Streak lengths worth a small celebration on the home screen. */
-const STREAK_MARKS = [3, 7, 14, 21, 30, 45, 60, 90, 120];
 
 const FEELS: { emoji: string; label: string; mood: Mood; line: string }[] = [
   { emoji: '😣', label: 'Kötü', mood: 'agri', line: 'Zor bir gün. Az ve hafif ye, bol sıvı al. Ağrın varsa semptom olarak yaz.' },
@@ -354,7 +352,27 @@ export default function Home() {
   const phaseTone = flare ? palette.flareDeep : palette.lettuceDeep;
   const phaseDays = app.phaseSince ? daysSince(app.phaseSince) + 1 : null;
 
-  const shown = entries.slice(-4);
+  const shown = entries.slice(-5);
+
+  // what Kıvırcık says: the single most useful thing right now
+  const hour = new Date(loadedAt || 0).getHours();
+  const message = redFlag
+    ? 'Son günlerde zorlanmışsın. Aşağıdaki notu doktorunla paylaşmanı isterim.'
+    : dueDoses.length
+      ? `${dueDoses[0].med.name} saatin geldi. Aldıysan aşağıdan işaretle.`
+      : pending.length
+        ? `${pending[0].name} nasıl geçti? Bir dokunuşla yazabilirsin.`
+        : !meals.length && hour < 11
+          ? 'Günaydın! Kahvaltıda ne var?'
+          : !meals.length
+            ? 'Bugün henüz bir şey yazmadın. İlk öğünle başlayalım mı?'
+            : meals.some((m) => m.reaction === 2)
+              ? 'Bir şey dokunmuş. Akşamı hafif geçirelim: çorba, pilav, haşlama.'
+              : flare
+                ? 'Atak günlerinde yumuşak, az yağlı ve küçük porsiyonlarla gidelim.'
+                : daily?.feel != null && daily.feel >= 3
+                  ? 'İyi bir gün gibi görünüyor. Neyin iyi geldiğini yazmaya devam.'
+                  : `Bugün ${meals.length} öğün yazdın. Böyle devam, örüntüleri birlikte göreceğiz.`;
 
   return (
     <Screen tone={flare ? 'flare' : 'calm'}>
@@ -366,29 +384,47 @@ export default function Home() {
           ],
         }}
       />
-      {/* who, which phase, how today feels: one compact header instead of a card */}
-      <Row gap={10} style={{ alignItems: 'center', marginTop: 4 }}>
-        <View style={{ flex: 1, gap: 4 }}>
-          <T v="small" color={palette.inkSoft}>
-            {todayLabel()}
-          </T>
-          <T v="large" numberOfLines={1} adjustsFontSizeToFit>
-            {app.name ? `Selam ${app.name}` : 'Selam'}
-          </T>
-          <Tap onPress={changePhase} accessibilityRole="button" accessibilityLabel={`${flare ? 'Atak' : 'Remisyon'} dönemi. Değiştirmek için dokun`} style={{ alignSelf: 'flex-start' }}>
-            <Row gap={6} style={{ paddingVertical: 4, paddingHorizontal: 10, borderRadius: radius.pill, backgroundColor: flare ? palette.flareSoft : palette.lettuceSoft }}>
-              <Icon name={flare ? 'flame.fill' : 'leaf.fill'} size={12} color={phaseTone} fallback={flare ? '🔥' : '🌿'} />
-              <T v="caption" color={phaseTone} style={{ fontWeight: '800' }}>
-                {flare ? 'Atak' : 'Remisyon'}
-                {phaseDays ? `, ${phaseDays}. gün` : ''}
-              </T>
-              <Icon name="chevron.down" size={9} color={phaseTone} fallback="˅" />
-            </Row>
-          </Tap>
-        </View>
-        <Mascot mood={mood} size={84} />
-      </Row>
+      {/* greeting and phase */}
+      <View style={{ gap: 6, marginTop: 2 }}>
+        <T v="small" color={palette.inkSoft}>
+          {todayLabel()}
+        </T>
+        <T v="large" numberOfLines={1} adjustsFontSizeToFit>
+          {app.name ? `Selam ${app.name}` : 'Selam'}
+        </T>
+        <Tap onPress={changePhase} accessibilityRole="button" accessibilityLabel={`${flare ? 'Atak' : 'Remisyon'} dönemi. Değiştirmek için dokun`} style={{ alignSelf: 'flex-start' }}>
+          <Row gap={6} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: flare ? palette.flareSoft : palette.lettuceSoft }}>
+            <Icon name={flare ? 'flame.fill' : 'leaf.fill'} size={12} color={phaseTone} fallback={flare ? '🔥' : '🌿'} />
+            <T v="caption" color={phaseTone} style={{ fontWeight: '800' }}>
+              {flare ? 'Atak' : 'Remisyon'}
+              {phaseDays ? `, ${phaseDays}. gün` : ''}
+            </T>
+            <Icon name="chevron.down" size={9} color={phaseTone} fallback="˅" />
+          </Row>
+        </Tap>
+      </View>
 
+      {/* Kıvırcık tells the one thing that matters now */}
+      <Row gap={0} style={{ alignItems: 'center' }}>
+        <Mascot mood={mood} size={104} />
+        {/* the bubble's tail, pointing at Kıvırcık */}
+        <View style={{ width: 16, height: 16, marginRight: -9, marginLeft: -2, zIndex: 1, backgroundColor: surface.card, borderRadius: 3, transform: [{ rotate: '45deg' }] }} />
+        <View style={{ flex: 1 }}>
+          <View style={[{ backgroundColor: surface.card, borderRadius: radius.lg, paddingVertical: 14, paddingHorizontal: 16, gap: 8 }, shadow]}>
+            <T v="callout" style={{ fontWeight: '600', lineHeight: 22 }}>
+              {message}
+            </T>
+            {streak.days >= 2 ? (
+              <Row gap={5} style={{ alignSelf: 'flex-start', paddingVertical: 3, paddingHorizontal: 9, borderRadius: radius.pill, backgroundColor: palette.warnSoft }}>
+                <Icon name="flame.fill" size={11} color={palette.warn} fallback="🔥" />
+                <T v="caption" color={palette.warn} style={{ fontWeight: '800' }}>
+                  {`${streak.days} gündür kayıttasın`}
+                </T>
+              </Row>
+            ) : null}
+          </View>
+        </View>
+      </Row>
 
       {redFlag ? (
         <Card tint={palette.badSoft} style={{ gap: 8 }}>
@@ -474,24 +510,31 @@ export default function Home() {
         )}
       </Row>
       {shown.length ? (
-        <Card style={{ paddingVertical: 6 }}>
+        <Card style={{ paddingVertical: 8 }}>
           {shown.map((e, i) => (
             <Tap key={e.key} onPress={e.onPress ?? (() => router.navigate('/gunluk'))} haptic={false}>
-              <Row gap={12} style={{ paddingVertical: 10 }}>
-                <T v="small" color={palette.inkFaint} style={{ width: 42 }}>
+              <Row gap={12} style={{ alignItems: 'stretch' }}>
+                <T v="caption" color={palette.inkFaint} style={{ width: 38, paddingTop: 22, fontVariant: ['tabular-nums'] }}>
                   {timeLabel(e.at)}
                 </T>
-                {e.group ? <GroupThumb group={e.group} size={34} /> : <IconBubble name={e.icon} color={e.color} dim={34} fallback={e.fallback} />}
-                <View style={{ flex: 1 }}>
-                  <T v="callout" numberOfLines={1} style={type.medium}>
-                    {e.title}
-                  </T>
-                  <T v="small" color={palette.inkSoft} numberOfLines={1}>
-                    {e.sub}
-                  </T>
+                {/* the day's thread: one coloured bead per entry */}
+                <View style={{ width: 14, alignItems: 'center' }}>
+                  <View style={{ width: 2, height: 22, backgroundColor: i === 0 ? 'transparent' : palette.hairline }} />
+                  <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: e.color, borderWidth: 3, borderColor: soft(e.color, 0.35) }} />
+                  <View style={{ width: 2, flex: 1, backgroundColor: i === shown.length - 1 ? 'transparent' : palette.hairline }} />
                 </View>
+                <Row gap={10} style={{ flex: 1, paddingVertical: 10 }}>
+                  {e.group ? <GroupThumb group={e.group} size={38} /> : <IconBubble name={e.icon} color={e.color} dim={38} fallback={e.fallback} />}
+                  <View style={{ flex: 1 }}>
+                    <T v="callout" numberOfLines={1} style={{ fontWeight: '700' }}>
+                      {e.title}
+                    </T>
+                    <T v="small" color={palette.inkSoft} numberOfLines={1}>
+                      {e.sub}
+                    </T>
+                  </View>
+                </Row>
               </Row>
-              {i < shown.length - 1 ? <View style={{ height: 1, backgroundColor: palette.hairline, marginLeft: 100 }} /> : null}
             </Tap>
           ))}
         </Card>
@@ -500,18 +543,6 @@ export default function Home() {
           Henüz kayıt yok. Yukarıdaki kutulardan tek dokunuşla ekle.
         </T>
       )}
-
-      {streak.today && STREAK_MARKS.includes(streak.days) ? (
-        <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 6 }}>
-          <Mascot mood="kutlama" size={64} />
-          <View style={{ flex: 1, gap: 2 }}>
-            <T v="h3">{streak.days} gündür her gün kayıt tutuyorsun</T>
-            <T v="small" color={palette.inkSoft}>
-              Örüntüler düzenli kayıtla ortaya çıkıyor. Böyle devam.
-            </T>
-          </View>
-        </Card>
-      ) : null}
 
       {backupDue ? (
         <Tap onPress={() => router.push('/ayarlar')}>

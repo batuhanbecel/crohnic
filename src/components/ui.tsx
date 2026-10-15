@@ -6,6 +6,7 @@ import React from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
+  Animated,
   Platform,
   Pressable,
   ScrollView,
@@ -21,17 +22,18 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import type { Verdict } from '../lib/foods';
-import { isDark, onTint, palette, radius, size, soft, surface, type } from '../lib/theme';
+import { glow, isDark, onTint, palette, radius, shadow, size, soft, surface, type } from '../lib/theme';
 import { Text } from './text';
 
 /*
- * Crohnic design system v2 (Apple HIG)
- * - Content layer: opaque grouped cards on the background. No glass here.
- * - Functional layer: Liquid Glass only for things that float (tab bar, search, the add
- *   panel, the floating gear / + buttons).
- * - Controls in content are filled: one prominent (accent) action per view, the rest gray.
- * - Selection = accent (or the item's signal colour); signal colours mean one thing each.
- * - Labels inside controls never wrap: one line, shrink to fit.
+ * Crohnic design system v3: "Kıvırcık'ın defteri", a soft, tactile tracker
+ * - Content layer: white cards on Krem with a soft lift tinted in Ana Yeşil (no grey shadows).
+ *   Radii by hierarchy: 32 hero, 24 card, 16 tile/well, 12 badge, capsule controls.
+ * - Every log kind has one candy colour (öğün green, tuvalet peach, semptom coral, ilaç blue,
+ *   gün lilac), used for its tile, its bead on the day's thread and its icon everywhere.
+ * - Titles and numbers in Nunito Black; text in Nunito; labels in sentence case.
+ * - Cards and tiles squish softly when pressed (spring); rows fade. Reduce Motion: fade only.
+ * - Functional layer: Liquid Glass only for things that float (tab bar, bar buttons, search).
  */
 
 export type SymbolName = SymbolViewProps['name'];
@@ -310,14 +312,16 @@ export function Screen({
   );
 }
 
+/** Content card: white on Krem with a soft green-tinted lift. `flat` for long lists and nested cards. */
 export function Card({
   children,
   style,
   tint,
+  flat,
   ...a11y
-}: { children: React.ReactNode; style?: StyleProp<ViewStyle>; tint?: string } & Pick<ViewProps, 'accessible' | 'accessibilityLabel' | 'accessibilityRole'>) {
+}: { children: React.ReactNode; style?: StyleProp<ViewStyle>; tint?: string; flat?: boolean } & Pick<ViewProps, 'accessible' | 'accessibilityLabel' | 'accessibilityRole'>) {
   return (
-    <View {...a11y} style={[st.card, tint ? { backgroundColor: tint } : null, style]}>
+    <View {...a11y} style={[st.card, flat ? null : shadow, tint ? { backgroundColor: tint } : null, style]}>
       {children}
     </View>
   );
@@ -327,21 +331,55 @@ export function Row({ children, gap = 10, style }: { children: React.ReactNode; 
   return <View style={[{ flexDirection: 'row', alignItems: 'center', gap }, style]}>{children}</View>;
 }
 
-/** Press feedback for content rows and cards: highlight on press-in. */
-export function Tap({ children, style, onPress, haptic = true, ...rest }: PressableProps & { haptic?: boolean; style?: StyleProp<ViewStyle> }) {
+/**
+ * Press feedback. Rows fade (like a list highlight); `press="scale"` gives cards and tiles a
+ * soft spring squish, which is what makes them feel like objects. Reduce Motion: fade only.
+ */
+export function Tap({
+  children,
+  style,
+  onPress,
+  haptic = true,
+  press = 'fade',
+  ...rest
+}: PressableProps & { haptic?: boolean; style?: StyleProp<ViewStyle>; press?: 'fade' | 'scale' }) {
+  const [scale] = React.useState(() => new Animated.Value(1));
+  const squish = press === 'scale' && !reduceMotion;
+  const to = (v: number) => Animated.spring(scale, { toValue: v, useNativeDriver: true, speed: 40, bounciness: v === 1 ? 8 : 0 }).start();
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : undefined}
       {...rest}
+      onPressIn={(e) => {
+        if (squish) to(0.96);
+        rest.onPressIn?.(e);
+      }}
+      onPressOut={(e) => {
+        if (squish) to(1);
+        rest.onPressOut?.(e);
+      }}
       onPress={(e) => {
         if (haptic) hapticTap();
         onPress?.(e);
       }}
-      style={({ pressed }) => [style, { opacity: pressed ? 0.6 : 1 }]}
+      style={({ pressed }) => [squish ? outerOf(style) : style, { opacity: pressed && !squish ? 0.6 : 1 }]}
     >
-      {children as React.ReactNode}
+      {squish ? <Animated.View style={[innerOf(style), { transform: [{ scale }] }]}>{children as React.ReactNode}</Animated.View> : (children as React.ReactNode)}
     </Pressable>
   );
+}
+
+// For the squish, placement in the parent (flex, width, margins) stays on the Pressable and the
+// look (background, padding, radius) moves to the scaling view inside it.
+const OUTER = new Set(['flex', 'flexGrow', 'flexShrink', 'flexBasis', 'width', 'minWidth', 'maxWidth', 'alignSelf', 'position', 'top', 'left', 'right', 'bottom', 'zIndex', 'margin', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'marginHorizontal', 'marginVertical']);
+function outerOf(style: StyleProp<ViewStyle>): ViewStyle {
+  const s = (StyleSheet.flatten(style) ?? {}) as Record<string, unknown>;
+  return Object.fromEntries(Object.entries(s).filter(([k]) => OUTER.has(k))) as ViewStyle;
+}
+function innerOf(style: StyleProp<ViewStyle>): ViewStyle {
+  const s = (StyleSheet.flatten(style) ?? {}) as Record<string, unknown>;
+  const inner = Object.fromEntries(Object.entries(s).filter(([k]) => !OUTER.has(k))) as ViewStyle;
+  return { flexGrow: 1, ...inner };
 }
 
 // ---------- buttons ----------
@@ -376,7 +414,7 @@ export function Button({
   const fg = kind === 'primary' ? onTint(fill) : kind === 'danger' ? palette.bad : kind === 'plain' ? palette.lettuceDeep : palette.ink;
   const h = compact ? size.buttonSm : size.button;
   return (
-    <View style={style}>
+    <View style={[style, kind === 'primary' && !disabled ? [glow(fill, 0.3), { borderRadius: radius.pill }] : null]}>
       <GlassPress tint={fill} disabled={disabled || loading} haptic="impact" onPress={onPress} accessibilityLabel={title} style={{ borderRadius: radius.pill }}>
         <View style={[st.btnInner, { minHeight: h, paddingHorizontal: compact ? 14 : 20, paddingVertical: 6 }]}>
           {loading ? <ActivityIndicator color={fg} /> : icon ? <Icon name={icon} color={fg} size={compact ? 15 : 17} /> : null}

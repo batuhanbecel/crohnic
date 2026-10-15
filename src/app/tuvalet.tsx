@@ -129,7 +129,7 @@ export default function Bowel() {
                   <Text style={{ fontSize: 22 }}>{b.emoji}</Text>
                   <View style={{ flex: 1 }}>
                     <T v="caption" color={on ? tone : palette.inkSoft} style={{ fontWeight: '800' }}>
-                      {`TİP ${b.type}`}
+                      {`Tip ${b.type}`}
                     </T>
                     <T v="callout" numberOfLines={2} style={{ fontWeight: '700', lineHeight: 19 }}>
                       {b.short}

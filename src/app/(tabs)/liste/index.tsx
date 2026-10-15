@@ -129,7 +129,7 @@ export default function FoodList() {
           const u = VERDICT_UI[a.verdict];
           return (
             <Tap onPress={() => router.push(`/besin/${f.id}`)}>
-              <Card style={{ padding: 10, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Card flat style={{ padding: 10, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <View style={{ width: 50, height: 50, borderRadius: radius.sm, backgroundColor: surface.well, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ fontSize: 24 }}>{f.emoji}</Text>
                 </View>
