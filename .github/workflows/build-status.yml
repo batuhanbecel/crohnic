@@ -1,0 +1,40 @@
+# Elle çalıştırılır: en son iOS EAS build'inin bitmesini bekler ve sonucunu bildirir
+# (build başarısızsa adım kırmızı olur, hata mesajı açıklama olarak düşer).
+name: build-status
+
+on:
+  workflow_dispatch:
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Wait for latest iOS build
+        timeout-minutes: 90
+        run: |
+          while true; do
+            JSON=$(eas build:list --platform ios --limit 1 --json --non-interactive)
+            STATUS=$(echo "$JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s)[0]?.status??"NONE"))')
+            case "$STATUS" in
+              NEW|IN_QUEUE|IN_PROGRESS|PENDING_CANCEL) sleep 30 ;;
+              *) break ;;
+            esac
+          done
+          INFO=$(echo "$JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const b=JSON.parse(s)[0]||{};console.log([b.status,b.appBuildVersion&&("build "+b.appBuildVersion),b.gitCommitHash&&b.gitCommitHash.slice(0,7),b.error&&(b.error.errorCode+": "+b.error.message)].filter(Boolean).join(" | ").replace(/\n/g," "))})')
+          if [ "$STATUS" = "FINISHED" ]; then
+            echo "::notice title=EAS build::$INFO"
+          else
+            echo "::error title=EAS build::$INFO"
+            exit 1
+          fi
