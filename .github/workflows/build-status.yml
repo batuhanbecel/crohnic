@@ -15,6 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
       - uses: expo/expo-github-action@v8
         with:
           eas-version: latest
@@ -24,7 +31,10 @@ jobs:
         timeout-minutes: 90
         run: |
           while true; do
-            JSON=$(eas build:list --platform ios --limit 1 --json --non-interactive)
+            if ! JSON=$(eas build:list --platform ios --limit 1 --json --non-interactive 2>/tmp/err); then
+              echo "::error title=eas build:list::$(tr '\n' ' ' </tmp/err | cut -c1-400)"
+              exit 1
+            fi
             STATUS=$(echo "$JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s)[0]?.status??"NONE"))')
             case "$STATUS" in
               NEW|IN_QUEUE|IN_PROGRESS|PENDING_CANCEL) sleep 30 ;;
