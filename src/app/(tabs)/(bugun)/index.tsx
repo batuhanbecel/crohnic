@@ -30,6 +30,9 @@ const FEELS: { emoji: string; label: string; mood: Mood; line: string }[] = [
   { emoji: '😄', label: 'Harika', mood: 'kutlama', line: 'Harika bir gün. Neyin iyi geldiğini yazarsan tekrarlaması kolaylaşır.' },
 ];
 
+/** Short answers that fit three across in Kıvırcık's bubble (full labels go to VoiceOver). */
+const BUBBLE_LABEL: Record<db.Reaction, string> = { 0: 'İyi', 1: 'Biraz', 2: 'Kötü' };
+
 type Entry = {
   key: string;
   at: number;
@@ -59,6 +62,12 @@ export default function Home() {
   const [factorsSeen, setFactorsSeen] = useState(true);
   const [streak, setStreak] = useState({ days: 0, today: false });
   const dayPlan = useDayPlan();
+  const [thanks, setThanks] = useState<{ text: string; mood: Mood } | null>(null);
+  useEffect(() => {
+    if (!thanks) return;
+    const t = setTimeout(() => setThanks(null), 3500);
+    return () => clearTimeout(t);
+  }, [thanks]);
   const nextMeal = dayPlan.plan?.find((x) => x.key === dayPlan.current);
 
   useEffect(() => {
@@ -166,6 +175,22 @@ export default function Home() {
     app.bump();
   };
 
+  // answers given right in Kıvırcık's bubble
+  const answerMeal = async (group: db.MealGroup, r: db.Reaction) => {
+    setThanks(
+      r === 0
+        ? { text: 'Süper, kaydettim! İyi gelenleri sana daha çok öneririm.', mood: 'mutlu' }
+        : r === 1
+          ? { text: 'Not ettim. Bunu bir süre az ve dikkatli yiyelim.', mood: 'dusunuyor' }
+          : { text: 'Geçmiş olsun. Kaydettim, bir dahaki sefere seni uyarırım.', mood: 'sevgi' },
+    );
+    await react(group, r);
+  };
+  const answerDose = async (d: Dose) => {
+    setThanks({ text: `Aferin! ${d.med.name} kaydedildi.`, mood: 'kutlama' });
+    await take(d);
+  };
+
   const dismissFactors = async (open: boolean) => {
     await db.setSetting(sql, 'factors_seen', '1');
     setFactorsSeen(true);
@@ -186,7 +211,11 @@ export default function Home() {
   const checkedIn = !!daily && (daily.stress != null || daily.sleep_q != null || daily.sleep_h != null);
   const askCheckIn = !checkedIn && new Date(loadedAt || 0).getHours() >= 18;
   const askNotifs = perm === 'undetermined' && !promptSeen;
-  const next = pending.slice(0, 2);
+  // Kıvırcık asks about one thing in the bubble and takes the answer there; the "Sıradaki"
+  // card lists the rest, so nothing is asked twice
+  const askDose = !redFlag ? dueDoses.find((d) => d.due >= dayStart) : undefined;
+  const askMeal = !redFlag && !askDose ? pending[0] : undefined;
+  const next = pending.filter((m) => m !== askMeal).slice(0, 2);
 
   const nextItems = [
     ...next.map((m) => (
@@ -205,7 +234,7 @@ export default function Home() {
         <ReactionPicker compact onChange={(r) => react(m, r)} />
       </View>
     )),
-    ...dueDoses.map((d) => (
+    ...dueDoses.filter((d) => d !== askDose).map((d) => (
       <Row key={`d${d.med.id}:${d.due}`} gap={12} style={{ paddingVertical: 12 }}>
         <IconBubble name="pills.fill" color={palette.peri} dim={40} fallback="💊" />
         <View style={{ flex: 1 }}>
@@ -356,12 +385,14 @@ export default function Home() {
 
   // what Kıvırcık says: the single most useful thing right now
   const hour = new Date(loadedAt || 0).getHours();
-  const message = redFlag
+  const message = thanks
+    ? thanks.text
+    : redFlag
     ? 'Son günlerde zorlanmışsın. Aşağıdaki notu doktorunla paylaşmanı isterim.'
-    : dueDoses.length
-      ? `${dueDoses[0].med.name} saatin geldi. Aldıysan aşağıdan işaretle.`
-      : pending.length
-        ? `${pending[0].name} nasıl geçti? Bir dokunuşla yazabilirsin.`
+    : askDose
+      ? `${askDose.med.name} saatin geldi${askDose.med.dose ? ` (${askDose.med.dose})` : ''}. Aldın mı?`
+      : askMeal
+        ? `${askMeal.name} nasıl geçti?`
         : !meals.length && hour < 11
           ? 'Günaydın! Kahvaltıda ne var?'
           : !meals.length
@@ -406,7 +437,7 @@ export default function Home() {
 
       {/* Kıvırcık tells the one thing that matters now */}
       <Row gap={0} style={{ alignItems: 'center' }}>
-        <Mascot mood={mood} size={104} />
+        <Mascot mood={thanks?.mood ?? mood} size={104} />
         {/* the bubble's tail, pointing at Kıvırcık */}
         <View style={{ width: 16, height: 16, marginRight: -9, marginLeft: -2, zIndex: 1, backgroundColor: surface.card, borderRadius: 3, transform: [{ rotate: '45deg' }] }} />
         <View style={{ flex: 1 }}>
@@ -414,7 +445,29 @@ export default function Home() {
             <T v="callout" style={{ fontWeight: '600', lineHeight: 22 }}>
               {message}
             </T>
-            {streak.days >= 2 ? (
+            {!thanks && askMeal ? (
+              <Row gap={6}>
+                {REACTIONS.map((r) => (
+                  <Tap
+                    key={r.value}
+                    press="scale"
+                    onPress={() => answerMeal(askMeal, r.value)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${askMeal.name}: ${r.label}`}
+                    style={{ flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: radius.md, backgroundColor: r.bg }}
+                  >
+                    <Text style={{ fontSize: 22 }}>{r.emoji}</Text>
+                    <T v="caption" color={r.color} style={{ fontWeight: '800' }} numberOfLines={1}>
+                      {BUBBLE_LABEL[r.value]}
+                    </T>
+                  </Tap>
+                ))}
+              </Row>
+            ) : null}
+            {!thanks && askDose ? (
+              <Button title="Aldım" icon="checkmark" compact onPress={() => answerDose(askDose)} style={{ alignSelf: 'flex-start' }} />
+            ) : null}
+            {!thanks && !askMeal && !askDose && streak.days >= 2 ? (
               <Row gap={5} style={{ alignSelf: 'flex-start', paddingVertical: 3, paddingHorizontal: 9, borderRadius: radius.pill, backgroundColor: palette.warnSoft }}>
                 <Icon name="flame.fill" size={11} color={palette.warn} fallback="🔥" />
                 <T v="caption" color={palette.warn} style={{ fontWeight: '800' }}>
