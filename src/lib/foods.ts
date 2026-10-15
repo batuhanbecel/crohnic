@@ -30,7 +30,8 @@ export type Tag =
   | 'islenmis'
   | 'tatlandirici'
   | 'katki'
-  | 'cig_hayvansal';
+  | 'cig_hayvansal'
+  | 'sigara';
 
 /**
  * Weights per phase. Negative = gentle on the gut. A food's score is the sum of its tags:
@@ -75,6 +76,11 @@ export const TAGS: Record<Tag, { label: string; reason: string; w: Record<Phase,
   tatlandirici: { label: 'Tatlandırıcı', reason: 'Sorbitol gibi tatlandırıcılar gaz ve ishal yapabilir', w: { remisyon: 0.9, atak: 1.5 } },
   katki: { label: 'Katkılı', reason: 'Çok işlenmiş, katkılı ürünler Crohn ile ilişkilendiriliyor', w: { remisyon: 0.6, atak: 0.9 } },
   cig_hayvansal: { label: 'Çiğ / az pişmiş', reason: 'Çiğ ya da az pişmiş hayvansal gıda, bağışıklığı baskılayan ilaç kullananlarda enfeksiyon riski taşır', w: { remisyon: 0.9, atak: 1.5 } },
+  sigara: {
+    label: 'Tütün',
+    reason: "Sigara Crohn'u en çok kötüleştiren çevresel etken: atak, ilaç ihtiyacı ve ameliyat riskini artırır. Bırakmak da en etkili tedavilerden biri sayılıyor",
+    w: { remisyon: 2.5, atak: 3 },
+  },
 };
 
 /** With lactose intolerance (set in Ayarlar) lactose carries real weight. */

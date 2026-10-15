@@ -356,14 +356,20 @@ export async function allRatedMeals(db: SQLiteDatabase) {
 }
 
 /** Meals eaten at least 90 minutes ago that still don't have a reaction. */
+/** Tobacco is logged next to meals but isn't food: never asked about, never counted as a meal. */
+export function isTobacco(m: Pick<Meal, 'tags'>) {
+  return m.tags.split(',').includes('sigara');
+}
+
 export async function pendingReactions(db: SQLiteDatabase) {
   const cutoff = Date.now() - 90 * 60 * 1000;
   const since = Date.now() - 4 * 24 * 60 * 60 * 1000;
-  return db.getAllAsync<Meal>(
+  const rows = await db.getAllAsync<Meal>(
     'SELECT * FROM meals WHERE reaction IS NULL AND eaten_at <= ? AND eaten_at >= ? ORDER BY eaten_at DESC LIMIT 40',
     cutoff,
     since,
   );
+  return rows.filter((m) => !isTobacco(m));
 }
 
 // ---------- symptoms ----------

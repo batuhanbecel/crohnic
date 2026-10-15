@@ -153,6 +153,8 @@ export function assessFood(food: Food, phase: Phase, meals: Meal[], stats?: Retu
 
   let verdict = g.verdict;
   let confidence: FoodAssessment['confidence'] = 'genel';
+  // tobacco harms over months, not hours: how one cigarette felt never makes it "iyi"
+  if (food.tags.includes('sigara')) return { verdict, general: g.verdict, personal: p, stat, reasons: g.reasons, confidence };
   if (p && stat) {
     if (stat.n >= 2) {
       verdict = p;

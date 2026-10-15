@@ -8,7 +8,7 @@ const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
 const TAGS = [
   'hafif', 'pure', 'lif', 'cig', 'kabuk', 'kuruyemis', 'cekirdek', 'baklagil', 'lahana', 'yag', 'yag_hafif',
   'aci', 'aci_hafif', 'asit', 'sut', 'sut_az', 'fermente', 'kafein', 'kafein_hafif', 'alkol', 'gazli', 'seker', 'islenmis',
-  'tatlandirici', 'katki', 'baklagil_az', 'cig_hayvansal',
+  'tatlandirici', 'katki', 'baklagil_az', 'cig_hayvansal', 'sigara',
 ];
 
 const TAG_GUIDE = `Etiket sözlüğü (sadece bunları kullan):
@@ -38,6 +38,7 @@ seker = şerbetli tatlı, yoğun şeker
 islenmis = sucuk, salam, sosis, pastırma
 tatlandirici = sorbitol, maltitol gibi şeker alkolleri (şekersiz sakız, diyet ürünler, protein bar)
 katki = emülgatör ve katkı maddesi yoğun paketli ürünler
+sigara = sigara, elektronik sigara, ısıtılmış tütün, nargile, puro (Crohn'u en çok kötüleştiren etken)
 cig_hayvansal = çiğ ya da az pişmiş et, balık, deniz ürünü (suşi, sashimi, istiridye, az pişmiş et, soğuk tütsülenmiş balık)`;
 
 const SYSTEM = `Sen Crohnic uygulamasındaki yemek koçusun. Uygulamanın maskotu Kıvırcık adında bir marul, sen onun ağzından konuşuyorsun. Kullanıcı Crohn hastası. Bir yemeğin ya da restoran menüsündeki yemeklerin ona iyi gelip gelmeyeceğini kısa ve net bir Türkçeyle söylüyorsun.

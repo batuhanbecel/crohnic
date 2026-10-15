@@ -1145,6 +1145,29 @@ Mocha|☕|kafein sut seker
 Soğuk kahve|🧋|kafein sut seker
 Kafeinsiz kahve|☕|kafein_hafif
 Chai latte|🍵|kafein_hafif sut seker aci_hafif
+Cortado|☕|kafein sut_az
+Macchiato|☕|kafein sut_az
+Latte macchiato|☕|kafein sut
+Caramel macchiato|☕|kafein sut seker
+Buzlu caramel macchiato|🧋|kafein sut seker
+White chocolate mocha|☕|kafein sut seker katki
+Vanilyalı latte|☕|kafein sut seker
+Buzlu latte|🧋|kafein sut
+Buzlu americano|🧋|kafein
+Cold brew|🧋|kafein
+Ristretto|☕|kafein
+Lungo|☕|kafein
+Doppio (çift espresso)|☕|kafein
+Affogato|🍨|kafein sut seker
+Yulaf sütlü latte|☕|kafein
+Badem sütlü latte|☕|kafein
+Sütlü Türk kahvesi|☕|kafein sut
+Damla sakızlı Türk kahvesi|☕|kafein
+Dibek kahvesi|☕|kafein
+Osmanlı kahvesi|☕|kafein
+Menengiç kahvesi|☕|sut yag_hafif
+Irish coffee|🥃|kafein alkol seker yag_hafif
+Frappé (buzlu, köpüklü)|🥤|kafein sut seker katki
 Sıcak çikolata|☕|sut seker kafein_hafif
 Salep|☕|sut seker
 Boza|🥤|fermente seker
@@ -1184,6 +1207,168 @@ Viski|🥃|alkol
 Votka|🥃|alkol
 Cin tonik|🍸|alkol gazli
 Kokteyl|🍸|alkol seker
+
+# Starbucks
+Starbucks Caffè Americano|☕|kafein
+Starbucks Iced Caffè Americano|🧋|kafein
+Starbucks Caffè Latte|☕|kafein sut
+Starbucks Iced Caffè Latte|🧋|kafein sut
+Starbucks Cappuccino|☕|kafein sut
+Starbucks Flat White|☕|kafein sut
+Starbucks Cortado|☕|kafein sut_az
+Starbucks Ristretto Bianco|☕|kafein sut
+Starbucks Espresso|☕|kafein
+Starbucks Latte Macchiato|☕|kafein sut
+Starbucks Caramel Macchiato|☕|kafein sut seker
+Starbucks Iced Caramel Macchiato|🧋|kafein sut seker
+Starbucks Caffè Mocha|☕|kafein sut seker
+Starbucks White Chocolate Mocha|☕|kafein sut seker katki
+Starbucks Iced White Chocolate Mocha|🧋|kafein sut seker katki
+Starbucks Filtre Kahve|☕|kafein
+Starbucks Cold Brew|🧋|kafein
+Starbucks Iced Brown Sugar Oat Shaken Espresso|🧋|kafein seker
+Starbucks Doubleshot Iced Shaken Espresso|🧋|kafein seker
+Starbucks Türk Kahvesi|☕|kafein
+Starbucks Chai Tea Latte|🍵|kafein_hafif sut seker aci_hafif
+Starbucks Iced Chai Tea Latte|🧋|kafein_hafif sut seker aci_hafif
+Starbucks Hot Chocolate|🍫|sut seker kafein_hafif
+Starbucks Caramel Frappuccino|🥤|kafein sut seker katki yag_hafif
+Starbucks Mocha Frappuccino|🥤|kafein sut seker katki
+Starbucks Java Chip Frappuccino|🥤|kafein sut seker katki yag_hafif
+Starbucks Espresso Frappuccino|🥤|kafein sut seker katki
+Starbucks Strawberries & Cream Frappuccino|🥤|sut seker katki
+Starbucks Cool Lime|🍈|kafein_hafif seker asit
+Starbucks Very Berry Hibiscus|🌺|kafein_hafif seker
+Starbucks Orange Mango|🥭|kafein_hafif seker asit
+Starbucks Mango Dragonfruit|🐉|kafein_hafif seker
+Starbucks Matcha Latte|🍵|kafein_hafif sut seker
+Starbucks Matcha Pistachio Latte|🍵|kafein_hafif sut seker
+Starbucks Spanish Cream Matcha Latte|🍵|kafein_hafif sut seker
+Starbucks Iced Strawberry Cream Matcha Latte|🧋|kafein_hafif sut seker katki
+Starbucks Iced Apple Crumble Matcha Latte|🧋|kafein_hafif sut seker katki
+Starbucks Pumpkin Spice Latte|🎃|kafein sut seker aci_hafif
+Starbucks Iced Pumpkin Spice Latte|🧋|kafein sut seker aci_hafif
+Starbucks Pumpkin Spice Frappuccino|🥤|kafein sut seker katki aci_hafif
+Starbucks Pecan Maple Latte|☕|kafein sut seker
+Starbucks Toffee Nut Latte|☕|kafein sut seker
+Starbucks Earl Grey|🫖|kafein_hafif
+Starbucks Mint Blend|🫖|hafif
+Starbucks Kruvasan|🥐|yag sut_az
+Starbucks Cheesecake|🍰|sut seker yag
+Starbucks Brownie|🍫|seker yag sut_az
+Starbucks Muffin|🧁|seker yag_hafif katki
+Starbucks Cookie|🍪|seker yag
+
+# Fast food zincirleri
+McDonald's Big Mac|🍔|yag katki sut_az
+McDonald's Double Big Mac|🍔|yag katki sut_az
+McDonald's Quarter Pounder|🍔|yag katki sut_az
+McDonald's Double Quarter Pounder|🍔|yag katki sut_az
+McDonald's McRoyal|🍔|yag katki sut_az
+McDonald's Max Burger|🍔|yag katki sut_az
+McDonald's Milli Burger|🍔|yag katki
+McDonald's Daba Daba Burger|🍔|yag katki aci_hafif
+McDonald's Köfteburger|🍔|yag katki
+McDonald's Double Köfteburger|🍔|yag katki
+McDonald's Hamburger|🍔|yag katki
+McDonald's Cheeseburger|🍔|yag katki sut_az
+McDonald's Double Cheeseburger|🍔|yag katki sut_az
+McDonald's McChicken|🍔|yag katki
+McDonald's Double McChicken|🍔|yag katki
+McDonald's Acılı Tavuk Klasik|🍔|yag katki aci
+McDonald's Çıtır Tavuk Ekstra|🍔|yag katki
+McDonald's Chicken McNuggets|🍗|yag katki islenmis
+McDonald's Acılı Chicken McBites|🍗|yag katki aci
+McDonald's Patates Kızartması|🍟|yag
+McDonald's Tırtıklı Patates|🍟|yag
+McDonald's Çıtır Soğan|🧅|yag lahana
+McDonald's McFlurry|🍦|sut seker katki
+McDonald's Sundae|🍨|sut seker katki
+McDonald's Çuros|🍩|yag seker
+McDonald's Donut|🍩|yag seker
+McDonald's Cookie|🍪|seker yag
+McDonald's Milkshake|🥤|sut seker katki
+Burger King Whopper|🍔|yag katki cig lahana
+Burger King Double Whopper|🍔|yag katki cig lahana
+Burger King Whopper Jr.|🍔|yag katki cig
+Burger King Rodeo Whopper|🍔|yag katki lahana
+Burger King Plant Based Whopper|🌱|yag katki cig
+Burger King Big King|🍔|yag katki sut_az
+Burger King King Beef Burger|🍔|yag katki sut_az
+Burger King Steakhouse Burger|🍔|yag katki sut_az
+Burger King Texas Smokehouse Burger|🍔|yag katki islenmis aci_hafif
+Burger King Köfteburger|🍔|yag katki
+Burger King Cheeseburger|🍔|yag katki sut_az
+Burger King Chicken Royale|🍔|yag katki
+Burger King King Chicken|🍔|yag katki
+Burger King Crispy Chicken|🍔|yag katki
+Burger King Klasik Gurme Tavuk|🍔|yag katki
+Burger King Spicy Gurme Tavuk|🍔|yag katki aci
+Burger King Tavukburger|🍔|yag katki
+Burger King Fish Royale|🐟|yag katki
+Burger King Bean Burger|🍔|yag katki baklagil
+Burger King Hot Wrap|🌯|yag katki aci_hafif
+Burger King King Nuggets|🍗|yag katki islenmis
+Burger King Chicken Tenders|🍗|yag katki
+Burger King Soğan Halkası|🧅|yag lahana
+Burger King Çıtır Peynir|🧀|yag sut_az
+Burger King Patates Kızartması|🍟|yag
+Burger King Sufle|🍫|seker yag sut_az
+Burger King Sundae|🍨|sut seker katki
+KFC Zinger Burger|🍔|yag aci katki
+KFC Double Zinger Burger|🍔|yag aci katki
+KFC Tavuk Burger|🍔|yag katki
+KFC Aşırı Burger|🍔|yag katki
+KFC Bi Burger|🍔|yag katki
+KFC Twister Dürüm|🌯|yag katki cig
+KFC Doritos Twister|🌯|yag katki aci_hafif
+KFC Çıtır Tavuk But|🍗|yag aci_hafif
+KFC Acılı Kanat|🍗|yag aci
+KFC Kemiksiz Çıtır|🍗|yag katki
+KFC Hot Shots|🍗|yag aci katki
+KFC Çıtır Shots|🍗|yag katki
+KFC Kova (karışık tavuk)|🍗|yag aci_hafif katki
+KFC Coleslaw|🥗|cig lahana yag_hafif
+KFC Püre (gravy soslu)|🥔|yag_hafif sut_az katki
+KFC Biscuit|🥐|yag sut_az
+KFC Patates Kızartması|🍟|yag
+Popeyes Klasik Tavuk Sandviç|🍔|yag katki
+Popeyes Acılı Tavuk Sandviç|🍔|yag katki aci
+Popeyes Tavuk Parçaları|🍗|yag aci_hafif
+Popeyes Kemiksiz Tavuk (Tenders)|🍗|yag katki
+Popeyes Kanat|🍗|yag aci
+Popeyes Cajun Patates|🍟|yag aci_hafif
+Popeyes Biscuit|🥐|yag sut_az
+Domino's Margarita Pizza|🍕|yag sut_az asit katki
+Domino's Karışık Pizza|🍕|yag sut islenmis asit katki
+Domino's Sucuksever Pizza|🍕|yag islenmis aci_hafif asit katki
+Domino's Mantarsever Pizza|🍕|yag sut_az asit katki
+Domino's Extravaganzza Pizza|🍕|yag islenmis sut asit katki lahana
+Domino's Bol Malzemos Pizza|🍕|yag islenmis sut asit katki
+Domino's Tavuklu Pizza|🍕|yag_hafif sut_az asit katki
+Domino's Vegi Pizza|🍕|yag_hafif sut_az asit lif katki
+Domino's Dört Peynirli Pizza|🍕|yag sut katki
+Domino's New York Pizza|🍕|yag islenmis sut_az asit katki
+Domino's Sarımsaklı Ekmek|🥖|yag lahana
+Domino's Bol Peynirli Ekmek|🧀|yag sut_az
+Domino's Çıtır Tavuk Topları|🍗|yag katki
+Domino's Gurme Patates|🍟|yag
+Domino's Patso|🥖|yag katki
+Domino's Sufle|🍫|seker yag sut_az
+Little Caesars Pepperoni Pizza|🍕|yag islenmis sut_az asit katki
+Little Caesars Crazy Bread|🥖|yag lahana
+Subway Tavuk Teriyaki Sandviç|🥪|seker yag_hafif cig
+Subway Ton Balıklı Sandviç|🥪|yag cig
+Subway Italian BMT|🥪|islenmis yag cig
+
+# Sigara & tütün
+Sigara|🚬|sigara
+Elektronik sigara (vape)|💨|sigara
+Isıtılmış tütün (IQOS)|🚬|sigara
+Nargile|💨|sigara
+Puro|🚬|sigara
+Pipo|🚬|sigara
+Sarma tütün|🚬|sigara
 `;
 
 // Eski ya da kısa adlar → listedeki yemek. Birleştirilen eski kayıtlar bunlarla
@@ -1311,4 +1496,49 @@ Nohut|Nohut yemeği
 Taze fasulye|Zeytinyağlı taze fasulye
 Salata|Mevsim salata
 Hoşmerim|Höşmerim
+Cool lime|Starbucks Cool Lime
+Hibiscus çayı|Hibiskus çayı
+Cool lime refresha|Starbucks Cool Lime
+Very berry hibiscus|Starbucks Very Berry Hibiscus
+Berry hibiscus|Starbucks Very Berry Hibiscus
+Mango dragonfruit|Starbucks Mango Dragonfruit
+Pumpkin spice latte|Starbucks Pumpkin Spice Latte
+PSL|Starbucks Pumpkin Spice Latte
+Frappuccino|Starbucks Caramel Frappuccino
+Java chip|Starbucks Java Chip Frappuccino
+Shaken espresso|Starbucks Iced Brown Sugar Oat Shaken Espresso
+Big Mac|McDonald's Big Mac
+McChicken|McDonald's McChicken
+McNuggets|McDonald's Chicken McNuggets
+McFlurry|McDonald's McFlurry
+Whopper|Burger King Whopper
+King Chicken|Burger King King Chicken
+Chicken Royale|Burger King Chicken Royale
+Zinger|KFC Zinger Burger
+Twister|KFC Twister Dürüm
+Kova menü|KFC Kova (karışık tavuk)
+Marlboro|Sigara
+Parliament|Sigara
+Camel|Sigara
+Winston|Sigara
+Kent|Sigara
+Lark|Sigara
+L&M|Sigara
+Chesterfield|Sigara
+Davidoff|Sigara
+Muratti|Sigara
+Tekel 2000|Sigara
+Samsun|Sigara
+Pall Mall|Sigara
+Lucky Strike|Sigara
+Rothmans|Sigara
+Tütün|Sarma tütün
+IQOS|Isıtılmış tütün (IQOS)
+Terea|Isıtılmış tütün (IQOS)
+Heets|Isıtılmış tütün (IQOS)
+Glo|Isıtılmış tütün (IQOS)
+E-sigara|Elektronik sigara (vape)
+Vape|Elektronik sigara (vape)
+Elf bar|Elektronik sigara (vape)
+Puff|Elektronik sigara (vape)
 `;

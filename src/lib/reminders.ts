@@ -161,7 +161,7 @@ export async function scheduleMealReminder(sql: SQLiteDatabase, meal: { firstId:
 export async function afterMealSaved(sql: SQLiteDatabase, ids: number[], reaction?: db.Reaction | null) {
   if (!ids.length || reaction != null) return;
   const rows = await Promise.all(ids.map((id) => db.getMeal(sql, id)));
-  const meals = rows.filter((m): m is db.Meal => !!m);
+  const meals = rows.filter((m): m is db.Meal => !!m && !db.isTobacco(m));
   if (!meals.length) return;
   await scheduleMealReminder(sql, { firstId: ids[0], name: meals.map((m) => m.name).join(', '), eatenAt: meals[0].eaten_at });
 }

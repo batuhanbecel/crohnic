@@ -23,7 +23,7 @@ export async function syncWidget(sql: SQLiteDatabase) {
       db.listMeds(sql),
       db.medLogsBetween(sql, from - 4 * 86400000, from + 86400000),
     ]);
-    const mealsToday = db.groupMeals(meals.filter((m) => m.eaten_at >= from)).length;
+    const mealsToday = db.groupMeals(meals.filter((m) => m.eaten_at >= from && !db.isTobacco(m))).length;
     const next = dosesForToday(meds, logs, t).find((d) => !d.log && d.due >= from);
     const img = mascotFile(widgetsDirectory);
     const today = {

@@ -365,15 +365,16 @@ export default function Home() {
   ].sort((a, b) => a.at - b.at);
 
   const todayDoses = doses.filter((d) => d.due >= dayStart);
+  const realMeals = meals.filter((g) => g.items.some((m) => !db.isTobacco(m)));
   const counts = {
-    meals: meals.length,
+    meals: realMeals.length,
     toilet: bowel.length,
     symptoms: symptoms.length,
     doses: { taken: todayDoses.filter((d) => d.log?.taken_at).length, total: todayDoses.length },
   };
 
   const maxPain = symptoms.length ? Math.max(...symptoms.map((s) => s.pain)) : null;
-  const summary = [`${meals.length} öğün`, `${bowel.length} tuvalet`, maxPain == null ? null : maxPain === 0 ? 'ağrı yok' : `ağrı ${maxPain}/5`]
+  const summary = [`${realMeals.length} öğün`, `${bowel.length} tuvalet`, maxPain == null ? null : maxPain === 0 ? 'ağrı yok' : `ağrı ${maxPain}/5`]
     .filter(Boolean)
     .join(', ');
 
@@ -393,9 +394,9 @@ export default function Home() {
       ? `${askDose.med.name} saatin geldi${askDose.med.dose ? ` (${askDose.med.dose})` : ''}. Aldın mı?`
       : askMeal
         ? `${askMeal.name} nasıl geçti?`
-        : !meals.length && hour < 11
+        : !realMeals.length && hour < 11
           ? 'Günaydın! Kahvaltıda ne var?'
-          : !meals.length
+          : !realMeals.length
             ? 'Bugün henüz bir şey yazmadın. İlk öğünle başlayalım mı?'
             : meals.some((m) => m.reaction === 2)
               ? 'Bir şey dokunmuş. Akşamı hafif geçirelim: çorba, pilav, haşlama.'
@@ -403,7 +404,7 @@ export default function Home() {
                 ? 'Atak günlerinde yumuşak, az yağlı ve küçük porsiyonlarla gidelim.'
                 : daily?.feel != null && daily.feel >= 3
                   ? 'İyi bir gün gibi görünüyor. Neyin iyi geldiğini yazmaya devam.'
-                  : `Bugün ${meals.length} öğün yazdın. Böyle devam, örüntüleri birlikte göreceğiz.`;
+                  : `Bugün ${realMeals.length} öğün yazdın. Böyle devam, örüntüleri birlikte göreceğiz.`;
 
   return (
     <Screen tone={flare ? 'flare' : 'calm'}>
