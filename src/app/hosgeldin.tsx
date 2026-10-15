@@ -131,6 +131,11 @@ export default function Welcome() {
               value={name}
               onChangeText={setName}
               placeholder="Ana sayfada böyle selamlarım"
+              // iOS suggests the owner's first name from their contact card above the keyboard
+              textContentType="givenName"
+              autoComplete="name-given"
+              autoCapitalize="words"
+              autoCorrect={false}
               placeholderTextColor={palette.inkFaint}
               style={st.input}
               returnKeyType="done"

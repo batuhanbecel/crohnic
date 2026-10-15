@@ -186,6 +186,11 @@ export default function Settings() {
           onEndEditing={() => app.saveName(name)}
           returnKeyType="done"
           placeholder="Ana sayfada böyle selamlarım"
+          // iOS suggests the owner's first name from their contact card above the keyboard
+          textContentType="givenName"
+          autoComplete="name-given"
+          autoCapitalize="words"
+          autoCorrect={false}
           placeholderTextColor={palette.inkFaint}
           style={st.input}
         />
