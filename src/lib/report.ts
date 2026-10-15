@@ -78,6 +78,78 @@ export function summarize(r: ReportInput) {
   };
 }
 
+const REACTION = [
+  { label: 'iyi geldi', color: C.good },
+  { label: 'biraz dokundu', color: C.warn },
+  { label: 'çok dokundu', color: C.bad },
+];
+const weekday = (ms: number) => new Date(ms).toLocaleDateString('tr-TR', { weekday: 'short' });
+const hhmm = (ms: number) => new Date(ms).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+const isTobacco = (m: Meal) => m.tags.split(',').includes('sigara');
+
+/**
+ * Day-by-day diary: every sitting with its time, what was eaten and how the patient marked it,
+ * next to that day's bowel movements and highest pain. Days without any record are left out.
+ */
+function diaryHtml(r: ReportInput) {
+  const days = new Map<string, { at: number; meals: Meal[]; bowel: BowelLog[]; pain: number | null; phase: Phase }>();
+  const day = (t: number) => {
+    const k = isoDay(t);
+    if (!days.has(k)) days.set(k, { at: startOfDay(t), meals: [], bowel: [], pain: null, phase: phaseAt(r.phases, startOfDay(t) + DAY - 1) });
+    return days.get(k)!;
+  };
+  for (const m of r.meals) if (m.eaten_at >= r.from && m.eaten_at < r.to) day(m.eaten_at).meals.push(m);
+  for (const b of r.bowel) if (b.at >= r.from && b.at < r.to) day(b.at).bowel.push(b);
+  for (const x of r.symptoms) {
+    if (x.at < r.from || x.at >= r.to) continue;
+    const d = day(x.at);
+    d.pain = Math.max(d.pain ?? 0, x.pain);
+  }
+  if (!days.size) return '';
+
+  const rows = [...days.values()]
+    .sort((a, b) => a.at - b.at)
+    .map((d) => {
+      // one line per sitting (items eaten together share a group)
+      const sittings = new Map<string, Meal[]>();
+      for (const m of [...d.meals].sort((a, b) => a.eaten_at - b.eaten_at || a.id - b.id)) {
+        const k = m.group_id ?? `m${m.id}`;
+        sittings.set(k, [...(sittings.get(k) ?? []), m]);
+      }
+      const lines = [...sittings.values()]
+        .map((items) => {
+          const food = items.filter((m) => !isTobacco(m));
+          const smoke = items.length - food.length;
+          const reaction = food.find((m) => m.reaction != null)?.reaction;
+          const note = food.find((m) => m.reaction_note)?.reaction_note;
+          const what = [food.map((m) => esc(m.name)).join(', '), smoke ? '<span class="soft">sigara/tütün</span>' : ''].filter(Boolean).join(', ');
+          const mark = !food.length
+            ? ''
+            : reaction != null
+              ? `<span class="rx" style="color:${REACTION[reaction].color}"><i style="background:${REACTION[reaction].color}"></i>${REACTION[reaction].label}</span>`
+              : '<span class="rx faint"><i class="o"></i>işaretlenmedi</span>';
+          return `<div class="meal"><span class="t">${hhmm(items[0].eaten_at)}</span><span class="w">${what}${note ? ` <span class="soft">“${esc(note)}”</span>` : ''}</span>${mark}</div>`;
+        })
+        .join('');
+      const n = d.bowel.length;
+      const avgB = n ? Math.round(d.bowel.reduce((a, b) => a + b.bristol, 0) / n) : null;
+      const blood = d.bowel.some((b) => b.blood);
+      const bowel = n
+        ? `<b>${n}</b> <span style="color:${tone(avgB!)}">B${avgB}</span>${blood ? ' <span style="color:' + C.bad + '">kan</span>' : ''}`
+        : '<span class="faint">–</span>';
+      const pain = d.pain == null ? '<span class="faint">–</span>' : `<b style="color:${d.pain >= 4 ? C.bad : d.pain >= 2 ? C.warn : C.ink}">${d.pain}</b>`;
+      return `<tr class="avoid"><td class="d"><b>${short(d.at)}</b> <span class="soft">${weekday(d.at)}</span>${d.phase === 'atak' ? `<div style="color:${C.flare};font-weight:600">atak</div>` : ''}</td><td>${lines || '<span class="faint">yemek kaydı yok</span>'}</td><td class="num">${bowel}</td><td class="num">${pain}</td></tr>`;
+    })
+    .join('');
+
+  return `<h2 class="break">Beslenme ve semptom günlüğü</h2>
+  <p class="soft" style="margin:0 0 6px">Gün gün yenenler, hastanın her öğün için işaretlediği tepki, o günkü tuvalet sayısı (B: ortalama Bristol tipi) ve en yüksek karın ağrısı (0–5). Kayıt olmayan günler gösterilmedi.</p>
+  <table class="diary">
+    <thead><tr><th style="width:62px">Gün</th><th>Öğünler ve tepki</th><th class="num" style="width:64px">Tuvalet</th><th class="num" style="width:34px">Ağrı</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
 /** Lab results and weight: last value in the window, change from the one before, every value in the window. */
 function labsHtml(r: ReportInput) {
   const labs = r.labs ?? [];
@@ -99,9 +171,9 @@ function labsHtml(r: ReportInput) {
     water.length ? `Günlük ortalama sıvı: ${fmt1(water.reduce((a, b) => a + b, 0) / water.length)} bardak (${water.length} gün)` : '',
   ].filter(Boolean);
   if (!rows && !extra.length) return '';
-  return `<h2>Tahliller, kilo ve genel durum</h2>
-  ${rows ? `<table class="avoid"><tr><th>Ölçüm</th><th class="num">Son değer</th><th>Değişim</th><th>Dönem içindeki değerler</th></tr>${rows}</table>` : ''}
-  ${extra.length ? `<p class="soft" style="margin-top:6px">${extra.join('. ')}.</p>` : ''}`;
+  return `<div class="avoid"><h2>Tahliller, kilo ve genel durum</h2>
+  ${rows ? `<table><tr><th>Ölçüm</th><th class="num">Son değer</th><th>Değişim</th><th>Dönem içindeki değerler</th></tr>${rows}</table>` : ''}
+  ${extra.length ? `<p class="soft" style="margin-top:6px">${extra.join('. ')}.</p>` : ''}</div>`;
 }
 
 export function reportHtml(r: ReportInput) {
@@ -174,9 +246,18 @@ export function reportHtml(r: ReportInput) {
     : `<tr><td colspan="4" class="soft">Bu dönemde ilaç kaydı yok.</td></tr>`;
 
   // ----- triggers -----
-  const rated = r.meals.filter((m) => m.reaction != null);
+  const food = r.meals.filter((m) => !isTobacco(m));
+  const rated = food.filter((m) => m.reaction != null);
+  const smokeDays = new Set(r.meals.filter(isTobacco).map((m) => isoDay(m.eaten_at))).size;
+  const byReaction = [0, 1, 2].map((v) => rated.filter((m) => m.reaction === v).length);
+  const foodSummary = [
+    `${food.length} yemek kaydı: ${byReaction[0]} iyi geldi, ${byReaction[1]} biraz dokundu, ${byReaction[2]} çok dokundu, ${food.length - rated.length} işaretlenmedi.`,
+    smokeDays ? `Sigara/tütün ${smokeDays} gün kaydedildi.` : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
   const { triggers } = triggerInsights(rated);
-  const suspects = suspectFoods(r.meals, r.symptoms, r.bowel).foods;
+  const suspects = suspectFoods(food, r.symptoms, r.bowel).foods;
   const badFoods = [...statsByName(rated).values()].filter((x) => personalVerdict(x) === 'riskli').sort((a, b) => b.bad - a.bad || b.n - a.n).slice(0, 8);
   const goodFoods = [...statsByName(rated).values()].filter((x) => personalVerdict(x) === 'iyi' && x.n >= 2).sort((a, b) => b.n - a.n).slice(0, 8);
   // only mention stress/sleep when the difference is worth a doctor's attention
@@ -209,11 +290,11 @@ export function reportHtml(r: ReportInput) {
   * { box-sizing: border-box; }
   body { font-family: -apple-system, 'SF Pro Text', Helvetica, Arial, sans-serif; color: ${C.ink}; font-size: 10.5px; line-height: 1.45; margin: 0; }
   h1 { font-size: 20px; margin: 0; letter-spacing: -0.2px; }
-  h2 { font-size: 12.5px; margin: 18px 0 8px; padding-bottom: 4px; border-bottom: 1px solid ${C.line}; color: ${C.lettuce}; text-transform: uppercase; letter-spacing: 0.6px; }
+  h2 { page-break-after: avoid; font-size: 12.5px; margin: 18px 0 8px; padding-bottom: 4px; border-bottom: 1px solid ${C.line}; color: ${C.lettuce}; text-transform: uppercase; letter-spacing: 0.6px; }
   .head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid ${C.ink}; padding-bottom: 8px; }
   .soft { color: ${C.soft}; } .faint { color: ${C.faint}; }
-  .tiles { display: flex; gap: 8px; flex-wrap: wrap; }
-  .tile { flex: 1 1 0; min-width: 88px; border: 1px solid ${C.line}; border-radius: 8px; padding: 7px 9px; }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .tile { border: 1px solid ${C.line}; border-radius: 8px; padding: 7px 9px; }
   .tl { font-size: 9px; color: ${C.soft}; text-transform: uppercase; letter-spacing: 0.4px; }
   .tv { font-size: 18px; font-weight: 700; margin-top: 2px; }
   .ts { font-size: 9px; color: ${C.faint}; min-height: 12px; }
@@ -239,6 +320,16 @@ export function reportHtml(r: ReportInput) {
   ul { margin: 4px 0 0; padding-left: 16px; } li { margin: 2px 0; }
   .note { font-size: 9px; color: ${C.faint}; margin-top: 18px; border-top: 1px solid ${C.line}; padding-top: 8px; }
   .avoid { page-break-inside: avoid; }
+  .break { page-break-before: always; margin-top: 0; }
+  thead { display: table-header-group; }
+  .diary td { padding: 5px 6px; }
+  .diary td.d { white-space: nowrap; }
+  .meal { display: flex; gap: 8px; align-items: baseline; padding: 1px 0; }
+  .meal .t { color: ${C.faint}; width: 30px; flex: none; font-variant-numeric: tabular-nums; }
+  .meal .w { flex: 1; }
+  .rx { flex: none; font-size: 9px; font-weight: 600; white-space: nowrap; }
+  .rx i { display: inline-block; width: 6px; height: 6px; border-radius: 3px; margin-right: 4px; vertical-align: 1px; }
+  .rx i.o { border: 1px solid ${C.faint}; width: 4px; height: 4px; }
   </style></head><body>
   <div class="head">
     <div>
@@ -261,8 +352,8 @@ export function reportHtml(r: ReportInput) {
     ${tile('İlaç uyumu', s.adherence != null ? pct(s.adherence) : '–', s.adh.length ? `${s.adh.length} ilaç` : 'kayıt yok', s.adherence == null ? C.ink : s.adherence >= 0.9 ? C.good : s.adherence >= 0.7 ? C.warn : C.bad)}
   </div>
 
-  <h2>Günlük seyir</h2>
   <div class="chart avoid">
+  <h2>Günlük seyir</h2>
     <div class="rowlbl">Tuvalet sayısı (renk: ortalama Bristol, kırmızı nokta: kan)</div>
     <div class="bars">${bars}</div>
     <div class="rowlbl">En yüksek karın ağrısı</div>
@@ -298,14 +389,17 @@ export function reportHtml(r: ReportInput) {
 
   ${labsHtml(r)}
 
+  <div class="avoid">
   <h2>İlaçlar</h2>
-  <table class="avoid">
+  <table>
     <tr><th>İlaç</th><th>Kullanım</th><th class="num">Alınan</th><th class="num">Uyum</th></tr>
     ${medRows}
   </table>
+  </div>
 
+  <div class="avoid">
   <h2>Beslenme ve olası tetikleyiciler</h2>
-  <div class="cols avoid">
+  <div class="cols">
     <div>
       <b>Dokunan içerikler</b>
       ${li(triggers.slice(0, 6).map((t) => `${esc(TAGS[t.tag].label)} <span class="soft">(${t.stat.n} kayıtta ${t.stat.mild + t.stat.bad} kez)</span>`))}
@@ -326,9 +420,12 @@ export function reportHtml(r: ReportInput) {
           .join(' ')}</p>`
       : ''
   }
-  <p class="soft">${r.meals.length} öğün kaydı, ${rated.length} tanesinde nasıl geçtiği işaretlenmiş.</p>
+  <p class="soft">${foodSummary}</p>
+  </div>
 
   ${notes.length ? `<h2>Notlar</h2><table>${notes.map((n) => `<tr><td class="soft" style="width:70px;white-space:nowrap">${short(n.at)}</td><td>${esc(n.t)}</td></tr>`).join('')}</table>` : ''}
+
+  ${diaryHtml(r)}
 
   <div class="note">Bu özet, hastanın Crohnic uygulamasında kendi tuttuğu kayıtlardan otomatik oluşturulmuştur. İlişkiler istatistiksel eğilimdir, tanı ya da tedavi önerisi değildir.</div>
   </body></html>`;
