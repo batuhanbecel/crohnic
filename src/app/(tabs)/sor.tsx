@@ -2,18 +2,22 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { TextInput } from '../../components/text';
+import { SlotCard } from '../../components/DayPlan';
 import { Mascot } from '../../components/Mascot';
 import { ThinkingOverlay } from '../../components/ThinkingOverlay';
-import { Button, Card, Chip, IconBubble, Row, Screen, T, Tap, st, type SymbolName } from '../../components/ui';
+import { Button, Card, Chip, IconBubble, Row, Screen, SectionTitle, T, Tap, st, type SymbolName } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
 import { findFoodByName, searchFoods } from '../../lib/foods';
 import { palette } from '../../lib/theme';
 import { useAnalyze } from '../../lib/use-analyze';
+import { useDayPlan } from '../../lib/use-day-plan';
 
 export default function Ask() {
   const app = useApp();
   const { busy, fromPhoto, byName, hasAi } = useAnalyze();
   const [text, setText] = useState('');
+  const day = useDayPlan();
+  const nextMeal = day.plan?.find((s) => s.key === day.current);
   const hits = useMemo(() => (text.trim().length >= 2 ? searchFoods(text).slice(0, 4) : []), [text]);
 
   const askText = () => {
@@ -39,6 +43,13 @@ export default function Ask() {
         </View>
         <Mascot mood="soru" size={80} />
       </Row>
+
+      {nextMeal ? (
+        <View style={{ gap: 10 }}>
+          <SectionTitle title="Bugün ne yesem?" action="Bütün gün" onAction={() => router.push('/oneriler')} />
+          <SlotCard slot={nextMeal} next compact onReroll={() => day.reroll(nextMeal.key)} />
+        </View>
+      ) : null}
 
       {!hasAi ? (
         <Tap onPress={() => router.push('/ayarlar')}>

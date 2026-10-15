@@ -21,6 +21,15 @@ import { palette } from '../lib/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+/**
+ * Links from the widget, the app icon shortcuts and notifications open a screen like /tuvalet
+ * directly. Without an anchor that screen was the only one in the stack: no tab bar, no way
+ * back. With it the tabs always sit underneath, so closing the sheet lands on Bugün.
+ */
+export const unstable_settings = {
+  anchor: '(tabs)',
+};
+
 export default function RootLayout() {
   // brand type: Nunito, loaded before the first frame so nothing flashes in the system font
   const [fontsReady, fontError] = useFonts({
@@ -76,6 +85,7 @@ export default function RootLayout() {
               <Stack.Screen name="ilaclar" options={{ ...pushed, title: 'İlaçlarım' }} />
               <Stack.Screen name="rapor" options={{ ...pushed, title: 'Doktor raporu' }} />
               <Stack.Screen name="tahliller" options={{ ...pushed, title: 'Tahliller ve kilo' }} />
+              <Stack.Screen name="oneriler" options={{ ...pushed, title: 'Bugün ne yesem?' }} />
               <Stack.Screen name="ilac" options={{ ...sheet, title: 'İlaç' }} />
               <Stack.Screen name="gun" options={{ ...sheet, title: 'Gün nasıldı' }} />
               <Stack.Screen name="hosgeldin" options={{ presentation: 'fullScreenModal', headerShown: false, gestureEnabled: false }} />

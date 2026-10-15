@@ -1,5 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useMemo, useState } from 'react';
 import { Alert, Image, View } from 'react-native';
@@ -12,7 +12,7 @@ import { useApp } from '../lib/app-state';
 import { now } from '../lib/dates';
 import * as db from '../lib/db';
 import { afterMealSaved } from '../lib/reminders';
-import { findFoodByName, type Food, type Phase } from '../lib/foods';
+import { FOOD_BY_ID, findFoodByName, type Food, type Phase } from '../lib/foods';
 import { savePhoto } from '../lib/photos';
 import { palette, radius, surface } from '../lib/theme';
 import { generalVerdict } from '../lib/tolerance';
@@ -26,7 +26,15 @@ export default function AddMeal() {
   // follows the app's phase until the user picks one here (app state may still be loading)
   const [picked, setPhase] = useState<Phase | null>(null);
   const phase = picked ?? app.phase;
-  const [items, setItems] = useState<Item[]>([]);
+  // "Bunu yedim" on a suggestion opens this screen with ?foods=id1,id2
+  const { foods } = useLocalSearchParams<{ foods?: string }>();
+  const [items, setItems] = useState<Item[]>(() =>
+    (foods ?? '')
+      .split(',')
+      .map((id) => FOOD_BY_ID[id])
+      .filter((f): f is Food => !!f)
+      .map((f, i) => ({ key: `pre-${i}`, name: f.name, food: f })),
+  );
   const [photo, setPhoto] = useState<string | null>(null);
   const [at, setAt] = useState(() => now());
   const [reaction, setReaction] = useState<db.Reaction | null>(null);
@@ -115,7 +123,7 @@ export default function AddMeal() {
           exclude={items.map((i) => i.food?.id)}
           placeholder={items.length ? 'Bir şey daha ekle' : 'ör. mercimek çorbası'}
           hint="Her yemeği ayrı ekle. Hangisinin dokunduğunu zamanla ayırt etmek kolaylaşır."
-          autoFocus
+          autoFocus={!foods}
         />
       </Card>
 
