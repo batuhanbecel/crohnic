@@ -1,16 +1,16 @@
-import { router } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { TextInput } from '../../components/text';
-import { SlotCard } from '../../components/DayPlan';
-import { Mascot } from '../../components/Mascot';
-import { ThinkingOverlay } from '../../components/ThinkingOverlay';
-import { Button, Card, Chip, IconBubble, Row, Screen, SectionTitle, T, Tap, st, type SymbolName } from '../../components/ui';
-import { useApp } from '../../lib/app-state';
-import { findFoodByName, searchFoods } from '../../lib/foods';
-import { palette } from '../../lib/theme';
-import { useAnalyze } from '../../lib/use-analyze';
-import { useDayPlan } from '../../lib/use-day-plan';
+import { TextInput } from '../../../components/text';
+import { SlotCard } from '../../../components/DayPlan';
+import { Mascot } from '../../../components/Mascot';
+import { ThinkingOverlay } from '../../../components/ThinkingOverlay';
+import { Button, Card, Chip, IconBubble, Row, Screen, SectionTitle, T, Tap, st, type SymbolName } from '../../../components/ui';
+import { useApp } from '../../../lib/app-state';
+import { findFoodByName, searchFoods } from '../../../lib/foods';
+import { palette } from '../../../lib/theme';
+import { useAnalyze } from '../../../lib/use-analyze';
+import { useDayPlan } from '../../../lib/use-day-plan';
 
 export default function Ask() {
   const app = useApp();
@@ -34,14 +34,14 @@ export default function Ask() {
   return (
     <Screen tone={app.phase === 'atak' ? 'flare' : 'calm'}>
       <ThinkingOverlay mode={busy} />
-      <Row gap={4} style={{ alignItems: 'flex-end', marginTop: 4 }}>
-        <View style={{ flex: 1 }}>
-          <T v="small" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft}>
-            {app.phase === 'atak' ? 'Atak modunda bakıyorum' : 'Remisyon modunda bakıyorum'}
-          </T>
-          <T v="large">Bunu yesem mi?</T>
-        </View>
-        <Mascot mood="soru" size={80} />
+      <Stack.Screen options={{ title: 'Bunu yesem mi?' }} />
+      <Row gap={8} style={{ alignItems: 'center', marginTop: -4 }}>
+        <T v="small" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft} style={{ flex: 1 }}>
+          {app.phase === 'atak'
+            ? 'Atak modunda bakıyorum. Tabağı, menüyü çek ya da adını yaz.'
+            : 'Remisyon modunda bakıyorum. Tabağı, menüyü çek ya da adını yaz.'}
+        </T>
+        <Mascot mood="soru" size={64} />
       </Row>
 
       {nextMeal ? (

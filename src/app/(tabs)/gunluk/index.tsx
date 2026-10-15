@@ -1,24 +1,24 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, Stack } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
 import Reanimated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AddMenu } from '../../components/AddMenu';
-import { BRISTOL, bristolTone } from '../../components/bristol';
-import { Mascot } from '../../components/Mascot';
-import { GroupThumb } from '../../components/MealRow';
-import { MonthCalendar } from '../../components/MonthCalendar';
-import { REACTIONS } from '../../components/ReactionPicker';
-import { SwipeRow } from '../../components/SwipeRow';
-import { TextInput } from '../../components/text';
-import { Card, Empty, Icon, IconBubble, IconButton, Row, Screen, Segmented, T, Tap, st } from '../../components/ui';
-import { useApp } from '../../lib/app-state';
-import { dayKey, dayLabel, isoDay, now, timeLabel } from '../../lib/dates';
-import * as db from '../../lib/db';
-import { dayStatuses } from '../../lib/insights';
-import { deletePhoto } from '../../lib/photos';
-import { palette, radius, surface, type } from '../../lib/theme';
+import { AddMenu } from '../../../components/AddMenu';
+import { BRISTOL, bristolTone } from '../../../components/bristol';
+import { Mascot } from '../../../components/Mascot';
+import { GroupThumb } from '../../../components/MealRow';
+import { MonthCalendar } from '../../../components/MonthCalendar';
+import { REACTIONS } from '../../../components/ReactionPicker';
+import { SwipeRow } from '../../../components/SwipeRow';
+import { TextInput } from '../../../components/text';
+import { Card, Empty, Icon, IconBubble, Row, Screen, Segmented, T, Tap, st } from '../../../components/ui';
+import { useApp } from '../../../lib/app-state';
+import { dayKey, dayLabel, isoDay, now, timeLabel } from '../../../lib/dates';
+import * as db from '../../../lib/db';
+import { dayStatuses } from '../../../lib/insights';
+import { deletePhoto } from '../../../lib/photos';
+import { palette, radius, surface, type } from '../../../lib/theme';
 
 type Entry =
   | { kind: 'meal'; key: string; at: number; item: db.MealGroup }
@@ -182,20 +182,20 @@ export default function Journal() {
   return (
     <View style={{ flex: 1 }}>
       <Screen tone={app.phase === 'atak' ? 'flare' : 'calm'}>
-        <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4 }}>
-          <T v="large" accessibilityRole="header">
-            Günlük
-          </T>
-          <Row gap={8}>
-            <IconButton
-              name={mode === 'list' ? 'calendar' : 'list.bullet'}
-              label={mode === 'list' ? 'Takvim görünümü' : 'Liste görünümü'}
-              fallback={mode === 'list' ? '📅' : '☰'}
-              onPress={() => setMode(mode === 'list' ? 'calendar' : 'list')}
-            />
-            <IconButton name="plus" label="Kayıt ekle" fallback="+" onPress={() => setAdding(true)} />
-          </Row>
-        </Row>
+        <Stack.Screen
+          options={{
+            title: 'Günlük',
+            unstable_headerRightItems: () => [
+              {
+                type: 'button',
+                label: mode === 'list' ? 'Takvim' : 'Liste',
+                icon: { type: 'sfSymbol', name: mode === 'list' ? 'calendar' : 'list.bullet' },
+                onPress: () => setMode(mode === 'list' ? 'calendar' : 'list'),
+              },
+              { type: 'button', label: 'Kayıt ekle', icon: { type: 'sfSymbol', name: 'plus' }, onPress: () => setAdding(true) },
+            ],
+          }}
+        />
         <AddMenu visible={adding} onClose={() => setAdding(false)} />
 
         {mode === 'list' ? (

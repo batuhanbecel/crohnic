@@ -1,17 +1,17 @@
-import { router, useFocusEffect } from 'expo-router';
+import { Stack, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { bristolTone } from '../../components/bristol';
-import { Mascot } from '../../components/Mascot';
-import { Button, Card, Empty, Icon, Row, Screen, SectionTitle, T } from '../../components/ui';
-import { useApp } from '../../lib/app-state';
-import { dayKey, now } from '../../lib/dates';
-import * as db from '../../lib/db';
-import { TAGS } from '../../lib/foods';
-import { flareDaysBetween, lifestyleEffects, phasePeriods, suspectFoods, type PhasePeriod } from '../../lib/insights';
-import { onTint, palette, radius, surface, type } from '../../lib/theme';
-import { personalVerdict, statsByName, triggerInsights } from '../../lib/tolerance';
+import { bristolTone } from '../../../components/bristol';
+import { Mascot } from '../../../components/Mascot';
+import { Card, Empty, Icon, Row, Screen, SectionTitle, T } from '../../../components/ui';
+import { useApp } from '../../../lib/app-state';
+import { dayKey, now } from '../../../lib/dates';
+import * as db from '../../../lib/db';
+import { TAGS } from '../../../lib/foods';
+import { flareDaysBetween, lifestyleEffects, phasePeriods, suspectFoods, type PhasePeriod } from '../../../lib/insights';
+import { onTint, palette, radius, surface, type } from '../../../lib/theme';
+import { personalVerdict, statsByName, triggerInsights } from '../../../lib/tolerance';
 
 const SLOTS = [
   { label: 'Sabah', from: 5, to: 11 },
@@ -95,10 +95,14 @@ export default function Insights() {
 
   return (
     <Screen tone={app.phase === 'atak' ? 'flare' : 'calm'}>
-      <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4 }}>
-        <T v="large">Örüntüler</T>
-        <Button title="Doktor raporu" kind="glass" compact icon="doc.text" onPress={() => router.push('/rapor')} />
-      </Row>
+      <Stack.Screen
+        options={{
+          title: 'Örüntüler',
+          unstable_headerRightItems: () => [
+            { type: 'button', label: 'Rapor', icon: { type: 'sfSymbol', name: 'doc.text' }, onPress: () => router.push('/rapor') },
+          ],
+        }}
+      />
 
       <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
         <Mascot mood={enough ? 'arastirma' : 'dusunuyor'} size={88} />

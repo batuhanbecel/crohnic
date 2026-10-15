@@ -1,11 +1,10 @@
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, ScrollView, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Alert, FlatList, Platform, ScrollView, View } from 'react-native';
 import { ThinkingOverlay } from '../../../components/ThinkingOverlay';
 import { Text } from '../../../components/text';
-import { Backdrop, Button, Card, Chip, Icon, Row, T, Tap, VERDICT_UI } from '../../../components/ui';
+import { Button, Card, Chip, Icon, Row, T, Tap, VERDICT_UI } from '../../../components/ui';
 import { useApp } from '../../../lib/app-state';
 import * as db from '../../../lib/db';
 import { CATEGORIES, FOODS, searchFoods, type Category, type Verdict } from '../../../lib/foods';
@@ -22,7 +21,6 @@ export default function FoodList() {
   const [q, setQ] = useState('');
   const [cat, setCat] = useState<Category | null>(null);
   const [vf, setVf] = useState<VF>('hepsi');
-  const insets = useSafeAreaInsets();
   const { busy, byName } = useAnalyze();
   const query = q.trim();
 
@@ -72,9 +70,8 @@ export default function FoodList() {
 
   const header = (
     <View style={{ gap: 12, marginBottom: 12 }}>
-      <T v="large">Yemekler</T>
       <Tap onPress={explain} haptic={false}>
-        <Row gap={6} style={{ paddingHorizontal: 2, marginTop: -6 }}>
+        <Row gap={6} style={{ paddingHorizontal: 2 }}>
           <T v="small" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft} style={{ flex: 1 }}>
             {FOODS.length} yemek, {app.phase === 'atak' ? 'atak' : 'remisyon'} dönemine göre
           </T>
@@ -115,27 +112,15 @@ export default function FoodList() {
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.paper }}>
-      <Backdrop tone={app.phase === 'atak' ? 'flare' : 'calm'} />
-      <ThinkingOverlay mode={busy} />
-      <Stack.SearchBar
-        placeholder="Ara ya da yeni bir yemek yaz"
-        onChangeText={(e) => setQ(e.nativeEvent.text)}
-        onCancelButtonPress={() => setQ('')}
-        onSearchButtonPress={() => {
-          if (query.length >= 2 && !rows.length) byName(query, null);
-        }}
-        hideWhenScrolling={false}
-        autoCapitalize="none"
-        placement="automatic"
-      />
+      <Stack.Screen options={{ title: 'Yemekler' }} />
       <FlatList
         style={{ flex: 1 }}
         data={rows}
         keyExtractor={(r) => r.f.id}
-        contentInsetAdjustmentBehavior="never"
+        contentInsetAdjustmentBehavior="automatic"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 110 }}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: Platform.OS === 'web' ? 72 : 8, paddingBottom: 32 }}
         ListHeaderComponent={header}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         initialNumToRender={20}
@@ -165,6 +150,18 @@ export default function FoodList() {
             </Tap>
           );
         }}
+      />
+      <ThinkingOverlay mode={busy} />
+      <Stack.SearchBar
+        placeholder="Ara ya da yeni bir yemek yaz"
+        onChangeText={(e) => setQ(e.nativeEvent.text)}
+        onCancelButtonPress={() => setQ('')}
+        onSearchButtonPress={() => {
+          if (query.length >= 2 && !rows.length) byName(query, null);
+        }}
+        hideWhenScrolling={false}
+        autoCapitalize="none"
+        placement="automatic"
       />
     </View>
   );

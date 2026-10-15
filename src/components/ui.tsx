@@ -236,39 +236,38 @@ export function IconButton({ name, onPress, label, fallback }: { name: SymbolNam
 
 // ---------- layout ----------
 /**
- * Scrolling page. Insets are applied explicitly (not via contentInsetAdjustmentBehavior):
- * native tabs on iOS 26 don't pass the top safe area to RN scroll views, which pushed titles
- * under the status bar.
+ * Scrolling page under a native header (tabs and pushed screens alike). Insets come from
+ * iOS (contentInsetAdjustmentBehavior "automatic"), which is what lets the iOS 26+ Liquid Glass
+ * header blur the content scrolling under it and the large title collapse. For that the
+ * ScrollView has to be the page's first subview, so the flare glow lives inside it.
  */
 export function Screen({
   children,
   contentStyle,
   tone,
-  header = true,
   footer,
 }: {
   children: React.ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
   tone?: 'calm' | 'flare';
-  /** false when a native header sits above the screen */
+  /** @deprecated every screen has a native header now; kept so call sites don't break */
   header?: boolean;
   /** pinned under the scroll area (the form's Kaydet), always reachable without scrolling */
   footer?: React.ReactNode;
 }) {
   const insets = useSafeAreaInsets();
-  const page = (
+  return (
     <View style={{ flex: 1, backgroundColor: palette.paper }}>
-      {header ? <Backdrop tone={tone} /> : null}
       <ScrollView
         style={{ flex: 1 }}
-        contentInsetAdjustmentBehavior="never"
+        contentInsetAdjustmentBehavior="automatic"
         automaticallyAdjustKeyboardInsets
-        scrollIndicatorInsets={{ top: header ? insets.top : 0, bottom: header ? insets.bottom + 60 : insets.bottom }}
         contentContainerStyle={[
           {
             paddingHorizontal: 16,
-            paddingTop: header ? insets.top + 8 : 16,
-            paddingBottom: footer ? 20 : header ? insets.bottom + 100 : insets.bottom + 24,
+            // the web preview has no automatic insets
+            paddingTop: Platform.OS === 'web' ? 72 : 8,
+            paddingBottom: footer ? 20 : 32,
             gap: size.gap,
           },
           contentStyle,
@@ -277,6 +276,11 @@ export function Screen({
         keyboardDismissMode="interactive"
         showsVerticalScrollIndicator={false}
       >
+        {tone === 'flare' ? (
+          <View pointerEvents="none" style={{ position: 'absolute', top: -420, left: 0, right: 0, height: 900 }}>
+            <Backdrop tone="flare" />
+          </View>
+        ) : null}
         {children}
       </ScrollView>
       {footer ? (
@@ -296,7 +300,6 @@ export function Screen({
       ) : null}
     </View>
   );
-  return page;
 }
 
 export function Card({

@@ -50,10 +50,12 @@ export default function RootLayout() {
 
   // Solid headers on every stacked screen: transparent ones let titles overlap
   // scrolled content on iOS 26, where the scroll-edge blur isn't applied to RN scroll views.
+  // transparent bars: on iOS 26+ the system draws Liquid Glass buttons and blurs content
+  // scrolling under the bar (scroll edge effect); Screen insets the content automatically
   const solid = {
-    headerTransparent: false,
-    headerStyle: { backgroundColor: palette.paper },
+    headerTransparent: true,
     headerShadowVisible: false,
+    contentStyle: { backgroundColor: palette.paper },
   };
   const sheet = { presentation: 'modal' as const, headerShown: true, ...solid };
   const pushed = { ...solid };
