@@ -1,16 +1,16 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, View } from 'react-native';
 import { TextInput } from '../components/text';
 import { Mascot } from '../components/Mascot';
 import { Suspects } from '../components/Suspects';
 import { WhenField } from '../components/WhenField';
-import { Button, Card, Row, Scale, Screen, T, st } from '../components/ui';
+import { Button, Card, Row, Screen, T, Tap, st } from '../components/ui';
 import { useApp } from '../lib/app-state';
 import { now } from '../lib/dates';
 import * as db from '../lib/db';
-import { palette } from '../lib/theme';
+import { onTint, palette, soft, surface } from '../lib/theme';
 
 const FIELDS = [
   { key: 'pain', label: 'Karın ağrısı', color: palette.bad },
@@ -20,6 +20,8 @@ const FIELDS = [
 ] as const;
 
 type Key = (typeof FIELDS)[number]['key'];
+
+const LEVELS = ['Yok', 'Çok hafif', 'Hafif', 'Orta', 'Şiddetli', 'Çok şiddetli'];
 
 export default function Symptom() {
   const sql = useSQLiteContext();
@@ -85,31 +87,77 @@ export default function Symptom() {
     );
 
   return (
-    <Screen header={false}>
+    <Screen
+      header={false}
+      footer={
+        <Button
+          title={editing ? 'Değişiklikleri kaydet' : total === 0 ? 'Şikayetim yok, kaydet' : 'Kaydet'}
+          icon="checkmark"
+          onPress={save}
+          loading={saving}
+        />
+      }
+    >
       {editing ? <Stack.Screen options={{ title: 'Semptomu düzenle' }} /> : null}
       <Row gap={4}>
-        <Mascot mood={mood} size={72} />
+        <Mascot mood={mood} size={64} />
         <T v="callout" style={{ flex: 1 }} color={palette.inkSoft}>
-          {total === 0 ? 'Şikayet yoksa da kaydet. İyi günler de işe yarar, karşılaştırmayı onlarla yapıyoruz.' : '0 hiç yok, 5 çok şiddetli.'}
+          {total === 0 ? 'Şikayet yoksa direkt kaydet. İyi günler de karşılaştırma için çok değerli.' : '0 hiç yok, 5 çok şiddetli.'}
         </T>
       </Row>
       <Card>
         <WhenField value={at} onChange={setAt} />
       </Card>
-      {FIELDS.map((f) => (
-        <Card key={f.key} style={{ gap: 12 }}>
-          <T v="h3">{f.label}</T>
-          <Scale value={v[f.key]} onChange={(n) => setV((p) => ({ ...p, [f.key]: n }))} color={f.color} labels={['Yok', 'Çok şiddetli']} />
-        </Card>
-      ))}
+      <Card style={{ gap: 4 }}>
+        {FIELDS.map((f, i) => (
+          <View key={f.key} style={{ gap: 8, paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: palette.hairline }}>
+            <Row style={{ justifyContent: 'space-between' }}>
+              <T v="callout" style={{ fontWeight: '700' }}>
+                {f.label}
+              </T>
+              <T v="caption" color={v[f.key] ? f.color : palette.inkFaint} style={{ fontWeight: '700' }}>
+                {LEVELS[v[f.key]]}
+              </T>
+            </Row>
+            <Row gap={6}>
+              {[0, 1, 2, 3, 4, 5].map((n) => {
+                const on = v[f.key] === n;
+                return (
+                  <Tap
+                    key={n}
+                    onPress={() => setV((p) => ({ ...p, [f.key]: n }))}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${f.label} ${n}, ${LEVELS[n]}`}
+                    accessibilityState={{ selected: on }}
+                    style={{ flex: 1 }}
+                  >
+                    <View
+                      style={{
+                        height: 38,
+                        borderRadius: 12,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: on ? (n === 0 ? palette.good : f.color) : n > 0 && n <= v[f.key] ? soft(f.color) : surface.well,
+                      }}
+                    >
+                      <T v="callout" color={on ? onTint(n === 0 ? palette.good : f.color) : palette.ink} style={{ fontWeight: '800' }}>
+                        {String(n)}
+                      </T>
+                    </View>
+                  </Tap>
+                );
+              })}
+            </Row>
+          </View>
+        ))}
+      </Card>
       <Card style={{ gap: 10 }}>
-        <T v="h3">Not</T>
         <TextInput
           value={note}
           onChangeText={setNote}
-          placeholder="ör. öğleden sonra kramp, ateş yok"
+          placeholder="Not (isteğe bağlı): ör. öğleden sonra kramp"
           placeholderTextColor={palette.inkFaint}
-          style={[st.input, { minHeight: 80, textAlignVertical: 'top' }]}
+          style={[st.input, { minHeight: 64, textAlignVertical: 'top' }]}
           multiline
         />
       </Card>
@@ -118,7 +166,6 @@ export default function Symptom() {
           <T v="small">Şiddetli ağrı, ateş, kusma ya da kanama varsa beklemeden doktoruna veya acile başvur.</T>
         </Card>
       ) : null}
-      <Button title={editing ? 'Değişiklikleri kaydet' : 'Kaydet'} icon="checkmark" onPress={save} loading={saving} />
       {editing ? <Button title="Kaydı sil" kind="danger" icon="trash" onPress={remove} /> : null}
     </Screen>
   );

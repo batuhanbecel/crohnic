@@ -2,11 +2,11 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, Alert, Platform, View } from 'react-native';
-import { AddMenu } from '../../components/AddMenu';
 import { BRISTOL } from '../../components/bristol';
 import { SLEEP, STRESS } from '../../components/checkin';
 import { GroupThumb } from '../../components/MealRow';
 import { Mascot, type Mood } from '../../components/Mascot';
+import { QuickLog } from '../../components/QuickLog';
 import { REACTIONS, ReactionPicker } from '../../components/ReactionPicker';
 import { Text } from '../../components/text';
 import { Button, Card, Icon, IconBubble, IconButton, Row, Screen, T, Tap, type SymbolName } from '../../components/ui';
@@ -17,6 +17,7 @@ import * as db from '../../lib/db';
 import { dosesForToday, type Dose } from '../../lib/meds';
 import { askPermission, cancelMealReminder, permission, syncReminders, type PermissionState } from '../../lib/reminders';
 import { palette, radius, surface, type } from '../../lib/theme';
+import { useDayPlan } from '../../lib/use-day-plan';
 
 const TIPS = [
   'Yeni bir yemeği küçük bir porsiyonla dene, birkaç saat sonra nasıl hissettiğini yaz.',
@@ -66,8 +67,9 @@ export default function Home() {
   const [promptSeen, setPromptSeen] = useState(true);
   const [backupDue, setBackupDue] = useState(false);
   const [factorsSeen, setFactorsSeen] = useState(true);
-  const [adding, setAdding] = useState(false);
   const [streak, setStreak] = useState({ days: 0, today: false });
+  const dayPlan = useDayPlan();
+  const nextMeal = dayPlan.plan?.find((x) => x.key === dayPlan.current);
 
   useEffect(() => {
     if (app.ready && !app.onboarded) router.push('/hosgeldin');
@@ -343,6 +345,14 @@ export default function Home() {
       : []),
   ].sort((a, b) => a.at - b.at);
 
+  const todayDoses = doses.filter((d) => d.due >= dayStart);
+  const counts = {
+    meals: meals.length,
+    toilet: bowel.length,
+    symptoms: symptoms.length,
+    doses: { taken: todayDoses.filter((d) => d.log?.taken_at).length, total: todayDoses.length },
+  };
+
   const maxPain = symptoms.length ? Math.max(...symptoms.map((s) => s.pain)) : null;
   const summary = [`${meals.length} öğün`, `${bowel.length} tuvalet`, maxPain == null ? null : maxPain === 0 ? 'ağrı yok' : `ağrı ${maxPain}/5`]
     .filter(Boolean)
@@ -365,6 +375,39 @@ export default function Home() {
         </View>
         <IconButton name="gearshape" label="Ayarlar" fallback="⚙️" onPress={() => router.push('/ayarlar')} />
       </Row>
+
+      <QuickLog counts={counts} />
+
+      {redFlag ? (
+        <Card tint={palette.badSoft} style={{ gap: 8 }}>
+          <Row gap={10}>
+            <IconBubble name="exclamationmark.triangle.fill" color={palette.bad} dim={32} fallback="⚠️" />
+            <T v="h3" color={palette.bad}>
+              Doktoruna haber ver
+            </T>
+          </Row>
+          <T v="small">
+            Son günlerde kan, ateş, şiddetli ağrı ya da çok sık sulu dışkılama kaydettin. Bunu gastroenteroloğunla paylaş. Ateş, şiddetli ağrı veya yoğun kanama varsa
+            beklemeden acile git.
+          </T>
+        </Card>
+      ) : null}
+
+      {nextItems.length ? (
+        <>
+          <T v="h2" style={{ marginTop: 8, paddingHorizontal: 2 }}>
+            Sıradaki
+          </T>
+          <Card style={{ paddingVertical: 4 }}>
+            {nextItems.map((el, i) => (
+              <Fragment key={i}>
+                {i > 0 ? <View style={{ height: 1, backgroundColor: palette.hairline }} /> : null}
+                {el}
+              </Fragment>
+            ))}
+          </Card>
+        </>
+      ) : null}
 
       <Card style={{ gap: 14 }}>
         <Row gap={12} style={{ alignItems: 'center' }}>
@@ -407,38 +450,21 @@ export default function Home() {
         </Tap>
       </Card>
 
-      <Button title="Kayıt ekle" icon="plus" onPress={() => setAdding(true)} />
-      <AddMenu visible={adding} onClose={() => setAdding(false)} />
-
-      {redFlag ? (
-        <Card tint={palette.badSoft} style={{ gap: 8 }}>
-          <Row gap={10}>
-            <IconBubble name="exclamationmark.triangle.fill" color={palette.bad} dim={32} fallback="⚠️" />
-            <T v="h3" color={palette.bad}>
-              Doktoruna haber ver
-            </T>
-          </Row>
-          <T v="small">
-            Son günlerde kan, ateş, şiddetli ağrı ya da çok sık sulu dışkılama kaydettin. Bunu gastroenteroloğunla paylaş. Ateş, şiddetli ağrı veya yoğun kanama varsa
-            beklemeden acile git.
-          </T>
-        </Card>
-      ) : null}
-
-      {nextItems.length ? (
-        <>
-          <T v="h2" style={{ marginTop: 8, paddingHorizontal: 2 }}>
-            Sıradaki
-          </T>
-          <Card style={{ paddingVertical: 4 }}>
-            {nextItems.map((el, i) => (
-              <Fragment key={i}>
-                {i > 0 ? <View style={{ height: 1, backgroundColor: palette.hairline }} /> : null}
-                {el}
-              </Fragment>
-            ))}
+      {nextMeal && nextMeal.items.length ? (
+        <Tap onPress={() => router.push('/oneriler')} accessibilityRole="button" accessibilityLabel={`${nextMeal.title} için önerim: ${nextMeal.items.map((i) => i.food.name).join(', ')}`}>
+          <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 8 }}>
+            <Mascot mood="yemek" size={56} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <T v="caption" color={palette.lettuceDeep} style={{ fontWeight: '800' }}>
+                {`${nextMeal.title.toLocaleUpperCase('tr-TR')} İÇİN ÖNERİM`}
+              </T>
+              <T v="callout" numberOfLines={2} style={type.semibold}>
+                {nextMeal.items.map((i) => `${i.food.emoji} ${i.food.name}`).join('  ·  ')}
+              </T>
+            </View>
+            <Icon name="chevron.right" size={13} color={palette.inkFaint} fallback="›" />
           </Card>
-        </>
+        </Tap>
       ) : null}
 
       <Row style={{ justifyContent: 'space-between', alignItems: 'baseline', marginTop: 8, paddingHorizontal: 2 }}>
@@ -473,7 +499,7 @@ export default function Home() {
         <Card style={{ alignItems: 'center', gap: 4, paddingVertical: 22 }}>
           <T v="h3">Bugün henüz kayıt yok</T>
           <T v="small" color={palette.inkSoft} style={{ textAlign: 'center' }}>
-            Yediğin ilk şeyi “Kayıt ekle”den yaz.
+            Yukarıdaki kutulardan tek dokunuşla ekle.
           </T>
         </Card>
       )}

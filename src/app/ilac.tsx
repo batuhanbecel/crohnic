@@ -129,7 +129,7 @@ export default function MedEdit() {
     ]);
 
   return (
-    <Screen header={false}>
+    <Screen header={false} footer={<Button title="Kaydet" icon="checkmark" onPress={save} loading={saving} disabled={!valid} />}>
       <Card style={{ gap: 10 }}>
         <T v="h3">İlaç</T>
         <TextInput value={name} onChangeText={setName} placeholder="ör. Mesalazin, Humira" placeholderTextColor={palette.inkFaint} style={st.input} autoFocus={!editing} />
@@ -303,7 +303,6 @@ export default function MedEdit() {
         ) : null}
       </Card>
 
-      <Button title="Kaydet" icon="checkmark" onPress={save} loading={saving} disabled={!valid} />
       {editing ? <Button title="Bu ilacı bıraktım" kind="plain" onPress={stop} /> : null}
     </Screen>
   );

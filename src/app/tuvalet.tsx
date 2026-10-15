@@ -1,16 +1,16 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { Alert, Switch, View } from 'react-native';
-import { TextInput } from '../components/text';
+import { Alert, View } from 'react-native';
+import { Text, TextInput } from '../components/text';
 import { BRISTOL, bristolTone } from '../components/bristol';
 import { Suspects } from '../components/Suspects';
 import { WhenField } from '../components/WhenField';
-import { Button, Card, ChoiceRow, Row, Screen, T, st } from '../components/ui';
+import { Button, Card, Icon, Row, Screen, T, Tap, st, type SymbolName } from '../components/ui';
 import { useApp } from '../lib/app-state';
 import { now } from '../lib/dates';
 import * as db from '../lib/db';
-import { palette } from '../lib/theme';
+import { palette, radius, soft, surface } from '../lib/theme';
 
 export default function Bowel() {
   const sql = useSQLiteContext();
@@ -76,45 +76,82 @@ export default function Bowel() {
       </Screen>
     );
 
+  const picked = kind ? BRISTOL[kind - 1] : null;
+
   return (
-    <Screen header={false}>
+    <Screen
+      header={false}
+      footer={
+        <Button
+          title={editing ? 'Değişiklikleri kaydet' : picked ? `Kaydet · ${picked.short}` : 'Kıvamı seç'}
+          icon="checkmark"
+          onPress={save}
+          loading={saving}
+          disabled={!kind}
+        />
+      }
+    >
       {editing ? <Stack.Screen options={{ title: 'Tuvalet kaydını düzenle' }} /> : null}
       <Card>
         <WhenField value={at} onChange={setAt} />
       </Card>
 
-      <View style={{ gap: 6 }}>
-        <T v="h3" style={{ paddingHorizontal: 4 }}>
-          Kıvam
-        </T>
-        <T v="small" color={palette.inkSoft} style={{ paddingHorizontal: 4, marginBottom: 4 }}>
-          Bristol skalası. 3 ve 4 normal kabul edilir.
-        </T>
-        <View style={{ gap: 8 }}>
-          {BRISTOL.map((b) => (
-            <ChoiceRow
-              key={b.type}
-              title={`${b.type}. ${b.short}`}
-              subtitle={b.desc}
-              emoji={b.emoji}
-              color={bristolTone(b.type)}
-              active={kind === b.type}
-              onPress={() => setKind(b.type)}
-            />
-          ))}
+      <Card style={{ gap: 12 }}>
+        <Row style={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <T v="h3">Kıvam</T>
+          <T v="caption" color={palette.inkSoft}>
+            3 ve 4 normal
+          </T>
+        </Row>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {BRISTOL.map((b) => {
+            const on = kind === b.type;
+            const tone = bristolTone(b.type);
+            return (
+              <Tap
+                key={b.type}
+                onPress={() => setKind(b.type)}
+                accessibilityRole="button"
+                accessibilityLabel={`${b.type}. ${b.short}: ${b.desc}`}
+                accessibilityState={{ selected: on }}
+                style={{ width: b.type === 7 ? '100%' : '48.6%' }}
+              >
+                <Row
+                  gap={10}
+                  style={{
+                    paddingVertical: 10,
+                    paddingHorizontal: 10,
+                    borderRadius: radius.md,
+                    backgroundColor: on ? soft(tone) : surface.well,
+                    borderWidth: 2,
+                    borderColor: on ? tone : 'transparent',
+                  }}
+                >
+                  <Text style={{ fontSize: 22 }}>{b.emoji}</Text>
+                  <View style={{ flex: 1 }}>
+                    <T v="caption" color={on ? tone : palette.inkSoft} style={{ fontWeight: '800' }}>
+                      {`TİP ${b.type}`}
+                    </T>
+                    <T v="callout" numberOfLines={2} style={{ fontWeight: '700', lineHeight: 19 }}>
+                      {b.short}
+                    </T>
+                  </View>
+                </Row>
+              </Tap>
+            );
+          })}
         </View>
-      </View>
+        <T v="small" color={palette.inkSoft}>
+          {picked ? picked.desc : 'Sana en yakın olanı seç.'}
+        </T>
+      </Card>
 
-      <Card style={{ gap: 14 }}>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <T v="callout">Kan vardı</T>
-          <Switch value={blood} onValueChange={setBlood} trackColor={{ true: palette.bad }} />
+      <Card style={{ gap: 12 }}>
+        <Row gap={8}>
+          <Toggle label="Kan vardı" icon="drop.triangle.fill" fallback="🩸" color={palette.bad} on={blood} onPress={() => setBlood(!blood)} />
+          <Toggle label="Zor yetiştim" icon="figure.run" fallback="🏃" color={palette.apricot} on={urgency} onPress={() => setUrgency(!urgency)} />
         </Row>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <T v="callout">Zor yetiştim</T>
-          <Switch value={urgency} onValueChange={setUrgency} trackColor={{ true: palette.apricot }} />
-        </Row>
-        <TextInput value={note} onChangeText={setNote} placeholder="Not ekle" placeholderTextColor={palette.inkFaint} style={st.input} />
+        <TextInput value={note} onChangeText={setNote} placeholder="Not ekle (isteğe bağlı)" placeholderTextColor={palette.inkFaint} style={st.input} />
       </Card>
 
       {blood ? (
@@ -123,8 +160,23 @@ export default function Bowel() {
         </Card>
       ) : null}
 
-      <Button title={editing ? 'Değişiklikleri kaydet' : 'Kaydet'} icon="checkmark" onPress={save} loading={saving} disabled={!kind} />
       {editing ? <Button title="Kaydı sil" kind="danger" icon="trash" onPress={remove} /> : null}
     </Screen>
+  );
+}
+
+function Toggle({ label, icon, fallback, color, on, onPress }: { label: string; icon: SymbolName; fallback: string; color: string; on: boolean; onPress: () => void }) {
+  return (
+    <Tap onPress={onPress} accessibilityRole="switch" accessibilityLabel={label} accessibilityState={{ checked: on }} style={{ flex: 1 }}>
+      <Row
+        gap={8}
+        style={{ justifyContent: 'center', paddingVertical: 12, borderRadius: radius.md, backgroundColor: on ? soft(color) : surface.well, borderWidth: 2, borderColor: on ? color : 'transparent' }}
+      >
+        <Icon name={on ? 'checkmark.circle.fill' : icon} size={16} color={on ? color : palette.inkSoft} fallback={on ? '✓' : fallback} />
+        <T v="callout" color={on ? color : palette.ink} style={{ fontWeight: '700' }}>
+          {label}
+        </T>
+      </Row>
+    </Tap>
   );
 }

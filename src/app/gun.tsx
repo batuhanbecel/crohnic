@@ -52,7 +52,10 @@ export default function DayCheckIn() {
   const mood = stress === 3 || sleepQ === 0 ? 'worried' : stress === 0 && sleepQ === 2 ? 'cheer' : stress == null && sleepQ == null ? 'sleepy' : 'happy';
 
   return (
-    <Screen header={false}>
+    <Screen
+      header={false}
+      footer={<Button title="Kaydet" icon="checkmark" onPress={save} loading={saving} disabled={stress == null && sleepQ == null && sleepH == null && !fever && water == null} />}
+    >
       <Row gap={4}>
         <Mascot mood={mood} size={72} />
         <T v="callout" style={{ flex: 1 }} color={palette.inkSoft}>
@@ -134,7 +137,6 @@ export default function DayCheckIn() {
         <TextInput value={note} onChangeText={setNote} placeholder="ör. sınav haftası, geç yattım" placeholderTextColor={palette.inkFaint} style={st.input} />
       </Card>
 
-      <Button title="Kaydet" icon="checkmark" onPress={save} loading={saving} disabled={stress == null && sleepQ == null && sleepH == null && !fever && water == null} />
     </Screen>
   );
 }

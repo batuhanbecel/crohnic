@@ -124,9 +124,11 @@ export default function Settings() {
     }
   };
 
-  const saveAll = async () => {
-    await app.saveName(name);
-    if (!DEFAULT_AI) await app.saveAi(url.trim() ? { url, token } : null);
+  const aiReady = !!DEFAULT_AI || !!app.ai?.url;
+  const [advanced, setAdvanced] = useState(!aiReady);
+
+  const saveAi = async () => {
+    await app.saveAi(url.trim() ? { url, token } : null);
     Alert.alert('Kaydedildi');
   };
 
@@ -168,51 +170,6 @@ export default function Settings() {
 
   return (
     <Screen header={false}>
-      <Card style={{ gap: 10 }}>
-        <T v="h3">Adın</T>
-        <TextInput value={name} onChangeText={setName} placeholder="Ana sayfada böyle selamlarım" placeholderTextColor={palette.inkFaint} style={st.input} />
-      </Card>
-
-      {DEFAULT_AI ? (
-        <Card style={{ gap: 10 }}>
-          <T v="h3">Fotoğraf analizi</T>
-          <T v="small" color={palette.inkSoft}>
-            Sunucu uygulamaya gömülü, ayar gerekmiyor. Çalıştığını görmek için test edebilirsin.
-          </T>
-          <Button title="Bağlantıyı test et" kind="glass" icon="bolt.fill" onPress={() => test(DEFAULT_AI!)} loading={testing} />
-        </Card>
-      ) : (
-        <Card style={{ gap: 10 }}>
-          <T v="h3">Fotoğraf analizi</T>
-          <T v="small" color={palette.inkSoft}>
-            Bu sürümde sunucu gömülü değil. Adres ve şifreyi elle gir.
-          </T>
-          <TextInput
-            value={url}
-            onChangeText={setUrl}
-            placeholder="https://crohnic.vercel.app"
-            placeholderTextColor={palette.inkFaint}
-            style={st.input}
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="url"
-          />
-          <TextInput
-            value={token}
-            onChangeText={setToken}
-            placeholder="Sunucu şifresi (APP_TOKEN)"
-            placeholderTextColor={palette.inkFaint}
-            style={st.input}
-            autoCapitalize="none"
-            autoCorrect={false}
-            secureTextEntry
-          />
-          <Button title="Bağlantıyı test et" kind="glass" icon="bolt.fill" onPress={() => test({ url: url.trim(), token: token.trim() })} loading={testing} disabled={!url.trim()} />
-        </Card>
-      )}
-
-      <Button title="Kaydet" icon="checkmark" onPress={saveAll} />
-
       <Card style={{ gap: 4, paddingVertical: 6 }}>
         <LinkRow icon="pills.fill" title="İlaçlarım" onPress={() => router.push('/ilaclar')} />
         <View style={{ height: 1, backgroundColor: palette.hairline }} />
@@ -220,6 +177,20 @@ export default function Settings() {
         <View style={{ height: 1, backgroundColor: palette.hairline }} />
         <LinkRow icon="testtube.2" title="Tahliller ve kilo" onPress={() => router.push('/tahliller')} />
       </Card>
+
+      <Card style={{ gap: 10 }}>
+        <T v="h3">Adın</T>
+        <TextInput
+          value={name}
+          onChangeText={setName}
+          onEndEditing={() => app.saveName(name)}
+          returnKeyType="done"
+          placeholder="Ana sayfada böyle selamlarım"
+          placeholderTextColor={palette.inkFaint}
+          style={st.input}
+        />
+      </Card>
+
 
       <Card style={{ gap: 14 }}>
         <View style={{ gap: 2 }}>
@@ -289,6 +260,59 @@ export default function Settings() {
           <Button title="Yedekle" icon="icloud.and.arrow.up" onPress={backup} loading={backingUp} style={{ flex: 1 }} />
           <Button title="Geri yükle" kind="glass" icon="icloud.and.arrow.down" onPress={restore} style={{ flex: 1 }} />
         </Row>
+      </Card>
+
+      <Card style={{ gap: 12 }}>
+        <Tap onPress={() => setAdvanced(!advanced)} accessibilityRole="button" accessibilityState={{ expanded: advanced }}>
+          <Row gap={10}>
+            <Icon name="camera.viewfinder" size={18} color={palette.lettuceDeep} fallback="📷" />
+            <View style={{ flex: 1 }}>
+              <T v="h3">Fotoğraf analizi</T>
+              <T v="small" color={aiReady ? palette.good : palette.warn}>
+                {aiReady ? 'Bağlı, ayar gerekmiyor' : 'Kurulmadı'}
+              </T>
+            </View>
+            <Icon name={advanced ? 'chevron.up' : 'chevron.down'} size={13} color={palette.inkFaint} fallback={advanced ? '˄' : '˅'} />
+          </Row>
+        </Tap>
+        {!advanced ? null : DEFAULT_AI ? (
+          <View style={{ gap: 10 }}>
+            <T v="small" color={palette.inkSoft}>
+              Sunucu uygulamaya gömülü, ayar gerekmiyor. Çalıştığını görmek için test edebilirsin.
+            </T>
+            <Button title="Bağlantıyı test et" kind="glass" icon="bolt.fill" onPress={() => test(DEFAULT_AI!)} loading={testing} />
+          </View>
+        ) : (
+          <View style={{ gap: 10 }}>
+            <T v="small" color={palette.inkSoft}>
+              Bu sürümde sunucu gömülü değil. Adres ve şifreyi elle gir.
+            </T>
+            <TextInput
+              value={url}
+              onChangeText={setUrl}
+              placeholder="https://crohnic.vercel.app"
+              placeholderTextColor={palette.inkFaint}
+              style={st.input}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+            />
+            <TextInput
+              value={token}
+              onChangeText={setToken}
+              placeholder="Sunucu şifresi (APP_TOKEN)"
+              placeholderTextColor={palette.inkFaint}
+              style={st.input}
+              autoCapitalize="none"
+              autoCorrect={false}
+              secureTextEntry
+            />
+            <Row gap={8}>
+              <Button title="Kaydet" icon="checkmark" compact style={{ flex: 1 }} onPress={saveAi} />
+              <Button title="Test et" kind="glass" compact icon="bolt.fill" style={{ flex: 1 }} onPress={() => test({ url: url.trim(), token: token.trim() })} loading={testing} disabled={!url.trim()} />
+            </Row>
+          </View>
+        )}
       </Card>
 
       <Card style={{ gap: 10 }}>

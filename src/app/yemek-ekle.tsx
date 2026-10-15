@@ -7,7 +7,7 @@ import { Text } from '../components/text';
 import { FoodPicker } from '../components/FoodPicker';
 import { ReactionPicker } from '../components/ReactionPicker';
 import { WhenField } from '../components/WhenField';
-import { Button, Card, Icon, Row, Screen, Segmented, T, Tap } from '../components/ui';
+import { Button, Card, Icon, Row, Screen, T, Tap } from '../components/ui';
 import { useApp } from '../lib/app-state';
 import { now } from '../lib/dates';
 import * as db from '../lib/db';
@@ -90,7 +90,18 @@ export default function AddMeal() {
   };
 
   return (
-    <Screen header={false}>
+    <Screen
+      header={false}
+      footer={
+        <Button
+          title={all.length > 1 ? `${all.length} yemeği kaydet` : all.length ? 'Kaydet' : 'Önce yemeği yaz'}
+          icon="checkmark"
+          onPress={save}
+          loading={saving}
+          disabled={!all.length}
+        />
+      }
+    >
       <Card style={{ gap: 12 }}>
         <Row style={{ justifyContent: 'space-between' }}>
           <T v="h3">Tabağında ne vardı?</T>
@@ -129,21 +140,32 @@ export default function AddMeal() {
 
       <Card style={{ gap: 14 }}>
         <WhenField value={at} onChange={setAt} />
-        <View style={{ gap: 8 }}>
-          <T v="h3">Dönem</T>
-          <Segmented
-            value={phase}
-            onChange={setPhase}
-            items={[
-              { key: 'remisyon', label: 'Remisyon', color: palette.lettuceDeep, icon: 'leaf.fill' },
-              { key: 'atak', label: 'Atak', color: palette.flare, icon: 'flame.fill' },
-            ]}
-          />
-        </View>
+        <Tap
+          onPress={() => setPhase(phase === 'atak' ? 'remisyon' : 'atak')}
+          accessibilityRole="button"
+          accessibilityLabel={`Dönem: ${phase === 'atak' ? 'atak' : 'remisyon'}. Değiştirmek için dokun`}
+        >
+          <Row gap={8} style={{ paddingTop: 2 }}>
+            <Icon name={phase === 'atak' ? 'flame.fill' : 'leaf.fill'} size={14} color={phase === 'atak' ? palette.flareDeep : palette.lettuceDeep} fallback={phase === 'atak' ? '🔥' : '🌿'} />
+            <T v="small" color={phase === 'atak' ? palette.flareDeep : palette.lettuceDeep} style={{ flex: 1, fontWeight: '700' }}>
+              {phase === 'atak' ? 'Atak döneminde' : 'Remisyon döneminde'}
+            </T>
+            <T v="small" color={palette.inkSoft}>
+              Değiştir
+            </T>
+          </Row>
+        </Tap>
       </Card>
 
       <Card style={{ gap: 12 }}>
-        <T v="h3">Fotoğraf</T>
+        <T v="h3">Nasıl geçti?</T>
+        <T v="small" color={palette.inkSoft} style={{ marginTop: -8 }}>
+          Şimdi bilmiyorsan boş bırak, 3 saat sonra soracağım.
+        </T>
+        <ReactionPicker value={reaction} onChange={(r) => setReaction(reaction === r ? null : r)} />
+      </Card>
+
+      <Card style={{ gap: 12 }}>
         {photo ? (
           <Tap onPress={() => setPhoto(null)}>
             <Image source={{ uri: photo }} style={{ width: '100%', aspectRatio: 1.4, borderRadius: radius.md }} />
@@ -153,27 +175,18 @@ export default function AddMeal() {
           </Tap>
         ) : (
           <Row gap={8}>
-            <Button title="Çek" kind="glass" icon="camera.fill" style={{ flex: 1 }} onPress={() => pickPhoto(true)} />
-            <Button title="Galeri" kind="glass" icon="photo.on.rectangle" style={{ flex: 1 }} onPress={() => pickPhoto(false)} />
+            <T v="callout" style={{ flex: 1, fontWeight: '700' }}>
+              Fotoğraf
+              <T v="small" color={palette.inkSoft}>
+                {'  isteğe bağlı'}
+              </T>
+            </T>
+            <Button title="Çek" kind="glass" compact icon="camera.fill" onPress={() => pickPhoto(true)} />
+            <Button title="Galeri" kind="glass" compact icon="photo.on.rectangle" onPress={() => pickPhoto(false)} />
           </Row>
         )}
       </Card>
 
-      <Card style={{ gap: 12 }}>
-        <T v="h3">Nasıl geçti?</T>
-        <T v="small" color={palette.inkSoft} style={{ marginTop: -8 }}>
-          Şimdi bilmiyorsan boş bırak, sonra soracağım.
-        </T>
-        <ReactionPicker value={reaction} onChange={(r) => setReaction(reaction === r ? null : r)} />
-      </Card>
-
-      <Button
-        title={all.length > 1 ? `${all.length} yemeği kaydet` : 'Kaydet'}
-        icon="checkmark"
-        onPress={save}
-        loading={saving}
-        disabled={!all.length}
-      />
     </Screen>
   );
 }

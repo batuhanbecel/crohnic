@@ -245,12 +245,15 @@ export function Screen({
   contentStyle,
   tone,
   header = true,
+  footer,
 }: {
   children: React.ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
   tone?: 'calm' | 'flare';
   /** false when a native header sits above the screen */
   header?: boolean;
+  /** pinned under the scroll area (the form's Kaydet), always reachable without scrolling */
+  footer?: React.ReactNode;
 }) {
   const insets = useSafeAreaInsets();
   const page = (
@@ -265,7 +268,7 @@ export function Screen({
           {
             paddingHorizontal: 16,
             paddingTop: header ? insets.top + 8 : 16,
-            paddingBottom: header ? insets.bottom + 100 : insets.bottom + 24,
+            paddingBottom: footer ? 20 : header ? insets.bottom + 100 : insets.bottom + 24,
             gap: size.gap,
           },
           contentStyle,
@@ -276,6 +279,21 @@ export function Screen({
       >
         {children}
       </ScrollView>
+      {footer ? (
+        <View
+          style={{
+            paddingHorizontal: 16,
+            paddingTop: 10,
+            paddingBottom: Math.max(insets.bottom, 12) + 4,
+            gap: 8,
+            backgroundColor: palette.paper,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: palette.hairline,
+          }}
+        >
+          {footer}
+        </View>
+      ) : null}
     </View>
   );
   return page;
