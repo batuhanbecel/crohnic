@@ -1,4 +1,4 @@
-import { Stack, router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, Alert, Platform, View } from 'react-native';
@@ -9,7 +9,7 @@ import { Mascot, type Mood } from '../../../components/Mascot';
 import { QuickLog } from '../../../components/QuickLog';
 import { REACTIONS, ReactionPicker } from '../../../components/ReactionPicker';
 import { Text } from '../../../components/text';
-import { Button, Card, Icon, IconBubble, Row, Screen, T, Tap, type SymbolName } from '../../../components/ui';
+import { Button, Card, Icon, IconBubble, IconButton, Row, Screen, T, Tap, type SymbolName } from '../../../components/ui';
 import { useApp } from '../../../lib/app-state';
 import { lastBackup } from '../../../lib/backup';
 import { dayKey, daysSince, isoDay, now, relative, startOfDay, timeLabel, todayLabel } from '../../../lib/dates';
@@ -358,19 +358,14 @@ export default function Home() {
 
   return (
     <Screen tone={flare ? 'flare' : 'calm'}>
-      <Stack.Screen
-        options={{
-          title: app.name ? `Selam ${app.name}` : 'Bugün',
-          unstable_headerRightItems: () => [
-            { type: 'button', label: 'Ayarlar', icon: { type: 'sfSymbol', name: 'gearshape' }, onPress: () => router.push('/ayarlar') },
-          ],
-        }}
-      />
-      {/* date, phase and Kıvırcık under the native large title */}
-      <Row gap={10} style={{ alignItems: 'center', marginTop: -4 }}>
-        <View style={{ flex: 1, gap: 6 }}>
+      {/* who, which phase, how today feels: one compact header instead of a card */}
+      <Row gap={10} style={{ alignItems: 'center', marginTop: 4 }}>
+        <View style={{ flex: 1, gap: 4 }}>
           <T v="small" color={palette.inkSoft}>
             {todayLabel()}
+          </T>
+          <T v="large" numberOfLines={1} adjustsFontSizeToFit>
+            {app.name ? `Selam ${app.name}` : 'Selam'}
           </T>
           <Tap onPress={changePhase} accessibilityRole="button" accessibilityLabel={`${flare ? 'Atak' : 'Remisyon'} dönemi. Değiştirmek için dokun`} style={{ alignSelf: 'flex-start' }}>
             <Row gap={6} style={{ paddingVertical: 4, paddingHorizontal: 10, borderRadius: radius.pill, backgroundColor: flare ? palette.flareSoft : palette.lettuceSoft }}>
@@ -383,8 +378,12 @@ export default function Home() {
             </Row>
           </Tap>
         </View>
-        <Mascot mood={mood} size={72} />
+        <Mascot mood={mood} size={84} />
+        <View style={{ alignSelf: 'flex-start' }}>
+          <IconButton name="gearshape" label="Ayarlar" fallback="⚙️" onPress={() => router.push('/ayarlar')} />
+        </View>
       </Row>
+
 
       {redFlag ? (
         <Card tint={palette.badSoft} style={{ gap: 8 }}>

@@ -70,8 +70,9 @@ export default function FoodList() {
 
   const header = (
     <View style={{ gap: 12, marginBottom: 12 }}>
+      <T v="large">Yemekler</T>
       <Tap onPress={explain} haptic={false}>
-        <Row gap={6} style={{ paddingHorizontal: 2 }}>
+        <Row gap={6} style={{ paddingHorizontal: 2, marginTop: -6 }}>
           <T v="small" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft} style={{ flex: 1 }}>
             {FOODS.length} yemek, {app.phase === 'atak' ? 'atak' : 'remisyon'} dönemine göre
           </T>
@@ -112,7 +113,6 @@ export default function FoodList() {
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.paper }}>
-      <Stack.Screen options={{ title: 'Yemekler' }} />
       <FlatList
         style={{ flex: 1 }}
         data={rows}

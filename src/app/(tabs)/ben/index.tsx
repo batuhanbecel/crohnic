@@ -1,10 +1,10 @@
-import { Stack, router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { bristolTone } from '../../../components/bristol';
 import { Mascot } from '../../../components/Mascot';
-import { Card, Empty, Icon, Row, Screen, SectionTitle, T } from '../../../components/ui';
+import { Button, Card, Empty, Icon, Row, Screen, SectionTitle, T } from '../../../components/ui';
 import { useApp } from '../../../lib/app-state';
 import { dayKey, now } from '../../../lib/dates';
 import * as db from '../../../lib/db';
@@ -95,14 +95,10 @@ export default function Insights() {
 
   return (
     <Screen tone={app.phase === 'atak' ? 'flare' : 'calm'}>
-      <Stack.Screen
-        options={{
-          title: 'Örüntüler',
-          unstable_headerRightItems: () => [
-            { type: 'button', label: 'Rapor', icon: { type: 'sfSymbol', name: 'doc.text' }, onPress: () => router.push('/rapor') },
-          ],
-        }}
-      />
+      <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4 }}>
+        <T v="large">Örüntüler</T>
+        <Button title="Doktor raporu" kind="glass" compact icon="doc.text" onPress={() => router.push('/rapor')} />
+      </Row>
 
       <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
         <Mascot mood={enough ? 'arastirma' : 'dusunuyor'} size={88} />

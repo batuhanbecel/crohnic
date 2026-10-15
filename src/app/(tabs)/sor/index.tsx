@@ -1,4 +1,4 @@
-import { Stack, router } from 'expo-router';
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { TextInput } from '../../../components/text';
@@ -34,14 +34,14 @@ export default function Ask() {
   return (
     <Screen tone={app.phase === 'atak' ? 'flare' : 'calm'}>
       <ThinkingOverlay mode={busy} />
-      <Stack.Screen options={{ title: 'Bunu yesem mi?' }} />
-      <Row gap={8} style={{ alignItems: 'center', marginTop: -4 }}>
-        <T v="small" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft} style={{ flex: 1 }}>
-          {app.phase === 'atak'
-            ? 'Atak modunda bakıyorum. Tabağı, menüyü çek ya da adını yaz.'
-            : 'Remisyon modunda bakıyorum. Tabağı, menüyü çek ya da adını yaz.'}
-        </T>
-        <Mascot mood="soru" size={64} />
+      <Row gap={4} style={{ alignItems: 'flex-end', marginTop: 4 }}>
+        <View style={{ flex: 1 }}>
+          <T v="small" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft}>
+            {app.phase === 'atak' ? 'Atak modunda bakıyorum' : 'Remisyon modunda bakıyorum'}
+          </T>
+          <T v="large">Bunu yesem mi?</T>
+        </View>
+        <Mascot mood="soru" size={80} />
       </Row>
 
       {nextMeal ? (

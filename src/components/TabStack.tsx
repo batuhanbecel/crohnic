@@ -13,13 +13,11 @@ export function TabStack() {
       screenOptions={{
         headerTransparent: true,
         headerShadowVisible: false,
-        // iOS large title: scrolls up with the content and settles as the small title in the bar
-        headerLargeTitle: true,
-        headerLargeTitleShadowVisible: false,
-        headerLargeStyle: { backgroundColor: 'transparent' },
-        headerTintColor: palette.lettuceDeep,
-        headerTitleStyle: { fontFamily: 'Nunito_800ExtraBold', color: palette.ink },
-        headerLargeTitleStyle: { fontFamily: 'Nunito_800ExtraBold', color: palette.ink },
+        // no visible bar and no title in it: each page draws its own title, which scrolls away
+        // with the content. The empty transparent bar is still there so iOS 26+ blurs content
+        // passing under the top edge (scroll edge effect).
+        title: '',
+        headerLargeTitle: false,
         contentStyle: { backgroundColor: palette.paper },
       }}
     />
