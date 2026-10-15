@@ -2,9 +2,10 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { Alert, Switch, View } from 'react-native';
+import { Alert, Linking, Platform, Switch, View } from 'react-native';
 import { TextInput } from '../components/text';
 import { Button, Card, Chip, GlassPress, Icon, Row, Screen, Segmented, T, st } from '../components/ui';
+import { alarmSupport, askAlarmPermission, type AlarmSupport } from '../lib/alarm';
 import { useApp } from '../lib/app-state';
 import { fromIsoDay, isoDay, now } from '../lib/dates';
 import * as db from '../lib/db';
@@ -39,6 +40,8 @@ export default function MedEdit() {
   const [customEvery, setCustomEvery] = useState('');
   const [anchor, setAnchor] = useState(() => now());
   const [remind, setRemind] = useState(true);
+  const [alarm, setAlarm] = useState(true);
+  const [support, setSupport] = useState<AlarmSupport | null>(null);
   const [injection, setInjection] = useState(false);
   const [stock, setStock] = useState('');
   const [saving, setSaving] = useState(false);
@@ -58,10 +61,15 @@ export default function MedEdit() {
       }
       setAnchor(fromIsoDay(m.start_day));
       setRemind(!!m.remind);
+      setAlarm(m.remind !== 2);
       setInjection(!!m.injection);
       setStock(m.stock != null ? String(m.stock) : '');
     });
   }, [sql, editing]);
+
+  useEffect(() => {
+    alarmSupport().then(setSupport);
+  }, []);
 
   const everyDays = every || Math.max(1, parseInt(customEvery, 10) || 0);
   const valid = !!name.trim() && times.length > 0 && (kind === 'daily' || everyDays >= 1);
@@ -81,12 +89,21 @@ export default function MedEdit() {
         times: (kind === 'daily' ? sorted : sorted.slice(0, 1)).map(fmtTime).join(','),
         every_days: kind === 'daily' ? 1 : everyDays,
         start_day: kind === 'daily' && !editing ? isoDay(now()) : isoDay(anchor),
-        remind: remind ? 1 : 0,
+        remind: remind ? (alarm ? 1 : 2) : 0,
         injection: injection ? 1 : 0,
         stock: stock.trim() ? parseInt(stock, 10) : null,
         stock_alert: kind === 'daily' ? Math.max(2, Math.min(7, parseTimes(times.map(fmtTime).join(',')).length * 3)) : 1,
       });
       if (remind && (await permission()) === 'undetermined') await askPermission();
+      if (remind && alarm && support === 'ask') await askAlarmPermission();
+      if (remind && alarm && (await alarmSupport()) === 'denied') {
+        await new Promise<void>((done) =>
+          Alert.alert('Alarm izni kapalı', 'İlaç saatinde alarm çalabilmesi için iPhone Ayarlar › Crohnic’ten alarmlara izin ver. O zamana kadar bildirim gelir.', [
+            { text: 'Sonra', style: 'cancel', onPress: () => done() },
+            { text: 'Ayarları aç', onPress: () => (Linking.openSettings(), done()) },
+          ]),
+        );
+      }
       app.bump();
       router.back();
     } catch (e: any) {
@@ -256,11 +273,34 @@ export default function MedEdit() {
           <View style={{ flex: 1 }}>
             <T v="callout">Hatırlat</T>
             <T v="small" color={palette.inkSoft}>
-              Doz saatinde bildirim gelir
+              İşaretlemezsen 15 ve 45 dakika sonra yine sorar
             </T>
           </View>
           <Switch value={remind} onValueChange={setRemind} trackColor={{ true: palette.lettuce }} />
         </Row>
+        {remind && Platform.OS === 'ios' ? (
+          <View style={{ gap: 8, marginTop: 14 }}>
+            <Segmented
+              value={alarm ? 'alarm' : 'bildirim'}
+              onChange={(v) => setAlarm(v === 'alarm')}
+              items={[
+                { key: 'alarm', label: 'Alarm', icon: 'alarm.fill', color: palette.lettuceDeep },
+                { key: 'bildirim', label: 'Bildirim', icon: 'bell.fill', color: palette.lettuceDeep },
+              ]}
+            />
+            <T v="small" color={alarm && (support === 'denied' || support === 'old-ios' || support === 'old-build') ? palette.warn : palette.inkSoft}>
+              {!alarm
+                ? 'Doz saatinde bildirim gelir. Sessiz moddayken ses çıkarmaz.'
+                : support === 'old-build'
+                  ? 'Alarm, uygulamanın bir sonraki sürümüyle gelecek. O zamana kadar bildirim gelir.'
+                  : support === 'old-ios'
+                    ? 'Alarm için iOS 26 gerekiyor. Bu telefonda bildirim gelir.'
+                    : support === 'denied'
+                      ? 'Alarm izni kapalı: iPhone Ayarlar › Crohnic’ten aç. O zamana kadar bildirim gelir.'
+                      : 'Saat uygulamasındaki alarm gibi çalar, sessiz modda ve odak modundayken de. Ayrıca “Aldım” düğmeli bir bildirim gelir.'}
+            </T>
+          </View>
+        ) : null}
       </Card>
 
       <Button title="Kaydet" icon="checkmark" onPress={save} loading={saving} disabled={!valid} />

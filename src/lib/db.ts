@@ -438,6 +438,7 @@ export type Med = {
   every_days: number;
   /** YYYY-MM-DD, first dose day (anchor for interval meds) */
   start_day: string;
+  /** 0 = off, 1 = alarm + notification (default), 2 = notification only */
   remind: number;
   active: number;
   created_at: number;

@@ -14,6 +14,7 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Crohnic, yemeğinin ya da menünün fotoğrafını çekip sana uygun olup olmadığını söylemek için kamerayı kullanır.",
         "NSPhotoLibraryUsageDescription": "Crohnic, galerinden seçtiğin yemek ve menü fotoğraflarını analiz etmek için fotoğraflarına erişir.",
+        "NSAlarmKitUsageDescription": "Crohnic, ilaç saatin geldiğinde sessiz modda ve odak modundayken de duyman için alarm çalar.",
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleDevelopmentRegion": "tr"
       },

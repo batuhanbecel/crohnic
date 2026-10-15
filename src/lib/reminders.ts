@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { Platform } from 'react-native';
+import { askAlarmPermission, alarmSupport, syncAlarms, type AlarmSpec } from './alarm';
 import * as db from './db';
 import { isoDay, startOfDay } from './dates';
 import { fmtTime, parseTimes, slotsBetween } from './meds';
@@ -8,7 +9,8 @@ import { fmtTime, parseTimes, slotsBetween } from './meds';
 /**
  * Local notifications only (no push server):
  *  - meal follow-up ~3 h after eating ("nasıl geçti?")
- *  - medication reminders
+ *  - medication reminders: a real alarm (AlarmKit) at dose time when the med is set to alarm,
+ *    a notification with an "Aldım" button, and two follow-ups (+15, +45 min) until the dose is marked
  *  - evening check-in (stress, sleep) on days it isn't filled in yet
  * Rolling one-off reminders are re-synced every time the app opens.
  */
@@ -177,20 +179,50 @@ async function cancelPrefix(prefixes: string[]) {
   );
 }
 
+const NAGS_MIN = [15, 45];
+const ALARM_SIG = 'alarm_sig';
+
+export function medTitle(m: Pick<db.Med, 'name' | 'dose'>) {
+  return m.dose ? `${m.name} · ${m.dose}` : m.name;
+}
+
+/** Alarms for meds set to alarm: daily ones repeat on their own, interval ones are the next few dates. */
+async function syncMedAlarms(sql: SQLiteDatabase, meds: db.Med[], done: Set<string>, now: number) {
+  const specs: AlarmSpec[] = [];
+  for (const m of meds.filter((x) => x.remind === 1)) {
+    const title = `💊 ${medTitle(m)}`;
+    if (m.kind === 'daily') {
+      for (const [hour, minute] of parseTimes(m.times)) specs.push({ title, hour, minute });
+    } else {
+      const next = slotsBetween(m, now + 60000, now + Math.max(60, m.every_days * 5) * DAY).filter((t) => !done.has(`${m.id}:${t}`));
+      for (const at of next.slice(0, 3)) specs.push({ title, at });
+    }
+  }
+  // first time there's an alarm to set: iOS asks once ("Crohnic alarm kurmak istiyor")
+  if (specs.length && (await alarmSupport()) === 'ask') await askAlarmPermission();
+  const saved = await db.getSetting(sql, ALARM_SIG);
+  const sig = await syncAlarms(specs, saved);
+  if (sig !== saved) await db.setSetting(sql, ALARM_SIG, sig);
+}
+
 /** Rebuild medication and check-in reminders from the database. Cheap; call on launch, on resume and after edits. */
 export async function syncReminders(sql: SQLiteDatabase) {
   if (!supported) return;
   try {
+    const now = Date.now();
+    const meds = (await db.listMeds(sql)).filter((m) => m.remind);
+    const logs = await db.medLogsBetween(sql, startOfDay(now) - 2 * DAY, now + 60 * DAY);
+    const done = new Set(logs.map((l) => `${l.med_id}:${l.due_at}`));
+
+    // alarms don't depend on notification permission
+    if (Platform.OS === 'ios') await syncMedAlarms(sql, meds, done, now);
+
     await cancelPrefix(['med-', 'daily-', 'stock-']);
     if ((await permission()) !== 'granted') return;
-    const now = Date.now();
 
     // medications
-    const meds = (await db.listMeds(sql)).filter((m) => m.remind);
-    const logs = await db.medLogsBetween(sql, startOfDay(now), now + 60 * DAY);
-    const done = new Set(logs.map((l) => `${l.med_id}:${l.due_at}`));
     for (const m of meds) {
-      const title = m.dose ? `${m.name} · ${m.dose}` : m.name;
+      const title = medTitle(m);
       if (m.kind === 'daily') {
         // repeating daily trigger: keeps working even if the app isn't opened for days
         for (const [h, min] of parseTimes(m.times)) {
@@ -212,6 +244,29 @@ export async function syncReminders(sql: SQLiteDatabase) {
           .slice(0, 4);
         for (const t of next) {
           await schedule(`med-${m.id}-${t}`, 'İlaç günü', `Bugün ${title} günü.`, t, '/', { category: CATEGORY.med, data: { kind: 'med', medId: m.id, due: t } });
+        }
+      }
+    }
+
+    // follow-ups until the dose is marked (taken or skipped); re-planned on every sync, so they stop once it is
+    let nags = 0;
+    for (const m of meds) {
+      for (const due of slotsBetween(m, now - NAGS_MIN[NAGS_MIN.length - 1] * 60000, now + 2 * DAY)) {
+        if (done.has(`${m.id}:${due}`)) continue;
+        for (const after of NAGS_MIN) {
+          const at = due + after * 60000;
+          if (at <= now + 30000 || nags >= 24) continue;
+          nags += 1;
+          await schedule(
+            `med-nag-${m.id}-${due}-${after}`,
+            after === NAGS_MIN[0] ? `${m.name} aldın mı?` : `${m.name} hâlâ bekliyor`,
+            after === NAGS_MIN[0]
+              ? `${fmtTime([new Date(due).getHours(), new Date(due).getMinutes()])} dozunu işaretlemedin. Aldıysan "Aldım"a bas, susarım.`
+              : `${medTitle(m)} dozunu unutma. Aldıysan "Aldım"a bas.`,
+            at,
+            '/',
+            { category: CATEGORY.med, data: { kind: 'med', medId: m.id, due } },
+          );
         }
       }
     }

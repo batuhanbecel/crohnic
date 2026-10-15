@@ -270,7 +270,7 @@ export default function Settings() {
         <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
           {perm === 'denied'
             ? 'Bildirim izni kapalı. iPhone Ayarlar > Crohnic > Bildirimler’den açabilirsin.'
-            : 'İlaç hatırlatmaları her ilacın kendi ayarında.'}
+            : 'İlaç hatırlatmaları (alarm ya da bildirim) her ilacın kendi ayarında.'}
         </T>
       </Card>
 

@@ -48,7 +48,7 @@ export default function Meds() {
                   </T>
                   <T v="small" color={palette.inkSoft} numberOfLines={1}>
                     {scheduleLabel(m)}
-                    {m.remind ? '' : ' · hatırlatma kapalı'}
+                    {m.remind === 0 ? ' · hatırlatma kapalı' : m.remind === 2 ? ' · bildirim' : ' · alarm'}
                     {m.stock != null ? ` · evde ${m.stock} doz` : ''}
                   </T>
                 </View>
