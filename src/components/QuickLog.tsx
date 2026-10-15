@@ -10,7 +10,7 @@ type Tile = { key: string; label: string; value: string; icon: SymbolName; fallb
 
 /**
  * One tap to the four logs people make every day, each with today's count (the same
- * layout as the home screen widget). Less frequent entries sit in a row of small links below.
+ * layout as the home screen widget).
  */
 export function QuickLog({ counts }: { counts: QuickCounts }) {
   const d = counts.doses;
@@ -31,8 +31,7 @@ export function QuickLog({ counts }: { counts: QuickCounts }) {
   ];
 
   return (
-    <View style={{ gap: 10 }}>
-      <Row gap={8} style={{ alignItems: 'stretch' }}>
+    <Row gap={8} style={{ alignItems: 'stretch' }}>
         {tiles.map((t) => (
           <Tap key={t.key} onPress={() => router.push(t.to as never)} accessibilityRole="button" accessibilityLabel={t.a11y} style={{ flex: 1 }}>
             <View style={{ backgroundColor: surface.card, borderRadius: radius.lg, paddingVertical: 12, paddingHorizontal: 10, gap: 8, minHeight: 108 }}>
@@ -52,26 +51,7 @@ export function QuickLog({ counts }: { counts: QuickCounts }) {
               </View>
             </View>
           </Tap>
-        ))}
-      </Row>
-      <Row gap={8}>
-        <MiniLink icon="moon.stars.fill" fallback="🌙" color={palette.plum} label="Gün nasıldı" to="/gun" />
-        <MiniLink icon="testtube.2" fallback="🧪" color={palette.good} label="Tahlil, kilo" to="/tahliller" />
-        <MiniLink icon="doc.text.fill" fallback="📄" color={palette.inkSoft} label="Rapor" to="/rapor" />
-      </Row>
-    </View>
-  );
-}
-
-function MiniLink({ icon, fallback, color, label, to }: { icon: SymbolName; fallback: string; color: string; label: string; to: string }) {
-  return (
-    <Tap onPress={() => router.push(to as never)} accessibilityRole="button" accessibilityLabel={label} style={{ flex: 1 }}>
-      <Row gap={6} style={{ justifyContent: 'center', paddingVertical: 9, paddingHorizontal: 8, borderRadius: radius.pill, backgroundColor: surface.card }}>
-        <Icon name={icon} size={13} color={color} fallback={fallback} />
-        <T v="caption" numberOfLines={1} style={{ fontWeight: '700' }}>
-          {label}
-        </T>
-      </Row>
-    </Tap>
+      ))}
+    </Row>
   );
 }

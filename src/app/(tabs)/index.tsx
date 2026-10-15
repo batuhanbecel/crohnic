@@ -19,14 +19,6 @@ import { askPermission, cancelMealReminder, permission, syncReminders, type Perm
 import { palette, radius, surface, type } from '../../lib/theme';
 import { useDayPlan } from '../../lib/use-day-plan';
 
-const TIPS = [
-  'Yeni bir yemeği küçük bir porsiyonla dene, birkaç saat sonra nasıl hissettiğini yaz.',
-  'Gün içine yayılmış küçük öğünler, iki büyük öğünden genelde daha rahat geçer.',
-  'İshalli günlerde su ve tuz kaybı artar. Ayran ya da tuzlu bir çorba iyi gelebilir.',
-  'Kabuğu soyulmuş, iyice pişmiş sebze çiğine göre çok daha kolay sindirilir.',
-  'Yavaş yemek ve iyi çiğnemek, bağırsağın işini gerçekten azaltır.',
-  'Bir yemek bir kere dokundu diye listeden çıkarma. İki üç kayıt sonra daha net görürüz.',
-];
 
 /** One-tap daily check-in (stored in daily.feel, 0 … 4). */
 /** Streak lengths worth a small celebration on the home screen. */
@@ -124,15 +116,15 @@ export default function Home() {
     }, [load, app.dataVersion]), // eslint-disable-line react-hooks/exhaustive-deps
   );
 
-  const { mood, line } = useMemo((): { mood: Mood; line: string } => {
+  const mood = useMemo((): Mood => {
     const hour = new Date(loadedAt || 0).getHours();
-    if (redFlag) return { mood: 'worried', line: 'Son günlerin zor geçmiş görünüyor. Aşağıdaki notu oku, doktorunla paylaşmanı isterim.' };
-    if (daily?.feel != null && FEELS[daily.feel]) return { mood: FEELS[daily.feel].mood, line: FEELS[daily.feel].line };
-    if (meals.some((m) => m.reaction === 2)) return { mood: 'agri', line: 'Bugün bir şey dokunmuş. Akşamı hafif geçir: çorba, pilav, haşlama.' };
-    if (app.phase === 'atak') return { mood: 'ok', line: 'Atak dönemindesin. Bu günlerde püre, haşlama ve az yağlı yemekleri öne çıkarıyorum.' };
-    if (meals.length >= 2 && meals.every((m) => m.reaction === 0)) return { mood: 'cheer', line: 'Bugün yediklerin iyi gelmiş görünüyor.' };
-    if (!meals.length && hour < 11) return { mood: 'merhaba', line: 'Günaydın. Kahvaltıda ne var?' };
-    return { mood: 'happy', line: TIPS[new Date(loadedAt || 0).getDate() % TIPS.length] };
+    if (redFlag) return 'worried';
+    if (daily?.feel != null && FEELS[daily.feel]) return FEELS[daily.feel].mood;
+    if (meals.some((m) => m.reaction === 2)) return 'agri';
+    if (app.phase === 'atak') return 'ok';
+    if (meals.length >= 2 && meals.every((m) => m.reaction === 0)) return 'cheer';
+    if (!meals.length && hour < 11) return 'merhaba';
+    return 'happy';
   }, [meals, app.phase, loadedAt, redFlag, daily]);
 
   // a choice between options is an action sheet on iOS, not an alert
@@ -362,21 +354,35 @@ export default function Home() {
   const phaseTone = flare ? palette.flareDeep : palette.lettuceDeep;
   const phaseDays = app.phaseSince ? daysSince(app.phaseSince) + 1 : null;
 
+  const shown = entries.slice(-4);
+
   return (
     <Screen tone={flare ? 'flare' : 'calm'}>
-      <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4 }}>
-        <View style={{ flex: 1 }}>
+      {/* who, which phase, how today feels: one compact header instead of a card */}
+      <Row gap={10} style={{ alignItems: 'center', marginTop: 4 }}>
+        <View style={{ flex: 1, gap: 4 }}>
           <T v="small" color={palette.inkSoft}>
             {todayLabel()}
           </T>
           <T v="large" numberOfLines={1} adjustsFontSizeToFit>
             {app.name ? `Selam ${app.name}` : 'Selam'}
           </T>
+          <Tap onPress={changePhase} accessibilityRole="button" accessibilityLabel={`${flare ? 'Atak' : 'Remisyon'} dönemi. Değiştirmek için dokun`} style={{ alignSelf: 'flex-start' }}>
+            <Row gap={6} style={{ paddingVertical: 4, paddingHorizontal: 10, borderRadius: radius.pill, backgroundColor: flare ? palette.flareSoft : palette.lettuceSoft }}>
+              <Icon name={flare ? 'flame.fill' : 'leaf.fill'} size={12} color={phaseTone} fallback={flare ? '🔥' : '🌿'} />
+              <T v="caption" color={phaseTone} style={{ fontWeight: '800' }}>
+                {flare ? 'Atak' : 'Remisyon'}
+                {phaseDays ? `, ${phaseDays}. gün` : ''}
+              </T>
+              <Icon name="chevron.down" size={9} color={phaseTone} fallback="˅" />
+            </Row>
+          </Tap>
         </View>
-        <IconButton name="gearshape" label="Ayarlar" fallback="⚙️" onPress={() => router.push('/ayarlar')} />
+        <Mascot mood={mood} size={84} />
+        <View style={{ alignSelf: 'flex-start' }}>
+          <IconButton name="gearshape" label="Ayarlar" fallback="⚙️" onPress={() => router.push('/ayarlar')} />
+        </View>
       </Row>
-
-      <QuickLog counts={counts} />
 
       {redFlag ? (
         <Card tint={palette.badSoft} style={{ gap: 8 }}>
@@ -393,89 +399,77 @@ export default function Home() {
         </Card>
       ) : null}
 
-      {nextItems.length ? (
-        <>
-          <T v="h2" style={{ marginTop: 8, paddingHorizontal: 2 }}>
-            Sıradaki
-          </T>
-          <Card style={{ paddingVertical: 4 }}>
-            {nextItems.map((el, i) => (
-              <Fragment key={i}>
-                {i > 0 ? <View style={{ height: 1, backgroundColor: palette.hairline }} /> : null}
-                {el}
-              </Fragment>
-            ))}
-          </Card>
-        </>
+      <QuickLog counts={counts} />
+
+      {/* everything that wants an answer or a decision now, in one list */}
+      {nextItems.length || (nextMeal && nextMeal.items.length) ? (
+        <Card style={{ paddingVertical: 4 }}>
+          {nextItems.map((el, i) => (
+            <Fragment key={i}>
+              {i > 0 ? <View style={{ height: 1, backgroundColor: palette.hairline }} /> : null}
+              {el}
+            </Fragment>
+          ))}
+          {nextMeal && nextMeal.items.length ? (
+            <>
+              {nextItems.length ? <View style={{ height: 1, backgroundColor: palette.hairline }} /> : null}
+              <Tap onPress={() => router.push('/oneriler')} accessibilityRole="button" accessibilityLabel={`${nextMeal.title} için önerim: ${nextMeal.items.map((x) => x.food.name).join(', ')}`}>
+                <Row gap={12} style={{ paddingVertical: 12 }}>
+                  <IconBubble name="fork.knife" color={palette.good} dim={40} fallback="🍽️" />
+                  <View style={{ flex: 1 }}>
+                    <T v="h3">{`${nextMeal.title} için ne yesem?`}</T>
+                    <T v="small" color={palette.inkSoft} numberOfLines={1}>
+                      {nextMeal.items.map((x) => x.food.name).join(', ')}
+                    </T>
+                  </View>
+                  <Icon name="chevron.right" size={13} color={palette.inkFaint} fallback="›" />
+                </Row>
+              </Tap>
+            </>
+          ) : null}
+        </Card>
       ) : null}
 
-      <Card style={{ gap: 14 }}>
-        <Row gap={12} style={{ alignItems: 'center' }}>
-          <Mascot mood={mood} size={76} />
-          <View style={{ flex: 1, gap: 3 }}>
-            <T v="h2">Bugün nasılsın?</T>
-            <T v="small" color={palette.inkSoft}>
-              {line}
+      <Card style={{ gap: 10 }}>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <T v="h3">Bugün nasılsın?</T>
+          {daily?.feel != null ? (
+            <T v="caption" color={palette.lettuceDeep} style={{ fontWeight: '700' }}>
+              {FEELS[daily.feel]?.label}
             </T>
-          </View>
+          ) : null}
         </Row>
         <Row gap={6}>
           {FEELS.map((f, i) => {
             const on = daily?.feel === i;
             return (
               <Tap key={f.label} onPress={() => feel(i)} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={f.label} accessibilityState={{ selected: on }}>
-                <View style={{ height: 64, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', gap: 2, backgroundColor: on ? palette.lettuceSoft : surface.well, borderWidth: 2, borderColor: on ? palette.lettuce : 'transparent' }}>
+                <View style={{ height: 46, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? palette.lettuceSoft : surface.well, borderWidth: 2, borderColor: on ? palette.lettuce : 'transparent' }}>
                   <Text style={{ fontSize: 24 }}>{f.emoji}</Text>
-                  <T v="caption" color={on ? palette.lettuceDeep : palette.inkSoft} numberOfLines={1}>
-                    {f.label}
-                  </T>
                 </View>
               </Tap>
             );
           })}
         </Row>
-        <View style={{ height: 1, backgroundColor: palette.hairline }} />
-        <Tap onPress={changePhase} accessibilityRole="button" accessibilityLabel="Dönemi değiştir">
-          <Row gap={8}>
-            <Icon name={flare ? 'flame.fill' : 'leaf.fill'} size={15} color={phaseTone} fallback={flare ? '🔥' : '🌿'} />
-            <T v="callout" color={phaseTone} style={[type.semibold, { flex: 1 }]}>
-              {flare ? 'Atak' : 'Remisyon'}
-              {phaseDays ? `, ${phaseDays}. gün` : ''}
-            </T>
-            <T v="small" color={palette.inkSoft}>
-              Değiştir
-            </T>
-            <Icon name="chevron.right" size={12} color={palette.inkFaint} fallback="›" />
-          </Row>
-        </Tap>
       </Card>
 
-      {nextMeal && nextMeal.items.length ? (
-        <Tap onPress={() => router.push('/oneriler')} accessibilityRole="button" accessibilityLabel={`${nextMeal.title} için önerim: ${nextMeal.items.map((i) => i.food.name).join(', ')}`}>
-          <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 8 }}>
-            <Mascot mood="yemek" size={56} />
-            <View style={{ flex: 1, gap: 2 }}>
-              <T v="caption" color={palette.lettuceDeep} style={{ fontWeight: '800' }}>
-                {`${nextMeal.title.toLocaleUpperCase('tr-TR')} İÇİN ÖNERİM`}
-              </T>
-              <T v="callout" numberOfLines={2} style={type.semibold}>
-                {nextMeal.items.map((i) => `${i.food.emoji} ${i.food.name}`).join('  ·  ')}
-              </T>
-            </View>
-            <Icon name="chevron.right" size={13} color={palette.inkFaint} fallback="›" />
-          </Card>
-        </Tap>
-      ) : null}
-
-      <Row style={{ justifyContent: 'space-between', alignItems: 'baseline', marginTop: 8, paddingHorizontal: 2 }}>
+      <Row style={{ justifyContent: 'space-between', alignItems: 'baseline', marginTop: 6, paddingHorizontal: 2 }}>
         <T v="h2">Bugün</T>
-        <T v="small" color={palette.inkSoft}>
-          {summary}
-        </T>
+        {entries.length > shown.length ? (
+          <Tap onPress={() => router.navigate('/gunluk')} hitSlop={10} accessibilityRole="button">
+            <T v="callout" color={palette.lettuceDeep} style={type.semibold}>
+              {`Hepsi (${entries.length})`}
+            </T>
+          </Tap>
+        ) : (
+          <T v="small" color={palette.inkSoft}>
+            {summary}
+          </T>
+        )}
       </Row>
-      {entries.length ? (
+      {shown.length ? (
         <Card style={{ paddingVertical: 6 }}>
-          {entries.map((e, i) => (
+          {shown.map((e, i) => (
             <Tap key={e.key} onPress={e.onPress ?? (() => router.navigate('/gunluk'))} haptic={false}>
               <Row gap={12} style={{ paddingVertical: 10 }}>
                 <T v="small" color={palette.inkFaint} style={{ width: 42 }}>
@@ -491,22 +485,19 @@ export default function Home() {
                   </T>
                 </View>
               </Row>
-              {i < entries.length - 1 ? <View style={{ height: 1, backgroundColor: palette.hairline, marginLeft: 100 }} /> : null}
+              {i < shown.length - 1 ? <View style={{ height: 1, backgroundColor: palette.hairline, marginLeft: 100 }} /> : null}
             </Tap>
           ))}
         </Card>
       ) : (
-        <Card style={{ alignItems: 'center', gap: 4, paddingVertical: 22 }}>
-          <T v="h3">Bugün henüz kayıt yok</T>
-          <T v="small" color={palette.inkSoft} style={{ textAlign: 'center' }}>
-            Yukarıdaki kutulardan tek dokunuşla ekle.
-          </T>
-        </Card>
+        <T v="small" color={palette.inkSoft} style={{ textAlign: 'center', paddingVertical: 8 }}>
+          Henüz kayıt yok. Yukarıdaki kutulardan tek dokunuşla ekle.
+        </T>
       )}
 
       {streak.today && STREAK_MARKS.includes(streak.days) ? (
         <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 6 }}>
-          <Mascot mood="kutlama" size={72} />
+          <Mascot mood="kutlama" size={64} />
           <View style={{ flex: 1, gap: 2 }}>
             <T v="h3">{streak.days} gündür her gün kayıt tutuyorsun</T>
             <T v="small" color={palette.inkSoft}>
@@ -526,10 +517,6 @@ export default function Home() {
           </Row>
         </Tap>
       ) : null}
-
-      <T v="caption" color={palette.inkFaint} style={{ textAlign: 'center', marginTop: 10, lineHeight: 17, fontWeight: '400' }}>
-        Crohnic bir takip aracıdır, tıbbi tavsiye vermez. Tedavi ve diyet kararlarını doktorunla birlikte al.
-      </T>
     </Screen>
   );
 }
