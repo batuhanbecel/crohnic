@@ -12,7 +12,7 @@ export default function Suggestions() {
   const flare = phase === 'atak';
 
   return (
-    <Screen header={false}>
+    <Screen title="Bugün ne yesem?">
       <Row gap={4} style={{ alignItems: 'center' }}>
         <View style={{ flex: 1, gap: 6 }}>
           <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, backgroundColor: flare ? palette.flareSoft : palette.lettuceSoft }}>

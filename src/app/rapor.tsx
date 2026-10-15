@@ -57,7 +57,7 @@ export default function Report() {
   };
 
   return (
-    <Screen header={false}>
+    <Screen title="Doktor raporu">
       <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
         <Mascot mood="rapor" size={88} />
         <T v="callout" style={{ flex: 1 }}>

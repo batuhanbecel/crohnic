@@ -53,7 +53,7 @@ export default function DayCheckIn() {
 
   return (
     <Screen
-      header={false}
+      title="Gün nasıldı"
       footer={<Button title="Kaydet" icon="checkmark" onPress={save} loading={saving} disabled={stress == null && sleepQ == null && sleepH == null && !fever && water == null} />}
     >
       <Row gap={4}>

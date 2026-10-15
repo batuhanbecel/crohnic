@@ -1,4 +1,4 @@
-import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { Alert, View } from 'react-native';
@@ -88,7 +88,7 @@ export default function Symptom() {
 
   return (
     <Screen
-      header={false}
+      title={editing ? 'Semptomu düzenle' : 'Semptom'}
       footer={
         <Button
           title={editing ? 'Değişiklikleri kaydet' : total === 0 ? 'Şikayetim yok, kaydet' : 'Kaydet'}
@@ -98,7 +98,6 @@ export default function Symptom() {
         />
       }
     >
-      {editing ? <Stack.Screen options={{ title: 'Semptomu düzenle' }} /> : null}
       <Row gap={4}>
         <Mascot mood={mood} size={64} />
         <T v="callout" style={{ flex: 1 }} color={palette.inkSoft}>

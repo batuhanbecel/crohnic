@@ -246,8 +246,11 @@ export function Screen({
   contentStyle,
   tone,
   footer,
+  title,
 }: {
   children: React.ReactNode;
+  /** page title drawn in the content (it scrolls away); the native bar never shows a title */
+  title?: string;
   contentStyle?: StyleProp<ViewStyle>;
   tone?: 'calm' | 'flare';
   /** @deprecated every screen has a native header now; kept so call sites don't break */
@@ -280,6 +283,11 @@ export function Screen({
           <View pointerEvents="none" style={{ position: 'absolute', top: -420, left: 0, right: 0, height: 900 }}>
             <Backdrop tone="flare" />
           </View>
+        ) : null}
+        {title ? (
+          <T v="large" accessibilityRole="header" style={{ marginTop: 2 }}>
+            {title}
+          </T>
         ) : null}
         {children}
       </ScrollView>

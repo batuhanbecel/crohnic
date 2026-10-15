@@ -1,4 +1,4 @@
-import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { Alert, View } from 'react-native';
@@ -80,7 +80,7 @@ export default function Bowel() {
 
   return (
     <Screen
-      header={false}
+      title={editing ? 'Tuvalet kaydını düzenle' : 'Tuvalet'}
       footer={
         <Button
           title={editing ? 'Değişiklikleri kaydet' : picked ? `Kaydet · ${picked.short}` : 'Kıvamı seç'}
@@ -91,7 +91,6 @@ export default function Bowel() {
         />
       }
     >
-      {editing ? <Stack.Screen options={{ title: 'Tuvalet kaydını düzenle' }} /> : null}
       <Card>
         <WhenField value={at} onChange={setAt} />
       </Card>

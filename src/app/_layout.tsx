@@ -7,7 +7,7 @@ import {
   Nunito_900Black,
   useFonts,
 } from '@expo-google-fonts/nunito';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
@@ -50,14 +50,24 @@ export default function RootLayout() {
 
   // Solid headers on every stacked screen: transparent ones let titles overlap
   // scrolled content on iOS 26, where the scroll-edge blur isn't applied to RN scroll views.
-  // transparent bars: on iOS 26+ the system draws Liquid Glass buttons and blurs content
-  // scrolling under the bar (scroll edge effect); Screen insets the content automatically
+  // transparent bars with no title (pages draw their own, which scrolls away): on iOS 26+ the
+  // system draws Liquid Glass buttons and blurs content scrolling under them (scroll edge
+  // effect, which only appears when the bar has at least one button). Screen insets the
+  // content automatically.
   const solid = {
     headerTransparent: true,
     headerShadowVisible: false,
     contentStyle: { backgroundColor: palette.paper },
   };
-  const sheet = { presentation: 'modal' as const, headerShown: true, ...solid };
+  // sheets: a Liquid Glass close button top-left (and with it the scroll edge blur)
+  const sheet = {
+    presentation: 'modal' as const,
+    headerShown: true,
+    ...solid,
+    unstable_headerLeftItems: () => [
+      { type: 'button' as const, label: 'Kapat', icon: { type: 'sfSymbol' as const, name: 'xmark' as const }, onPress: () => router.back() },
+    ],
+  };
   const pushed = { ...solid };
 
   return (
@@ -77,19 +87,19 @@ export default function RootLayout() {
               }}
             >
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="yemek-ekle" options={{ ...sheet, title: 'Öğün ekle' }} />
-              <Stack.Screen name="semptom" options={{ ...sheet, title: 'Semptom' }} />
-              <Stack.Screen name="tuvalet" options={{ ...sheet, title: 'Tuvalet' }} />
-              <Stack.Screen name="ogun/[id]" options={{ ...sheet, title: 'Öğün' }} />
+              <Stack.Screen name="yemek-ekle" options={{ ...sheet, title: '' }} />
+              <Stack.Screen name="semptom" options={{ ...sheet, title: '' }} />
+              <Stack.Screen name="tuvalet" options={{ ...sheet, title: '' }} />
+              <Stack.Screen name="ogun/[id]" options={{ ...sheet, title: '' }} />
               <Stack.Screen name="sonuc" options={{ ...pushed, title: '' }} />
               <Stack.Screen name="besin/[id]" options={{ ...pushed, title: '' }} />
-              <Stack.Screen name="ayarlar" options={{ ...pushed, title: 'Ayarlar' }} />
-              <Stack.Screen name="ilaclar" options={{ ...pushed, title: 'İlaçlarım' }} />
-              <Stack.Screen name="rapor" options={{ ...pushed, title: 'Doktor raporu' }} />
-              <Stack.Screen name="tahliller" options={{ ...pushed, title: 'Tahliller ve kilo' }} />
-              <Stack.Screen name="oneriler" options={{ ...pushed, title: 'Bugün ne yesem?' }} />
-              <Stack.Screen name="ilac" options={{ ...sheet, title: 'İlaç' }} />
-              <Stack.Screen name="gun" options={{ ...sheet, title: 'Gün nasıldı' }} />
+              <Stack.Screen name="ayarlar" options={{ ...pushed, title: '' }} />
+              <Stack.Screen name="ilaclar" options={{ ...pushed, title: '' }} />
+              <Stack.Screen name="rapor" options={{ ...pushed, title: '' }} />
+              <Stack.Screen name="tahliller" options={{ ...pushed, title: '' }} />
+              <Stack.Screen name="oneriler" options={{ ...pushed, title: '' }} />
+              <Stack.Screen name="ilac" options={{ ...sheet, title: '' }} />
+              <Stack.Screen name="gun" options={{ ...sheet, title: '' }} />
               <Stack.Screen name="hosgeldin" options={{ presentation: 'fullScreenModal', headerShown: false, gestureEnabled: false }} />
             </Stack>
           </AppProvider>

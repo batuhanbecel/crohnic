@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { TextInput } from '../../../components/text';
@@ -34,7 +34,14 @@ export default function Ask() {
   return (
     <Screen tone={app.phase === 'atak' ? 'flare' : 'calm'}>
       <ThinkingOverlay mode={busy} />
-      <Row gap={4} style={{ alignItems: 'flex-end', marginTop: 4 }}>
+      <Stack.Screen
+        options={{
+          unstable_headerRightItems: () => [
+            { type: 'button', label: 'Bugün ne yesem', icon: { type: 'sfSymbol', name: 'fork.knife' }, onPress: () => router.push('/oneriler') },
+          ],
+        }}
+      />
+      <Row gap={4} style={{ alignItems: 'flex-end', marginTop: 2 }}>
         <View style={{ flex: 1 }}>
           <T v="small" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft}>
             {app.phase === 'atak' ? 'Atak modunda bakıyorum' : 'Remisyon modunda bakıyorum'}

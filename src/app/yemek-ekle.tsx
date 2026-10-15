@@ -91,7 +91,7 @@ export default function AddMeal() {
 
   return (
     <Screen
-      header={false}
+      title="Öğün ekle"
       footer={
         <Button
           title={all.length > 1 ? `${all.length} yemeği kaydet` : all.length ? 'Kaydet' : 'Önce yemeği yaz'}

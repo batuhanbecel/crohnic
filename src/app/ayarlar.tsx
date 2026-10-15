@@ -169,7 +169,7 @@ export default function Settings() {
 
 
   return (
-    <Screen header={false}>
+    <Screen title="Ayarlar">
       <Card style={{ gap: 4, paddingVertical: 6 }}>
         <LinkRow icon="pills.fill" title="İlaçlarım" onPress={() => router.push('/ilaclar')} />
         <View style={{ height: 1, backgroundColor: palette.hairline }} />

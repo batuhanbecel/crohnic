@@ -1,4 +1,4 @@
-import { router, useFocusEffect } from 'expo-router';
+import { Stack, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
@@ -12,7 +12,7 @@ import { MonthCalendar } from '../../../components/MonthCalendar';
 import { REACTIONS } from '../../../components/ReactionPicker';
 import { SwipeRow } from '../../../components/SwipeRow';
 import { TextInput } from '../../../components/text';
-import { Card, Empty, Icon, IconBubble, IconButton, Row, Screen, Segmented, T, Tap, st } from '../../../components/ui';
+import { Card, Empty, Icon, IconBubble, Row, Screen, Segmented, T, Tap, st } from '../../../components/ui';
 import { useApp } from '../../../lib/app-state';
 import { dayKey, dayLabel, isoDay, now, timeLabel } from '../../../lib/dates';
 import * as db from '../../../lib/db';
@@ -182,20 +182,22 @@ export default function Journal() {
   return (
     <View style={{ flex: 1 }}>
       <Screen tone={app.phase === 'atak' ? 'flare' : 'calm'}>
-        <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4 }}>
-          <T v="large" accessibilityRole="header">
-            Günlük
-          </T>
-          <Row gap={8}>
-            <IconButton
-              name={mode === 'list' ? 'calendar' : 'list.bullet'}
-              label={mode === 'list' ? 'Takvim görünümü' : 'Liste görünümü'}
-              fallback={mode === 'list' ? '📅' : '☰'}
-              onPress={() => setMode(mode === 'list' ? 'calendar' : 'list')}
-            />
-            <IconButton name="plus" label="Kayıt ekle" fallback="+" onPress={() => setAdding(true)} />
-          </Row>
-        </Row>
+        <Stack.Screen
+          options={{
+            unstable_headerRightItems: () => [
+              {
+                type: 'button',
+                label: mode === 'list' ? 'Takvim' : 'Liste',
+                icon: { type: 'sfSymbol', name: mode === 'list' ? 'calendar' : 'list.bullet' },
+                onPress: () => setMode(mode === 'list' ? 'calendar' : 'list'),
+              },
+              { type: 'button', label: 'Kayıt ekle', icon: { type: 'sfSymbol', name: 'plus' }, onPress: () => setAdding(true) },
+            ],
+          }}
+        />
+        <T v="large" accessibilityRole="header" style={{ marginTop: 2 }}>
+          Günlük
+        </T>
         <AddMenu visible={adding} onClose={() => setAdding(false)} />
 
         {mode === 'list' ? (

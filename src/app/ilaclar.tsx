@@ -30,7 +30,7 @@ export default function Meds() {
   );
 
   return (
-    <Screen header={false}>
+    <Screen title="İlaçlarım">
       <Doses showEmpty title="Bugün" link={false} />
 
       <SectionTitle title="Kullandıkların" action="Ekle" onAction={() => router.push('/ilac')} />

@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, Platform, ScrollView, View } from 'react-native';
 import { ThinkingOverlay } from '../../../components/ThinkingOverlay';
 import { Text } from '../../../components/text';
-import { Button, Card, Chip, Icon, Row, T, Tap, VERDICT_UI } from '../../../components/ui';
+import { Button, Card, Chip, Row, T, Tap, VERDICT_UI } from '../../../components/ui';
 import { useApp } from '../../../lib/app-state';
 import * as db from '../../../lib/db';
 import { CATEGORIES, FOODS, searchFoods, type Category, type Verdict } from '../../../lib/foods';
@@ -76,7 +76,6 @@ export default function FoodList() {
           <T v="small" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft} style={{ flex: 1 }}>
             {FOODS.length} yemek, {app.phase === 'atak' ? 'atak' : 'remisyon'} dönemine göre
           </T>
-          <Icon name="info.circle" size={15} color={palette.inkSoft} fallback="ⓘ" />
         </Row>
       </Tap>
       <View style={{ gap: 8 }}>
@@ -152,6 +151,13 @@ export default function FoodList() {
         }}
       />
       <ThinkingOverlay mode={busy} />
+      <Stack.Screen
+        options={{
+          unstable_headerRightItems: () => [
+            { type: 'button', label: 'Nasıl değerlendiriliyor', icon: { type: 'sfSymbol', name: 'info.circle' }, onPress: explain },
+          ],
+        }}
+      />
       <Stack.SearchBar
         placeholder="Ara ya da yeni bir yemek yaz"
         onChangeText={(e) => setQ(e.nativeEvent.text)}

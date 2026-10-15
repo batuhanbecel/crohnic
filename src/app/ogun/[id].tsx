@@ -112,7 +112,7 @@ export default function MealDetail() {
     ]);
 
   return (
-    <Screen header={false}>
+    <Screen title="Öğün">
       {uri ? (
         <Image source={{ uri }} style={{ width: '100%', aspectRatio: 1.3, borderRadius: radius.xl }} />
       ) : (

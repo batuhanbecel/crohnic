@@ -60,7 +60,7 @@ export default function Labs() {
   const filled = LAB_KINDS.filter((x) => byKind.has(x.key));
 
   return (
-    <Screen header={false}>
+    <Screen title="Tahliller ve kilo">
       <Row gap={4}>
         <Mascot mood="doktor" size={76} />
         <T v="callout" color={palette.inkSoft} style={{ flex: 1 }}>

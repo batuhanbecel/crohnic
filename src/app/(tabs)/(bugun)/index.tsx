@@ -1,4 +1,4 @@
-import { router, useFocusEffect } from 'expo-router';
+import { Stack, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, Alert, Platform, View } from 'react-native';
@@ -9,7 +9,7 @@ import { Mascot, type Mood } from '../../../components/Mascot';
 import { QuickLog } from '../../../components/QuickLog';
 import { REACTIONS, ReactionPicker } from '../../../components/ReactionPicker';
 import { Text } from '../../../components/text';
-import { Button, Card, Icon, IconBubble, IconButton, Row, Screen, T, Tap, type SymbolName } from '../../../components/ui';
+import { Button, Card, Icon, IconBubble, Row, Screen, T, Tap, type SymbolName } from '../../../components/ui';
 import { useApp } from '../../../lib/app-state';
 import { lastBackup } from '../../../lib/backup';
 import { dayKey, daysSince, isoDay, now, relative, startOfDay, timeLabel, todayLabel } from '../../../lib/dates';
@@ -358,6 +358,14 @@ export default function Home() {
 
   return (
     <Screen tone={flare ? 'flare' : 'calm'}>
+      {/* the bar shows no title, only the glass settings button (and with it the scroll edge blur) */}
+      <Stack.Screen
+        options={{
+          unstable_headerRightItems: () => [
+            { type: 'button', label: 'Ayarlar', icon: { type: 'sfSymbol', name: 'gearshape' }, onPress: () => router.push('/ayarlar') },
+          ],
+        }}
+      />
       {/* who, which phase, how today feels: one compact header instead of a card */}
       <Row gap={10} style={{ alignItems: 'center', marginTop: 4 }}>
         <View style={{ flex: 1, gap: 4 }}>
@@ -379,9 +387,6 @@ export default function Home() {
           </Tap>
         </View>
         <Mascot mood={mood} size={84} />
-        <View style={{ alignSelf: 'flex-start' }}>
-          <IconButton name="gearshape" label="Ayarlar" fallback="⚙️" onPress={() => router.push('/ayarlar')} />
-        </View>
       </Row>
 
 
