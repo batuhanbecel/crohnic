@@ -189,25 +189,45 @@ function wordForms(w: string) {
   return forms;
 }
 
+/**
+ * Search form of a name: like the slug, but accents fold ("Nestlé" → nestle, "Caffè" → caffe)
+ * and apostrophes vanish ("McDonald's" → mcdonalds). Ids keep using slug(), so stored meals
+ * still find their food.
+ */
+const KEYS = new Map<string, string>();
+function searchKey(s: string) {
+  let k = KEYS.get(s);
+  if (k == null) {
+    k = slug(
+      s
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/['’`]/g, ''),
+    );
+    KEYS.set(s, k);
+  }
+  return k;
+}
+
 function matches(target: string, words: string[][]) {
   return words.every((forms) => forms.some((f) => target.includes(f)));
 }
 
 /** Search that ignores Turkish characters and suffixes, and knows old/short names. */
 export function searchFoods(q: string, list: Food[] = FOODS) {
-  const n = slug(q);
+  const n = searchKey(q);
   if (!n) return list;
   const words = n.split('-').map(wordForms);
   const allowed = list === FOODS ? null : new Set(list.map((f) => f.id));
   const hits = new Map<string, Food>();
-  for (const f of list) if (matches(slug(f.name), words)) hits.set(f.id, f);
+  for (const f of list) if (matches(searchKey(f.name), words)) hits.set(f.id, f);
   for (const [from, food] of ALIASES) {
-    if ((!allowed || allowed.has(food.id)) && matches(slug(from), words)) hits.set(food.id, food);
+    if ((!allowed || allowed.has(food.id)) && matches(searchKey(from), words)) hits.set(food.id, food);
   }
   const aliasOf = (f: Food) => ALIAS_SLUGS.get(f.id) ?? [];
   // exact name or short name first ("muz" → Olgun muz), then names that start with the query
   const rank = (f: Food) => {
-    const s = slug(f.name);
+    const s = searchKey(f.name);
     const al = aliasOf(f);
     if (s === n || al.includes(n)) return 0;
     if (s.startsWith(n)) return 1;

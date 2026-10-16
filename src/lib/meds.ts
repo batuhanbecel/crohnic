@@ -1,5 +1,5 @@
 import type { Med, MedLog } from './db';
-import { fromIsoDay, isoDay, startOfDay } from './dates';
+import { dayLabel, fromIsoDay, isoDay, startOfDay } from './dates';
 
 const DAY = 86400000;
 
@@ -58,6 +58,39 @@ export function dosesForToday(meds: Med[], logs: MedLog[], at: number): Dose[] {
     }
   }
   return out.sort((a, b) => a.due - b.due);
+}
+
+/** "40 dk", "1 saat", "2 saat 15 dk" */
+export function spanLabel(min: number) {
+  if (min < 60) return `${Math.max(1, min)} dk`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m ? `${h} saat ${m} dk` : `${h} saat`;
+}
+
+export type DoseWhen = 'missed' | 'late' | 'now' | 'soon' | 'later';
+
+/**
+ * Where an unmarked dose stands at `at`. Only 'now' (its time came in the last half hour) and
+ * 'late' mean "take it": a dose an hour away is 'soon' and must never be called due.
+ */
+export function doseWhen(due: number, at: number): { when: DoseWhen; text: string } {
+  if (due < startOfDay(at)) return { when: 'missed', text: `${dayLabel(due)} kaçırıldı` };
+  const ms = due - at;
+  if (ms > 0) {
+    const min = Math.ceil(ms / 60000);
+    return { when: min <= 120 ? 'soon' : 'later', text: `${spanLabel(min)} sonra` };
+  }
+  const ago = Math.floor(-ms / 60000);
+  if (ago <= 30) return { when: 'now', text: 'saati geldi' };
+  return { when: 'late', text: `${spanLabel(ago)} geçti` };
+}
+
+/** The next time a daily slot comes round after `at` (today if it's still ahead, else tomorrow). */
+export function nextSlot([h, m]: [number, number], at: number) {
+  const d = new Date(at);
+  const today = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m).getTime();
+  return today > at ? today : new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, h, m).getTime();
 }
 
 /** Taken / due in a window, per med. */

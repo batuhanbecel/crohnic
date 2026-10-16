@@ -3,6 +3,7 @@ import { Image, View } from 'react-native';
 import { Text } from './text';
 import { timeLabel } from '../lib/dates';
 import type { Meal, MealGroup } from '../lib/db';
+import { customEmoji } from '../lib/custom-emoji';
 import { FOOD_BY_ID, findFoodByName } from '../lib/foods';
 import { photoUri } from '../lib/photos';
 import { palette, radius, surface } from '../lib/theme';
@@ -10,7 +11,7 @@ import { REACTIONS } from './ReactionPicker';
 import { Card, Row, T, Tap, VERDICT_UI } from './ui';
 
 export function emojiOf(meal: Pick<Meal, 'food_id' | 'name'>) {
-  return (meal.food_id ? FOOD_BY_ID[meal.food_id]?.emoji : null) ?? findFoodByName(meal.name)?.emoji ?? '🍽️';
+  return (meal.food_id ? FOOD_BY_ID[meal.food_id]?.emoji : null) ?? findFoodByName(meal.name)?.emoji ?? customEmoji(meal.name) ?? '🍽️';
 }
 
 export function MealThumb({ meal, size = 50 }: { meal: Pick<Meal, 'photo' | 'food_id' | 'name'>; size?: number }) {

@@ -2,6 +2,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { DEFAULT_AI, newInstallId, setInstallId, type AiConfig, type Analysis } from './ai';
 import * as db from './db';
+import { loadCustomEmojis } from './custom-emoji';
 import { setLactose, setStoma, setStricture, setTagHistory } from './tolerance';
 import type { Phase } from './foods';
 
@@ -54,6 +55,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setStoma((await db.getSetting(sql, 'stoma')) === '1');
       setLactose((await db.getSetting(sql, 'lactose')) === '1');
       setTagHistory(await db.allRatedMeals(sql));
+      await loadCustomEmojis(sql);
       const [p, url, token, n, seen, mealCount] = await Promise.all([
         db.getPhase(sql),
         db.getSetting(sql, 'ai_url'),
@@ -77,6 +79,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // keep the per-tag history behind the general verdicts in step with new ratings
   useEffect(() => {
     if (dataVersion) db.allRatedMeals(sql).then(setTagHistory);
+    // a restored backup brings its own emoji choices
+    if (dataVersion) loadCustomEmojis(sql);
   }, [sql, dataVersion]);
 
   const changePhase = useCallback(

@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { askAlarmPermission, alarmSupport, syncAlarms, type AlarmSpec } from './alarm';
 import * as db from './db';
 import { isoDay, startOfDay } from './dates';
-import { fmtTime, parseTimes, slotsBetween } from './meds';
+import { fmtTime, nextSlot, parseTimes, slotsBetween } from './meds';
 
 /**
  * Local notifications only (no push server):
@@ -182,6 +182,18 @@ async function cancelPrefix(prefixes: string[]) {
 const NAGS_MIN = [15, 45];
 const ALARM_SIG = 'alarm_sig';
 
+/**
+ * A daily slot whose next dose was already marked (taken early, or skipped) must not ring or say
+ * "zamanı geldi". A repeating trigger can't skip one day, so such a slot gets one-off reminders
+ * for the days after instead; the next sync (any app open) puts the repeating one back.
+ */
+function skipNext(m: db.Med, slot: [number, number], done: Set<string>, now: number) {
+  const next = nextSlot(slot, now);
+  if (!done.has(`${m.id}:${next}`)) return null;
+  const d = new Date(next);
+  return Array.from({ length: 6 }, (_, i) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1 + i, slot[0], slot[1]).getTime());
+}
+
 export function medTitle(m: Pick<db.Med, 'name' | 'dose'>) {
   return m.dose ? `${m.name} · ${m.dose}` : m.name;
 }
@@ -192,7 +204,11 @@ async function syncMedAlarms(sql: SQLiteDatabase, meds: db.Med[], done: Set<stri
   for (const m of meds.filter((x) => x.remind === 1)) {
     const title = `💊 ${medTitle(m)}`;
     if (m.kind === 'daily') {
-      for (const [hour, minute] of parseTimes(m.times)) specs.push({ title, hour, minute });
+      for (const [hour, minute] of parseTimes(m.times)) {
+        const later = skipNext(m, [hour, minute], done, now);
+        if (later) for (const at of later.slice(0, 3)) specs.push({ title, at });
+        else specs.push({ title, hour, minute });
+      }
     } else {
       const next = slotsBetween(m, now + 60000, now + Math.max(60, m.every_days * 5) * DAY).filter((t) => !done.has(`${m.id}:${t}`));
       for (const at of next.slice(0, 3)) specs.push({ title, at });
@@ -226,6 +242,13 @@ export async function syncReminders(sql: SQLiteDatabase) {
       if (m.kind === 'daily') {
         // repeating daily trigger: keeps working even if the app isn't opened for days
         for (const [h, min] of parseTimes(m.times)) {
+          const later = skipNext(m, [h, min], done, now);
+          if (later) {
+            for (const t of later) {
+              await schedule(`med-${m.id}-${t}`, 'İlaç saati', `${title} zamanı geldi.`, t, '/ilaclar', { category: CATEGORY.med, data: { kind: 'med', medId: m.id, due: t } });
+            }
+            continue;
+          }
           await Notifications.scheduleNotificationAsync({
             identifier: `med-${m.id}-${fmtTime([h, min]).replace(':', '')}`,
             content: {

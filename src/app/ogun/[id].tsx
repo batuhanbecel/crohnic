@@ -2,9 +2,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Image, View } from 'react-native';
-import { Text, TextInput } from '../../components/text';
+import { TextInput } from '../../components/text';
+import { FoodEmoji } from '../../components/FoodEmoji';
 import { FoodPicker } from '../../components/FoodPicker';
-import { GroupThumb, emojiOf } from '../../components/MealRow';
+import { GroupThumb } from '../../components/MealRow';
 import { ReactionPicker } from '../../components/ReactionPicker';
 import { WhenField } from '../../components/WhenField';
 import { Button, Card, Icon, Row, Screen, Segmented, T, Tap, VerdictBadge, st } from '../../components/ui';
@@ -128,7 +129,7 @@ export default function MealDetail() {
         <T v="h3">Tabakta</T>
         {items.map((m) => (
           <Row key={m.id} gap={10} style={{ backgroundColor: surface.well, borderRadius: radius.md, paddingVertical: 8, paddingHorizontal: 12 }}>
-            <Text style={{ fontSize: 20 }}>{emojiOf(m)}</Text>
+            <FoodEmoji name={m.name} foodId={m.food_id} />
             <T v="callout" style={{ flex: 1 }} numberOfLines={1}>
               {m.name}
             </T>

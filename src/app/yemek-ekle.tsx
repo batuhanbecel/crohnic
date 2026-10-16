@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useMemo, useState } from 'react';
 import { Alert, Image, View } from 'react-native';
-import { Text } from '../components/text';
+import { FoodEmoji } from '../components/FoodEmoji';
 import { FoodPicker } from '../components/FoodPicker';
 import { ReactionPicker } from '../components/ReactionPicker';
 import { WhenField } from '../components/WhenField';
@@ -116,7 +116,7 @@ export default function AddMeal() {
           <View style={{ gap: 6 }}>
             {items.map((it) => (
               <Row key={it.key} gap={10} style={{ backgroundColor: surface.well, borderRadius: radius.md, paddingVertical: 8, paddingHorizontal: 12 }}>
-                <Text style={{ fontSize: 20 }}>{it.food?.emoji ?? '🍽️'}</Text>
+                <FoodEmoji name={it.name} foodId={it.food?.id} />
                 <T v="callout" style={{ flex: 1 }} numberOfLines={1}>
                   {it.name}
                 </T>

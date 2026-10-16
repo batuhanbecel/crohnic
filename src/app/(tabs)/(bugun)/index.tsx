@@ -1,7 +1,7 @@
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, Platform, View } from 'react-native';
+import { ActionSheetIOS, Alert, AppState, Platform, View } from 'react-native';
 import { BRISTOL } from '../../../components/bristol';
 import { SLEEP, STRESS } from '../../../components/checkin';
 import { GroupThumb } from '../../../components/MealRow';
@@ -14,9 +14,10 @@ import { useApp } from '../../../lib/app-state';
 import { lastBackup } from '../../../lib/backup';
 import { dayKey, daysSince, isoDay, now, relative, startOfDay, timeLabel, todayLabel } from '../../../lib/dates';
 import * as db from '../../../lib/db';
-import { dosesForToday, type Dose } from '../../../lib/meds';
+import { doseWhen, dosesForToday, type Dose } from '../../../lib/meds';
 import { askPermission, cancelMealReminder, permission, syncReminders, type PermissionState } from '../../../lib/reminders';
 import { palette, radius, shadow, soft, surface, type } from '../../../lib/theme';
+import { slotForHour } from '../../../lib/suggest';
 import { useDayPlan } from '../../../lib/use-day-plan';
 
 
@@ -68,7 +69,6 @@ export default function Home() {
     const t = setTimeout(() => setThanks(null), 3500);
     return () => clearTimeout(t);
   }, [thanks]);
-  const nextMeal = dayPlan.plan?.find((x) => x.key === dayPlan.current);
 
   useEffect(() => {
     if (app.ready && !app.onboarded) router.push('/hosgeldin');
@@ -120,6 +120,16 @@ export default function Home() {
   useFocusEffect(
     useCallback(() => {
       load();
+      // what Kıvırcık says depends on the clock (a dose comes due, a meal waits for its answer):
+      // reload every half minute and on return to the app, so it never says something stale
+      const tick = setInterval(load, 30000);
+      const sub = AppState.addEventListener('change', (s) => {
+        if (s === 'active') load();
+      });
+      return () => {
+        clearInterval(tick);
+        sub.remove();
+      };
     }, [load, app.dataVersion]), // eslint-disable-line react-hooks/exhaustive-deps
   );
 
@@ -130,7 +140,7 @@ export default function Home() {
     if (meals.some((m) => m.reaction === 2)) return 'agri';
     if (app.phase === 'atak') return 'ok';
     if (meals.length >= 2 && meals.every((m) => m.reaction === 0)) return 'cheer';
-    if (!meals.length && hour < 11) return 'merhaba';
+    if (!meals.length && hour >= 5 && hour < 11) return 'merhaba';
     return 'happy';
   }, [meals, app.phase, loadedAt, redFlag, daily]);
 
@@ -206,14 +216,21 @@ export default function Home() {
   };
 
   // ----- what needs an answer now -----
-  const dayStart = startOfDay(loadedAt || 0);
-  const dueDoses = doses.filter((d) => !d.log && d.due <= (loadedAt || 0) + 2 * 3600000);
+  const at = loadedAt || 0;
+  const dayStart = startOfDay(at);
+  // unmarked doses up to two hours ahead; only those whose time has come are asked about
+  const dueDoses = doses.filter((d) => !d.log && d.due <= at + 2 * 3600000);
   const checkedIn = !!daily && (daily.stress != null || daily.sleep_q != null || daily.sleep_h != null);
-  const askCheckIn = !checkedIn && new Date(loadedAt || 0).getHours() >= 18;
+  const askCheckIn = !checkedIn && new Date(at).getHours() >= 18;
   const askNotifs = perm === 'undetermined' && !promptSeen;
   // Kıvırcık asks about one thing in the bubble and takes the answer there; the "Sıradaki"
   // card lists the rest, so nothing is asked twice
-  const askDose = !redFlag ? dueDoses.find((d) => d.due >= dayStart) : undefined;
+  const askDose = !redFlag
+    ? dueDoses.find((d) => {
+        const w = doseWhen(d.due, at).when;
+        return w === 'now' || w === 'late';
+      })
+    : undefined;
   const askMeal = !redFlag && !askDose ? pending[0] : undefined;
   const next = pending.filter((m) => m !== askMeal).slice(0, 2);
 
@@ -234,20 +251,26 @@ export default function Home() {
         <ReactionPicker compact onChange={(r) => react(m, r)} />
       </View>
     )),
-    ...dueDoses.filter((d) => d !== askDose).map((d) => (
-      <Row key={`d${d.med.id}:${d.due}`} gap={12} style={{ paddingVertical: 12 }}>
-        <IconBubble name="pills.fill" color={palette.peri} dim={40} fallback="💊" />
-        <View style={{ flex: 1 }}>
-          <T v="h3" numberOfLines={1}>
-            {d.med.name}
-          </T>
-          <T v="small" color={d.due < dayStart ? palette.bad : palette.inkSoft}>
-            {d.due < dayStart ? 'Kaçırılmış doz' : `${timeLabel(d.due)}${d.med.dose ? `, ${d.med.dose}` : ''}`}
-          </T>
-        </View>
-        <Button title="Aldım" compact onPress={() => take(d)} />
-      </Row>
-    )),
+    ...dueDoses
+      .filter((d) => d !== askDose)
+      .map((d) => {
+        const w = doseWhen(d.due, at);
+        const overdue = w.when === 'missed' || w.when === 'late';
+        return (
+          <Row key={`d${d.med.id}:${d.due}`} gap={12} style={{ paddingVertical: 12 }}>
+            <IconBubble name="pills.fill" color={palette.peri} dim={40} fallback="💊" />
+            <View style={{ flex: 1 }}>
+              <T v="h3" numberOfLines={1}>
+                {d.med.name}
+              </T>
+              <T v="small" color={overdue ? palette.bad : palette.inkSoft} numberOfLines={1}>
+                {w.when === 'missed' ? w.text : [timeLabel(d.due), w.text, d.med.dose].filter(Boolean).join(' · ')}
+              </T>
+            </View>
+            <Button title="Aldım" kind={w.when === 'soon' ? 'glass' : 'primary'} compact onPress={() => take(d)} />
+          </Row>
+        );
+      }),
     ...(askCheckIn
       ? [
           <Tap key="checkin" onPress={() => router.push('/gun')}>
@@ -366,6 +389,12 @@ export default function Home() {
 
   const todayDoses = doses.filter((d) => d.due >= dayStart);
   const realMeals = meals.filter((g) => g.items.some((m) => !db.isTobacco(m)));
+  // suggest the current meal, or the next one when this one is already logged (no "akşam için
+  // ne yesem?" right after dinner); a snack after midnight doesn't count as breakfast
+  const slotOf = (t: number) => (new Date(t).getHours() < 5 ? null : slotForHour(new Date(t).getHours()));
+  const slotKeys = dayPlan.plan?.map((x) => x.key) ?? [];
+  const mealSlot = slotKeys.slice(Math.max(0, slotKeys.indexOf(dayPlan.current))).find((k) => !realMeals.some((g) => slotOf(g.eaten_at) === k));
+  const nextMeal = mealSlot ? dayPlan.plan?.find((x) => x.key === mealSlot) : undefined;
   const counts = {
     meals: realMeals.length,
     toilet: bowel.length,
@@ -385,21 +414,32 @@ export default function Home() {
   const shown = entries.slice(-5);
 
   // what Kıvırcık says: the single most useful thing right now
-  const hour = new Date(loadedAt || 0).getHours();
+  // every line has to be true at this moment: no "saatin geldi" an hour early, no "günaydın" at 2 am
+  const hour = new Date(at).getHours();
+  const doseLine = (d: Dose) =>
+    doseWhen(d.due, at).when === 'now'
+      ? `${d.med.name} saati geldi${d.med.dose ? ` (${d.med.dose})` : ''}. Aldın mı?`
+      : `${d.med.name} saati geçti (${[timeLabel(d.due), d.med.dose].filter(Boolean).join(', ')}). Aldın mı?`;
   const message = thanks
     ? thanks.text
     : redFlag
     ? 'Son günlerde zorlanmışsın. Aşağıdaki notu doktorunla paylaşmanı isterim.'
     : askDose
-      ? `${askDose.med.name} saatin geldi${askDose.med.dose ? ` (${askDose.med.dose})` : ''}. Aldın mı?`
+      ? doseLine(askDose)
       : askMeal
         ? `${askMeal.name} nasıl geçti?`
-        : !realMeals.length && hour < 11
+        : !realMeals.length && hour < 5
+          ? 'Gece geç oldu. Bir şey yediysen yazalım, sonra biraz dinlen.'
+          : !realMeals.length && hour < 11
           ? 'Günaydın! Kahvaltıda ne var?'
           : !realMeals.length
             ? 'Bugün henüz bir şey yazmadın. İlk öğünle başlayalım mı?'
             : meals.some((m) => m.reaction === 2)
-              ? 'Bir şey dokunmuş. Akşamı hafif geçirelim: çorba, pilav, haşlama.'
+              ? hour < 16
+                ? 'Bir şey dokunmuş. Günün kalanını hafif geçirelim: çorba, pilav, haşlama.'
+                : hour < 22
+                  ? 'Bir şey dokunmuş. Akşamı hafif geçirelim: çorba, pilav, haşlama.'
+                  : 'Bir şey dokunmuş. Bu gece mideni dinlendir, yarına hafif başlayalım.'
               : flare
                 ? 'Atak günlerinde yumuşak, az yağlı ve küçük porsiyonlarla gidelim.'
                 : daily?.feel != null && daily.feel >= 3
