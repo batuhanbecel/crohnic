@@ -76,6 +76,9 @@ AccessibilityInfo.addEventListener?.('reduceMotionChanged', (v) => {
 export function prefersReducedMotion() {
   return reduceMotion;
 }
+export function prefersReducedTransparency() {
+  return reduceTransparency;
+}
 
 const hapticTap = () => Haptics.selectionAsync().catch(() => {});
 
@@ -119,6 +122,7 @@ export function GlassPress({
   haptic = 'select',
   accessibilityLabel,
   glass,
+  selected,
 }: {
   children: React.ReactNode;
   onPress?: () => void;
@@ -129,12 +133,14 @@ export function GlassPress({
   haptic?: 'select' | 'impact' | 'none';
   accessibilityLabel?: string;
   glass?: boolean;
+  /** for toggles and choices (chips, option tiles): VoiceOver says "selected" */
+  selected?: boolean;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ disabled: !!disabled }}
+      accessibilityState={{ disabled: !!disabled, selected }}
       disabled={disabled}
       onLongPress={onLongPress}
       onPress={() => {
@@ -453,7 +459,7 @@ export function Button({
 export function Chip({ label, active, onPress, color = palette.lettuce, emoji }: { label: string; active?: boolean; onPress?: () => void; color?: string; emoji?: string }) {
   const fill = color === palette.ink ? palette.lettuce : color;
   return (
-    <GlassPress onPress={onPress} tint={active ? fill : surface.well} style={st.chip} accessibilityLabel={label}>
+    <GlassPress onPress={onPress} tint={active ? fill : surface.well} style={st.chip} accessibilityLabel={label} selected={!!active}>
       <Label small fit={false} color={active ? onTint(fill) : palette.ink}>
         {`${emoji ? `${emoji}  ` : ''}${label}`}
       </Label>
@@ -554,6 +560,7 @@ export function OptionTiles<K extends string | number>({
               tint={on ? it.color : surface.well}
               style={[st.option, { minHeight: compact ? 70 : 80, paddingVertical: 8 }]}
               accessibilityLabel={it.label}
+              selected={on}
             >
               <Text style={{ fontSize: compact ? 22 : 26 }}>{it.emoji}</Text>
               <Label small color={on ? onTint(it.color) : palette.ink}>

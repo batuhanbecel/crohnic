@@ -72,7 +72,7 @@ export default function FoodList() {
 
   const header = (
     <View style={{ gap: 12, marginBottom: 12 }}>
-      <T v="large">Yemekler</T>
+      <T v="large" accessibilityRole="header">Yemekler</T>
       <Tap onPress={explain} haptic={false}>
         <Row gap={6} style={{ paddingHorizontal: 2, marginTop: -6 }}>
           <T v="small" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft} style={{ flex: 1 }}>

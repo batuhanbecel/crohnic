@@ -646,6 +646,13 @@ export async function listDaily(db: SQLiteDatabase, limit = 400) {
 
 // ---------- backup ----------
 const BACKUP_TABLES = ['meals', 'symptoms', 'bowel', 'phases', 'meds', 'med_logs', 'daily', 'labs', 'settings'] as const;
+/** "Tüm verilerimi sil": every personal record and setting. Only the anonymous install id stays (it rate-limits photo analysis). */
+export async function wipeAll(db: SQLiteDatabase) {
+  await db.withTransactionAsync(async () => {
+    for (const t of BACKUP_TABLES) await db.runAsync(t === 'settings' ? "DELETE FROM settings WHERE key <> 'install_id'" : `DELETE FROM ${t}`);
+  });
+}
+
 /** Settings that belong to this phone/build and are never restored. */
 const LOCAL_SETTINGS = ['ai_url', 'ai_token', 'onboarded', 'last_backup', 'install_id', 'last_auto_backup'];
 

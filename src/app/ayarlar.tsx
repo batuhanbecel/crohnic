@@ -3,7 +3,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import * as Updates from 'expo-updates';
 import { useCallback, useState } from 'react';
-import { Alert, Linking, Switch, View } from 'react-native';
+import { Alert, DevSettings, Linking, Switch, View } from 'react-native';
 import { TextInput } from '../components/text';
 import { Logo } from '../components/Mascot';
 import { Button, Card, Icon, Row, Screen, T, Tap, st } from '../components/ui';
@@ -15,6 +15,9 @@ import * as db from '../lib/db';
 import { SETTINGS, askPermission, isOn, permission, syncReminders, type PermissionState } from '../lib/reminders';
 import { palette } from '../lib/theme';
 import { hasLactose, hasStoma, hasStricture, setLactose, setStoma, setStricture } from '../lib/tolerance';
+import { wipeEverything } from '../lib/wipe';
+
+const PRIVACY_URL = 'https://crohnic.vercel.app/gizlilik';
 
 export default function Settings() {
   const sql = useSQLiteContext();
@@ -145,6 +148,31 @@ export default function Settings() {
       setTesting(false);
     }
   };
+
+  const [wiping, setWiping] = useState(false);
+  // a fresh start: everything on this phone goes, then the app opens to the intro again
+  const wipe = () =>
+    Alert.alert(
+      'Tüm verilerin silinsin mi?',
+      'Öğünler, tuvalet ve semptom kayıtları, ilaçlar, tahliller, dönemler, fotoğraflar ve otomatik yedekler bu telefondan silinir. Geri alınamaz. Dışarı aktardığın yedek dosyaları yerinde kalır; istersen önce yedek al.',
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        {
+          text: 'Hepsini sil',
+          style: 'destructive',
+          onPress: async () => {
+            setWiping(true);
+            try {
+              await wipeEverything(sql);
+            } finally {
+              setWiping(false);
+            }
+            if (__DEV__ || !Updates.isEnabled) DevSettings.reload();
+            else Updates.reloadAsync().catch(() => DevSettings.reload());
+          },
+        },
+      ],
+    );
 
   const checkUpdate = async () => {
     if (__DEV__ || !Updates.isEnabled) {
@@ -318,6 +346,23 @@ export default function Settings() {
             </Row>
           </View>
         )}
+      </Card>
+
+      <Card style={{ gap: 10 }}>
+        <T v="h3">Gizlilik ve verilerin</T>
+        <T v="small" color={palette.inkSoft}>
+          Hesap, reklam ya da takip yok. Kayıtların yalnızca bu telefonda durur. Fotoğraf analizi kullandığında sadece o fotoğraf ve değerlendirme için gereken bilgiler sunucuya gider, saklanmaz.
+        </T>
+        <Tap onPress={() => Linking.openURL(PRIVACY_URL)} accessibilityRole="link">
+          <Row gap={12} style={{ paddingVertical: 6 }}>
+            <Icon name="hand.raised.fill" color={palette.lettuceDeep} fallback="🛡️" />
+            <T v="callout" style={{ flex: 1 }}>
+              Gizlilik politikası
+            </T>
+            <Icon name="arrow.up.right" size={13} color={palette.inkFaint} fallback="↗" />
+          </Row>
+        </Tap>
+        <Button title="Tüm verilerimi sil" kind="danger" icon="trash" onPress={wipe} loading={wiping} />
       </Card>
 
       <Card style={{ gap: 10 }}>

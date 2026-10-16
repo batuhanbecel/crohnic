@@ -46,7 +46,7 @@ export default function Ask() {
           <T v="small" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft}>
             {app.phase === 'atak' ? 'Atak modunda bakıyorum' : 'Remisyon modunda bakıyorum'}
           </T>
-          <T v="large">Bunu yesem mi?</T>
+          <T v="large" accessibilityRole="header">Bunu yesem mi?</T>
         </View>
         <Mascot mood="soru" size={80} />
       </Row>

@@ -1,5 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useMemo, useState } from 'react';
 import { Alert, Image, View } from 'react-native';
@@ -16,6 +16,7 @@ import { FOOD_BY_ID, findFoodByName, type Food, type Phase } from '../lib/foods'
 import { savePhoto } from '../lib/photos';
 import { palette, radius, surface } from '../lib/theme';
 import { generalVerdict } from '../lib/tolerance';
+import { useConfirmDiscard } from '../lib/use-confirm-discard';
 
 type Item = { key: string; name: string; food: Food | null };
 
@@ -55,6 +56,8 @@ export default function AddMeal() {
 
   // Whatever is still in the box counts as an item too, so nothing typed gets lost.
   const all = useMemo(() => (text.trim() ? [...items, { key: 'typing', name: text.trim(), food: findFoodByName(text) ?? null }] : items), [items, text]);
+  // a half-written meal isn't lost to an accidental swipe down
+  const leave = useConfirmDiscard(all.length > 0 || !!photo);
 
   const save = async () => {
     if (!all.length) return;
@@ -81,7 +84,7 @@ export default function AddMeal() {
       );
       await afterMealSaved(sql, saved.ids, reaction);
       app.bump();
-      router.back();
+      leave();
     } catch (e: any) {
       Alert.alert('Kaydedilemedi', e?.message ?? '');
     } finally {

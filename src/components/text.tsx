@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { Text as RNText, TextInput as RNTextInput, StyleSheet, type StyleProp, type TextInputProps, type TextProps, type TextStyle } from 'react-native';
+import { AccessibilityInfo, Text as RNText, TextInput as RNTextInput, StyleSheet, type StyleProp, type TextInputProps, type TextProps, type TextStyle } from 'react-native';
 
 /**
  * Text and TextInput for the whole app:
@@ -24,10 +24,29 @@ const FACES: Record<string, string> = {
   '900': 'Nunito_900Black',
 };
 
+/**
+ * Settings > Accessibility > Bold Text. iOS bolds the system font by itself but not a custom one,
+ * so with the setting on every Nunito weight steps up (regular reads as bold, bold as black).
+ */
+let boldText = false;
+AccessibilityInfo.isBoldTextEnabled?.()
+  .then((v) => (boldText = v))
+  .catch(() => {});
+AccessibilityInfo.addEventListener?.('boldTextChanged', (v) => (boldText = v));
+
+const BOLDER: Record<string, string> = {
+  Nunito_400Regular: 'Nunito_700Bold',
+  Nunito_500Medium: 'Nunito_700Bold',
+  Nunito_600SemiBold: 'Nunito_800ExtraBold',
+  Nunito_700Bold: 'Nunito_800ExtraBold',
+  Nunito_800ExtraBold: 'Nunito_900Black',
+  Nunito_900Black: 'Nunito_900Black',
+};
+
 export function brandFont(style: StyleProp<TextStyle>): TextStyle {
   const s = StyleSheet.flatten(style) ?? {};
-  if (s.fontFamily?.startsWith('Nunito_')) return { ...s, fontWeight: undefined };
-  return { ...s, fontFamily: FACES[String(s.fontWeight ?? '400')] ?? FACES['400'], fontWeight: undefined };
+  const face = s.fontFamily?.startsWith('Nunito_') ? s.fontFamily : (FACES[String(s.fontWeight ?? '400')] ?? FACES['400']);
+  return { ...s, fontFamily: boldText ? (BOLDER[face] ?? face) : face, fontWeight: undefined };
 }
 
 export const Text = forwardRef<RNText, TextProps>(function Text({ style, ...props }, ref) {

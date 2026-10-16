@@ -59,13 +59,14 @@ export default function RootLayout() {
     headerShadowVisible: false,
     contentStyle: { backgroundColor: palette.paper },
   };
-  // sheets: a Liquid Glass back button top-left (and with it the scroll edge blur)
+  // sheets: the iOS 26 close button top-left (a glass xmark; sheets dismiss, they don't go
+  // "back"), which also brings the scroll edge blur
   const sheet = {
     presentation: 'modal' as const,
     headerShown: true,
     ...solid,
     unstable_headerLeftItems: () => [
-      { type: 'button' as const, label: 'Geri', icon: { type: 'sfSymbol' as const, name: 'chevron.left' as const }, onPress: () => router.back() },
+      { type: 'button' as const, label: 'Kapat', icon: { type: 'sfSymbol' as const, name: 'xmark' as const }, onPress: () => router.back() },
     ],
   };
   const pushed = { ...solid, headerBackVisible: true };

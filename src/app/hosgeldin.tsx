@@ -95,7 +95,7 @@ export default function Welcome() {
       {step === 0 ? (
         <>
           <View style={{ gap: 6 }}>
-            <T v="large" style={{ textAlign: 'center' }}>
+            <T v="large" accessibilityRole="header" style={{ textAlign: 'center' }}>
               Merhaba, ben Kıvırcık!
             </T>
             <T v="callout" color={palette.inkSoft} style={{ textAlign: 'center' }}>

@@ -1,7 +1,7 @@
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, AppState, Platform, View } from 'react-native';
+import { ActionSheetIOS, Alert, AppState, Linking, Platform, View } from 'react-native';
 import { BRISTOL } from '../../../components/bristol';
 import { SLEEP, STRESS } from '../../../components/checkin';
 import { GroupThumb } from '../../../components/MealRow';
@@ -15,6 +15,7 @@ import { lastBackup } from '../../../lib/backup';
 import { dayKey, daysSince, isoDay, now, relative, startOfDay, timeLabel, todayLabel } from '../../../lib/dates';
 import * as db from '../../../lib/db';
 import { doseWhen, dosesForToday, type Dose } from '../../../lib/meds';
+import { alarmSupport } from '../../../lib/alarm';
 import { askPermission, cancelMealReminder, permission, syncReminders, type PermissionState } from '../../../lib/reminders';
 import { palette, radius, shadow, soft, surface, type } from '../../../lib/theme';
 import { slotForHour } from '../../../lib/suggest';
@@ -60,6 +61,8 @@ export default function Home() {
   const [perm, setPerm] = useState<PermissionState>('granted');
   const [promptSeen, setPromptSeen] = useState(true);
   const [backupDue, setBackupDue] = useState(false);
+  // medication reminders that can't reach the user: notifications denied and no alarm permission
+  const [medsSilent, setMedsSilent] = useState(false);
   const [factorsSeen, setFactorsSeen] = useState(true);
   const [streak, setStreak] = useState({ days: 0, today: false });
   const dayPlan = useDayPlan();
@@ -103,6 +106,9 @@ export default function Home() {
     setBowel(bowelRows.filter((b) => dayKey(b.at) === k));
     setSymptoms(symptomRows.filter((s) => dayKey(s.at) === k));
     setDoses(dosesForToday(meds, logs, t));
+    // remind 1 = alarm (AlarmKit rings without notification permission), 2 = notification only
+    const alarmsOk = (await alarmSupport()) === 'ok';
+    setMedsSilent(p2 === 'denied' && meds.some((m) => m.remind === 2 || (m.remind === 1 && !alarmsOk)));
     setDaily(d);
     setPerm(p2);
     setPromptSeen(!!seen);
@@ -271,6 +277,20 @@ export default function Home() {
           </Row>
         );
       }),
+    ...(medsSilent
+      ? [
+          <Row key="meds-silent" gap={12} style={{ paddingVertical: 12 }}>
+            <IconBubble name="bell.slash.fill" color={palette.bad} dim={40} fallback="🔕" />
+            <View style={{ flex: 1 }}>
+              <T v="h3">İlaç hatırlatmaları kapalı</T>
+              <T v="small" color={palette.inkSoft}>
+                Bildirim izni yok, ilaç saatinde sana ulaşamıyorum
+              </T>
+            </View>
+            <Button title="Aç" compact onPress={() => Linking.openSettings()} />
+          </Row>,
+        ]
+      : []),
     ...(askCheckIn
       ? [
           <Tap key="checkin" onPress={() => router.push('/gun')}>
@@ -481,7 +501,7 @@ export default function Home() {
         <T v="small" color={palette.inkSoft}>
           {todayLabel()}
         </T>
-        <T v="large" numberOfLines={1} adjustsFontSizeToFit>
+        <T v="large" accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit>
           {app.name ? `Selam ${app.name}` : 'Selam'}
         </T>
         <Tap onPress={changePhase} accessibilityRole="button" accessibilityLabel={`${flare ? 'Atak' : 'Remisyon'} dönemi. Değiştirmek için dokun`} style={{ alignSelf: 'flex-start' }}>
