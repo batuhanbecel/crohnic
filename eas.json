@@ -26,14 +26,6 @@
         "simulator": true,
         "image": "latest"
       }
-    },
-    "preview": {
-      "distribution": "internal",
-      "channel": "production",
-      "environment": "production",
-      "ios": {
-        "image": "latest"
-      }
     }
   },
   "submit": {
