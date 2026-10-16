@@ -1,10 +1,10 @@
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, Platform, ScrollView, View } from 'react-native';
+import { Alert, FlatList, ScrollView, View } from 'react-native';
 import { ThinkingOverlay } from '../../../components/ThinkingOverlay';
 import { Text } from '../../../components/text';
-import { Button, Card, Chip, Row, T, Tap, VERDICT_UI } from '../../../components/ui';
+import { Button, Card, Chip, Row, T, Tap, VERDICT_UI, usePageInsets } from '../../../components/ui';
 import { useApp } from '../../../lib/app-state';
 import * as db from '../../../lib/db';
 import { CATEGORIES, FOODS, searchFoods, type Category, type Verdict } from '../../../lib/foods';
@@ -23,6 +23,7 @@ export default function FoodList() {
   const [vf, setVf] = useState<VF>('hepsi');
   const { busy, byName } = useAnalyze();
   const query = q.trim();
+  const page = usePageInsets();
 
   useFocusEffect(
     useCallback(() => {
@@ -116,10 +117,11 @@ export default function FoodList() {
         style={{ flex: 1 }}
         data={rows}
         keyExtractor={(r) => r.f.id}
-        contentInsetAdjustmentBehavior="automatic"
+        contentInsetAdjustmentBehavior="never"
+        scrollIndicatorInsets={{ top: page.top, bottom: page.bottom }}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: Platform.OS === 'web' ? 72 : 8, paddingBottom: 32 }}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: page.top + 8, paddingBottom: page.bottom + 32 }}
         ListHeaderComponent={header}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         initialNumToRender={20}

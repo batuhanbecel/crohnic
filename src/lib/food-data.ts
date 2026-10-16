@@ -1130,6 +1130,41 @@ Bitki çayı (karışık)|🌿|hafif
 Kuşburnu çayı|🌹|asit
 Hibiskus çayı|🌺|asit
 Elma çayı (hazır toz)|🍎|seker katki
+Nane çayı|🌿|hafif
+Lavanta çayı|💜|hafif
+Biberiye çayı|🌿|hafif
+Kekik çayı|🌿|hafif
+Limon otu çayı|🌿|hafif
+Ekinezya çayı|🌸|hafif
+Tarçın çayı|🟤|hafif
+Zerdeçal çayı|🟡|hafif
+Rooibos çayı|🍂|hafif
+Karanfil çayı|🌰|aci_hafif
+Zencefilli limonlu çay|🍋|asit
+Kış çayı|🍊|asit
+Elmalı hibiskus çayı|🍎|asit
+Armutlu hibiskus çayı|🍐|asit
+Armut ve elmalı hibiskus çayı|🍐|asit
+Elmalı tarçınlı çay|🍎|asit
+Portakallı tarçınlı çay|🍊|asit
+Orman meyveli çay|🫐|asit
+Böğürtlenli çay|🫐|asit
+Çilekli meyve çayı|🍓|asit
+Vişneli meyve çayı|🍒|asit
+Nar çiçeği çayı|🌺|asit
+Aronyalı çay|🫐|asit
+Mangolu meyve çayı|🥭|asit
+Ananaslı meyve çayı|🍍|asit
+Şeftalili meyve çayı|🍑|asit
+Soğuk demleme meyve çayı|🧊|asit
+Beyaz çay|🍵|kafein_hafif
+Yasemin çayı|🌼|kafein_hafif
+Oolong çayı|🍵|kafein_hafif
+Earl Grey çayı|🫖|kafein_hafif
+English Breakfast çayı|🫖|kafein_hafif
+Limonlu yeşil çay|🍋|kafein_hafif asit
+Naneli yeşil çay|🌿|kafein_hafif
+Mate çayı|🧉|kafein
 Türk kahvesi|☕|kafein
 Kahve (filtre)|☕|kafein
 Kahve (sütlü filtre)|☕|kafein sut
@@ -1498,6 +1533,16 @@ Salata|Mevsim salata
 Hoşmerim|Höşmerim
 Cool lime|Starbucks Cool Lime
 Hibiscus çayı|Hibiskus çayı
+Elmalı hibiscus çayı|Elmalı hibiskus çayı
+Armutlu hibiscus çayı|Armutlu hibiskus çayı
+Armut ve elmalı hibiscus çayı|Armut ve elmalı hibiskus çayı
+Elma armut hibiscus|Armut ve elmalı hibiskus çayı
+Meyve çayı|Orman meyveli çay
+Lemongrass|Limon otu çayı
+Ekinezya|Ekinezya çayı
+Rooibos|Rooibos çayı
+Mate|Mate çayı
+Earl Grey|Earl Grey çayı
 Cool lime refresha|Starbucks Cool Lime
 Very berry hibiscus|Starbucks Very Berry Hibiscus
 Berry hibiscus|Starbucks Very Berry Hibiscus

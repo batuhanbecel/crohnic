@@ -231,7 +231,7 @@ export async function syncReminders(sql: SQLiteDatabase) {
             content: {
               title: 'İlaç saati',
               body: `${title} zamanı geldi.`,
-              data: { url: '/', kind: 'med', medId: m.id, time: fmtTime([h, min]) },
+              data: { url: '/ilaclar', kind: 'med', medId: m.id, time: fmtTime([h, min]) },
               sound: 'default',
               categoryIdentifier: CATEGORY.med,
             },
@@ -243,7 +243,7 @@ export async function syncReminders(sql: SQLiteDatabase) {
           .filter((t) => !done.has(`${m.id}:${t}`))
           .slice(0, 4);
         for (const t of next) {
-          await schedule(`med-${m.id}-${t}`, 'İlaç günü', `Bugün ${title} günü.`, t, '/', { category: CATEGORY.med, data: { kind: 'med', medId: m.id, due: t } });
+          await schedule(`med-${m.id}-${t}`, 'İlaç günü', `Bugün ${title} günü.`, t, '/ilaclar', { category: CATEGORY.med, data: { kind: 'med', medId: m.id, due: t } });
         }
       }
     }
@@ -264,7 +264,7 @@ export async function syncReminders(sql: SQLiteDatabase) {
               ? `${fmtTime([new Date(due).getHours(), new Date(due).getMinutes()])} dozunu işaretlemedin. Aldıysan "Aldım"a bas, susarım.`
               : `${medTitle(m)} dozunu unutma. Aldıysan "Aldım"a bas.`,
             at,
-            '/',
+            '/ilaclar',
             { category: CATEGORY.med, data: { kind: 'med', medId: m.id, due } },
           );
         }

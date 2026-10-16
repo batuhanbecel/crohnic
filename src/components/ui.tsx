@@ -19,6 +19,7 @@ import {
   type ViewProps,
   type ViewStyle,
 } from 'react-native';
+import { HeaderHeightContext } from 'expo-router/build/react-navigation/elements';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import type { Verdict } from '../lib/foods';
@@ -237,11 +238,27 @@ export function IconButton({ name, onPress, label, fallback }: { name: SymbolNam
 }
 
 // ---------- layout ----------
+/** True inside a tab's stack: the floating tab bar covers the bottom of the page there. */
+export const InTabsContext = React.createContext(false);
+
 /**
- * Scrolling page under a native header (tabs and pushed screens alike). Insets come from
- * iOS (contentInsetAdjustmentBehavior "automatic"), which is what lets the iOS 26+ Liquid Glass
- * header blur the content scrolling under it and the large title collapse. For that the
- * ScrollView has to be the page's first subview, so the flare glow lives inside it.
+ * Space the page leaves at the top and bottom. The header is transparent and the page runs
+ * under it, so the content starts exactly one header height down: measured by the native
+ * stack, not left to iOS's automatic insets (those opened tabs slightly scrolled).
+ */
+export function usePageInsets() {
+  const insets = useSafeAreaInsets();
+  const header = React.useContext(HeaderHeightContext) ?? 0;
+  const inTabs = React.useContext(InTabsContext);
+  const top = Platform.OS === 'web' ? 72 : header || insets.top;
+  const bottom = inTabs ? insets.bottom + 84 : insets.bottom;
+  return { top, bottom, inTabs };
+}
+
+/**
+ * Scrolling page under a transparent native header (tabs and pushed screens alike). The iOS
+ * 26+ Liquid Glass bar blurs the content passing under it (scroll edge effect), which needs
+ * the ScrollView to be the page's first subview, so the flare glow lives inside it.
  */
 export function Screen({
   children,
@@ -261,18 +278,19 @@ export function Screen({
   footer?: React.ReactNode;
 }) {
   const insets = useSafeAreaInsets();
+  const page = usePageInsets();
   return (
     <View style={{ flex: 1, backgroundColor: palette.paper }}>
       <ScrollView
         style={{ flex: 1 }}
-        contentInsetAdjustmentBehavior="automatic"
+        contentInsetAdjustmentBehavior="never"
         automaticallyAdjustKeyboardInsets
+        scrollIndicatorInsets={{ top: page.top, bottom: footer ? 0 : page.bottom }}
         contentContainerStyle={[
           {
             paddingHorizontal: 16,
-            // the web preview has no automatic insets
-            paddingTop: Platform.OS === 'web' ? 72 : 8,
-            paddingBottom: footer ? 20 : 32,
+            paddingTop: page.top + 8,
+            paddingBottom: footer ? 20 : page.bottom + 32,
             gap: size.gap,
           },
           contentStyle,
