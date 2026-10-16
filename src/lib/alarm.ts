@@ -14,6 +14,9 @@ type Native = {
   cancelAll(): Promise<void>;
   scheduleDaily(title: string, hour: number, minute: number): Promise<string>;
   scheduleAt(title: string, timestamp: number): Promise<string>;
+  /** since build 17: 2 = alarms snooze ("Ertele"), App Intents hand routes over */
+  version?(): number;
+  takePendingRoute?(): string | null;
 };
 
 const native = Platform.OS === 'ios' ? requireOptionalNativeModule<Native>('CrohnicAlarm') : null;
@@ -43,6 +46,36 @@ export async function askAlarmPermission() {
 
 export type AlarmSpec = { title: string } & ({ hour: number; minute: number } | { at: number });
 
+function moduleVersion() {
+  try {
+    return native?.version?.() ?? 1;
+  } catch {
+    return 1;
+  }
+}
+
+/** True on builds whose alarms have the 10-minute "Ertele" button. */
+export function alarmsSnooze() {
+  return moduleVersion() >= 2;
+}
+
+/** True on builds with Siri phrases, Shortcuts actions and Control Center controls (same build as snooze). */
+export function hasSystemActions() {
+  return Platform.OS === 'ios' && moduleVersion() >= 2;
+}
+
+/**
+ * The screen a Siri, Shortcuts, Control Center or Action button action asked for, once.
+ * null when there is none (or on builds without App Intents).
+ */
+export function takePendingRoute(): string | null {
+  try {
+    return native?.takePendingRoute?.() ?? null;
+  } catch {
+    return null;
+  }
+}
+
 let lastSig: string | null = null;
 
 /**
@@ -54,7 +87,9 @@ export async function syncAlarms(specs: AlarmSpec[], savedSig: string | null): P
   if (!native) return savedSig;
   try {
     if (!native.isSupported() || (await native.authorization()) !== 'authorized') return savedSig;
-    const sig = JSON.stringify(specs);
+    // the module version is part of the signature: alarms set by an older build get re-created
+    // with the new presentation (snooze) once the app updates
+    const sig = JSON.stringify({ v: moduleVersion(), specs });
     const prev = lastSig ?? savedSig;
     if (prev === sig && (await native.count()) === specs.length) return sig;
     await native.cancelAll();

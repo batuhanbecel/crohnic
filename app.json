@@ -57,6 +57,7 @@
       "expo-updates",
       "./plugins/local-notifications-only.js",
       "expo-quick-actions",
+      "./plugins/crohnic-intents.js",
       [
         "expo-widgets",
         {

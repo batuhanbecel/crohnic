@@ -4,6 +4,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import * as Updates from 'expo-updates';
 import { useEffect } from 'react';
 import { Appearance, AppState, DevSettings, Platform } from 'react-native';
+import { takePendingRoute } from '../lib/alarm';
 import { useApp } from '../lib/app-state';
 import { autoSnapshot } from '../lib/backup';
 import { handleNotificationAction, setupNotifications, syncReminders } from '../lib/reminders';
@@ -51,6 +52,30 @@ export function Bootstrap() {
       sub.remove();
     };
   }, [ready, sql, bump]);
+
+  // Siri, Shortcuts, Control Center and the Action button open a screen: the action leaves the
+  // route in the App Group and runs as the app comes forward, so look a few times after that
+  useEffect(() => {
+    if (!ready || Platform.OS !== 'ios') return;
+    let timers: ReturnType<typeof setTimeout>[] = [];
+    const look = () => {
+      timers.forEach(clearTimeout);
+      timers = [0, 500, 1500, 3000].map((ms) =>
+        setTimeout(() => {
+          const route = takePendingRoute();
+          if (route) router.push(route as never);
+        }, ms),
+      );
+    };
+    look();
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') look();
+    });
+    return () => {
+      timers.forEach(clearTimeout);
+      sub.remove();
+    };
+  }, [ready]);
 
   // re-sync on resume; reload if light/dark changed while the app was open
   useEffect(() => {

@@ -15,6 +15,7 @@ import * as db from '../lib/db';
 import { SETTINGS, askPermission, isOn, permission, syncReminders, type PermissionState } from '../lib/reminders';
 import { palette } from '../lib/theme';
 import { hasLactose, hasStoma, hasStricture, setLactose, setStoma, setStricture } from '../lib/tolerance';
+import { hasSystemActions } from '../lib/alarm';
 import { wipeEverything } from '../lib/wipe';
 
 const PRIVACY_URL = 'https://crohnic.vercel.app/gizlilik';
@@ -347,6 +348,24 @@ export default function Settings() {
           </View>
         )}
       </Card>
+
+      {hasSystemActions() ? (
+        <Card style={{ gap: 10 }}>
+          <T v="h3">Siri ve kısayollar</T>
+          <T v="small" color={palette.inkSoft}>
+            Uygulamayı açmadan kayda başla. Siri’ye söyle ya da Kestirmeler’den, Spotlight’tan veya Eylem düğmesinden çalıştır:
+          </T>
+          {['Crohnic tuvalet kaydet', 'Crohnic öğün ekle', 'Crohnic semptom kaydet', 'Crohnic bugün ne yesem', 'Crohnic doktor raporu'].map((p) => (
+            <Row key={p} gap={10}>
+              <Icon name="waveform" size={14} color={palette.lettuceDeep} fallback="🎙️" />
+              <T v="callout" style={{ flex: 1 }}>{`“${p}”`}</T>
+            </Row>
+          ))}
+          <T v="small" color={palette.inkSoft}>
+            Denetim Merkezi ya da kilit ekranı için: Denetim Merkezi’ni aç, sol üstteki + ile “Kontrol ekle”ye dokun ve Crohnic’i seç. Tuvalet, öğün, semptom, ilaç ve “Bunu yesem mi?” düğmeleri var.
+          </T>
+        </Card>
+      ) : null}
 
       <Card style={{ gap: 10 }}>
         <T v="h3">Gizlilik ve verilerin</T>

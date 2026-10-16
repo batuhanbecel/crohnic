@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Linking, Platform, Switch, View } from 'react-native';
 import { TextInput } from '../components/text';
 import { Button, Card, Chip, GlassPress, Icon, Row, Screen, Segmented, T, st } from '../components/ui';
-import { alarmSupport, askAlarmPermission, type AlarmSupport } from '../lib/alarm';
+import { alarmSupport, alarmsSnooze, askAlarmPermission, type AlarmSupport } from '../lib/alarm';
 import { useApp } from '../lib/app-state';
 import { fromIsoDay, isoDay, now } from '../lib/dates';
 import * as db from '../lib/db';
@@ -297,7 +297,7 @@ export default function MedEdit() {
                     ? 'Alarm için iOS 26 gerekiyor. Bu telefonda bildirim gelir.'
                     : support === 'denied'
                       ? 'Alarm izni kapalı: iPhone Ayarlar › Crohnic’ten aç. O zamana kadar bildirim gelir.'
-                      : 'Saat uygulamasındaki alarm gibi çalar, sessiz modda ve odak modundayken de. Ayrıca “Aldım” düğmeli bir bildirim gelir.'}
+                      : `Saat uygulamasındaki alarm gibi çalar, sessiz modda ve odak modundayken de.${alarmsSnooze() ? ' “Ertele” ile 10 dakika sonra yeniden çalar.' : ''} Ayrıca “Aldım” düğmeli bir bildirim gelir.`}
             </T>
           </View>
         ) : null}
