@@ -6,6 +6,7 @@ import { ThinkingOverlay } from '../../../components/ThinkingOverlay';
 import { Text } from '../../../components/text';
 import { Button, Card, Chip, Row, T, Tap, VERDICT_UI, usePageInsets } from '../../../components/ui';
 import { useApp } from '../../../lib/app-state';
+import { lastTab } from '../../../lib/last-tab';
 import * as db from '../../../lib/db';
 import { CATEGORIES, FOODS, searchFoods, type Category, type Verdict } from '../../../lib/foods';
 import { palette, radius, surface, type } from '../../../lib/theme';
@@ -155,6 +156,10 @@ export default function FoodList() {
       <ThinkingOverlay mode={busy} />
       <Stack.Screen
         options={{
+          // Yemekler is the search tab: back returns to the tab it was opened from
+          unstable_headerLeftItems: () => [
+            { type: 'button', label: 'Geri', icon: { type: 'sfSymbol', name: 'chevron.left' }, onPress: () => router.navigate(lastTab() as never) },
+          ],
           unstable_headerRightItems: () => [
             { type: 'button', label: 'Nasıl değerlendiriliyor', icon: { type: 'sfSymbol', name: 'info.circle' }, onPress: explain },
           ],

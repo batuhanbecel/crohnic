@@ -1,8 +1,10 @@
 import * as QuickActions from 'expo-quick-actions';
 import { useQuickActionRouting, type RouterAction } from 'expo-quick-actions/router';
+import { usePathname } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
+import { rememberTab } from '../../lib/last-tab';
 import { palette } from '../../lib/theme';
 
 /** Long-press the app icon: the most common logs in one tap. */
@@ -15,6 +17,8 @@ const SHORTCUTS: RouterAction[] = [
 
 export default function TabsLayout() {
   useQuickActionRouting();
+  const pathname = usePathname();
+  useEffect(() => rememberTab(pathname), [pathname]);
   useEffect(() => {
     if (Platform.OS !== 'web') QuickActions.setItems(SHORTCUTS).catch(() => {});
   }, []);

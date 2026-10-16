@@ -395,14 +395,34 @@ export default function Home() {
   const slotKeys = dayPlan.plan?.map((x) => x.key) ?? [];
   const mealSlot = slotKeys.slice(Math.max(0, slotKeys.indexOf(dayPlan.current))).find((k) => !realMeals.some((g) => slotOf(g.eaten_at) === k));
   const nextMeal = mealSlot ? dayPlan.plan?.find((x) => x.key === mealSlot) : undefined;
+  const maxPain = symptoms.length ? Math.max(...symptoms.map((s) => s.pain)) : null;
+  const lastMeal = realMeals.reduce<db.MealGroup | null>((a, g) => (!a || g.eaten_at > a.eaten_at ? g : a), null);
+  const lastBowel = bowel.reduce<db.BowelLog | null>((a, b) => (!a || b.at > a.at ? b : a), null);
+  const takenToday = todayDoses.filter((d) => d.log?.taken_at).length;
+  const nextDose = todayDoses.find((d) => !d.log);
   const counts = {
     meals: realMeals.length,
     toilet: bowel.length,
     symptoms: symptoms.length,
-    doses: { taken: todayDoses.filter((d) => d.log?.taken_at).length, total: todayDoses.length },
+    doses: { taken: takenToday, total: todayDoses.length },
+    subs: {
+      meal: lastMeal ? `Son ${timeLabel(lastMeal.eaten_at)}` : undefined,
+      toilet: lastBowel ? `Tip ${lastBowel.bristol}, son ${timeLabel(lastBowel.at)}` : undefined,
+      symptom: maxPain == null ? undefined : maxPain === 0 ? 'Şikayet yok' : `En yüksek ağrı ${maxPain}/5`,
+      med: !todayDoses.length
+        ? undefined
+        : !nextDose
+          ? takenToday === todayDoses.length
+            ? 'Hepsi alındı'
+            : 'Bugünlük bitti'
+          : doseWhen(nextDose.due, at).when === 'late'
+            ? `${timeLabel(nextDose.due)} dozu bekliyor`
+            : doseWhen(nextDose.due, at).when === 'now'
+              ? 'Saati geldi'
+              : `Sıradaki ${timeLabel(nextDose.due)}`,
+    },
   };
 
-  const maxPain = symptoms.length ? Math.max(...symptoms.map((s) => s.pain)) : null;
   const summary = [`${realMeals.length} öğün`, `${bowel.length} tuvalet`, maxPain == null ? null : maxPain === 0 ? 'ağrı yok' : `ağrı ${maxPain}/5`]
     .filter(Boolean)
     .join(', ');

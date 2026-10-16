@@ -197,13 +197,17 @@ export function T({ v = 'body', color = palette.ink, style, ...rest }: TextProps
 }
 
 /** Single-line label for controls: never wraps, shrinks a little if it must. */
-function Label({ children, color, small }: { children: string; color: string; small?: boolean }) {
+/**
+ * Button text. `fit` shrinks it a little when the button has a fixed width; chips in a
+ * horizontal scroller must not use it (iOS measures them unbounded and shrinks the text to a speck).
+ */
+function Label({ children, color, small, fit = true }: { children: string; color: string; small?: boolean; fit?: boolean }) {
   return (
     <Text
       numberOfLines={1}
-      adjustsFontSizeToFit
-      minimumFontScale={0.75}
-      style={[type.semibold, { fontSize: small ? 15 : 17, lineHeight: small ? 20 : 22, letterSpacing: small ? -0.23 : -0.43, color, flexShrink: 1 }]}
+      adjustsFontSizeToFit={fit}
+      minimumFontScale={fit ? 0.75 : undefined}
+      style={[type.semibold, { fontSize: small ? 15 : 17, lineHeight: small ? 20 : 22, letterSpacing: small ? -0.23 : -0.43, color, flexShrink: fit ? 1 : 0 }]}
     >
       {children}
     </Text>
@@ -450,7 +454,7 @@ export function Chip({ label, active, onPress, color = palette.lettuce, emoji }:
   const fill = color === palette.ink ? palette.lettuce : color;
   return (
     <GlassPress onPress={onPress} tint={active ? fill : surface.well} style={st.chip} accessibilityLabel={label}>
-      <Label small color={active ? onTint(fill) : palette.ink}>
+      <Label small fit={false} color={active ? onTint(fill) : palette.ink}>
         {`${emoji ? `${emoji}  ` : ''}${label}`}
       </Label>
     </GlassPress>
