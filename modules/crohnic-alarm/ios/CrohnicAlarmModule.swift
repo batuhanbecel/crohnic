@@ -5,47 +5,20 @@ import SwiftUI
 import ActivityKit
 import AlarmKit
 
-/// Same name and shape as the type the widget extension renders the snoozed alarm with
-/// (plugins/ios/CrohnicWidgetExtras.swift), so the system pairs them.
 @available(iOS 26.0, *)
 struct CrohnicAlarmMetadata: AlarmMetadata {
-  var title: String?
+  init() {}
 }
 #endif
 
-/// Where a Siri / Shortcuts / Control Center action asked the app to go (plugins/ios/CrohnicIntents.swift).
-private enum PendingRoute {
-  static let group = "group.tr.com.f28.crohnic"
-  static let key = "crohnic_pending_route"
-
-  /// The route, once, if it was asked for in the last two minutes.
-  static func take() -> String? {
-    guard let defaults = UserDefaults(suiteName: group), let route = defaults.string(forKey: key) else { return nil }
-    let at = defaults.double(forKey: key + "_at")
-    defaults.removeObject(forKey: key)
-    defaults.removeObject(forKey: key + "_at")
-    return Date().timeIntervalSince1970 - at < 120 ? route : nil
-  }
-}
-
 /**
  * Medication alarms through AlarmKit (iOS 26+): they ring like the Clock app's alarms,
- * also in silent mode and Focus. "Ertele" snoozes for 10 minutes; while snoozed the widget
- * extension shows the countdown as a Live Activity. Every function is a no-op that reports
- * "unsupported" on older iOS.
+ * also in silent mode and Focus. Alert-only (no countdown/snooze), so no Live Activity
+ * widget is needed. Every function is a no-op that reports "unsupported" on older iOS.
  */
 public class CrohnicAlarmModule: Module {
   public func definition() -> ModuleDefinition {
     Name("CrohnicAlarm")
-
-    /// 2: snooze + routes from App Intents. JS checks it before promising either.
-    Function("version") { () -> Int in
-      return 2
-    }
-
-    Function("takePendingRoute") { () -> String? in
-      return PendingRoute.take()
-    }
 
     Function("isSupported") { () -> Bool in
       #if canImport(AlarmKit)
@@ -129,33 +102,20 @@ public class CrohnicAlarmModule: Module {
   }
 
   #if canImport(AlarmKit)
-  /// Snooze length: "Ertele" rings again after this many seconds.
-  private static let snoozeSeconds: TimeInterval = 600
-
   @available(iOS 26.0, *)
   private static func schedule(title: String, schedule: Alarm.Schedule) async throws -> String {
-    // the system draws its own Stop; the secondary button snoozes (restarts a 10 min countdown)
-    let snooze = AlarmButton(
-      text: LocalizedStringResource(stringLiteral: "Ertele"),
+    let stop = AlarmButton(
+      text: LocalizedStringResource(stringLiteral: "Tamam"),
       textColor: .white,
-      systemImageName: "zzz"
+      systemImageName: "checkmark"
     )
-    let alert = AlarmPresentation.Alert(
-      title: LocalizedStringResource(stringLiteral: title),
-      secondaryButton: snooze,
-      secondaryButtonBehavior: .countdown
-    )
-    let countdown = AlarmPresentation.Countdown(
-      title: LocalizedStringResource(stringLiteral: "Ertelendi: \(title)"),
-      pauseButton: nil
-    )
+    let alert = AlarmPresentation.Alert(title: LocalizedStringResource(stringLiteral: title), stopButton: stop)
     let attributes = AlarmAttributes<CrohnicAlarmMetadata>(
-      presentation: AlarmPresentation(alert: alert, countdown: countdown),
-      metadata: CrohnicAlarmMetadata(title: title),
+      presentation: AlarmPresentation(alert: alert),
       tintColor: Color(red: 0.08, green: 0.35, blue: 0.20) // Ana Yeşil #145A32
     )
     let configuration = AlarmManager.AlarmConfiguration<CrohnicAlarmMetadata>(
-      countdownDuration: Alarm.CountdownDuration(preAlert: nil, postAlert: snoozeSeconds),
+      countdownDuration: nil,
       schedule: schedule,
       attributes: attributes,
       sound: .default
