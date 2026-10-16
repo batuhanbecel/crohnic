@@ -63,11 +63,14 @@ jobs:
 
       - name: Build + TestFlight if native code changed
         run: |
-          COUNT=$(eas build:list --platform ios --runtime-version "${{ steps.fp.outputs.runtime }}" --limit 5 --json --non-interactive \
-            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s||"[]");console.log(l.filter(b=>b.buildProfile==="production"&&!["ERRORED","CANCELED"].includes(b.status)).length)})')
+          # failures become annotations (readable from the run summary and the API)
+          fail() { echo "::error title=$1::$(tail -n 25 "$2" | tr '\n' ' ' | cut -c1-1800)"; exit 1; }
+          eas build:list --platform ios --runtime-version "${{ steps.fp.outputs.runtime }}" --limit 5 --json --non-interactive >/tmp/list.json 2>/tmp/list.err || fail "eas build:list" /tmp/list.err
+          COUNT=$(node -e 'const l=JSON.parse(require("fs").readFileSync("/tmp/list.json","utf8")||"[]");console.log(l.filter(b=>b.buildProfile==="production"&&!["ERRORED","CANCELED"].includes(b.status)).length)')
           if [ "$COUNT" = "0" ]; then
             echo "Native değişiklik var, yeni build başlatılıyor."
-            eas build --platform ios --profile production --auto-submit --non-interactive --no-wait
+            eas build --platform ios --profile production --auto-submit --non-interactive --no-wait >/tmp/build.log 2>&1 || fail "eas build" /tmp/build.log
+            cat /tmp/build.log
           else
             echo "Bu parmak izi için build zaten var, sadece güncelleme yayınlanacak."
           fi
