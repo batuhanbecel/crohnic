@@ -352,6 +352,8 @@ Balık buğulama|🐟|hafif
 Fırında balık köftesi|🐟|yag_hafif
 Somon köftesi|🐟|yag_hafif
 Ton balıklı köfte|🐟|yag_hafif
+Sardalya buğulama|🐟|yag_hafif
+Ahtapot carpaccio|🐙|cig_hayvansal asit
 # Sebze yemekleri
 Zeytinyağlı taze fasulye|🫛|lif
 Etli taze fasulye|🫛|lif yag_hafif
@@ -952,6 +954,43 @@ Salatalık turşusu|🥒|asit fermente
 Biber turşusu|🫑|asit aci fermente
 Lahana turşusu|🥬|fermente lahana asit
 Kimchi|🥬|fermente aci lahana
+Kavun peynir|🍈|sut_az
+Karışık meze tabağı|🍽️|yag fermente asit
+Peynir tabağı|🧀|sut yag
+Şarküteri tabağı|🥓|islenmis yag
+Meyve tabağı|🍉|kabuk
+Abugannuş|🍆|kabuk yag_hafif
+Mütebbel|🍆|kabuk kuruyemis lahana
+Tarator (cevizli)|🥣|kuruyemis lahana fermente
+Kabak tarator|🥒|fermente kuruyemis lahana
+Kuru cacık|🥒|fermente lahana
+Patlıcan söğürme|🍆|kabuk yag_hafif
+Köpoğlu|🍆|yag fermente lahana kabuk
+Yoğurtlu kızartma|🍆|yag kabuk fermente lahana
+Sarımsaklı köz biber|🫑|kabuk lahana yag_hafif
+Kuru domates (zeytinyağlı)|🍅|asit yag_hafif
+Sıcak humus (pastırmalı)|🫘|baklagil_az kuruyemis islenmis yag
+Hamsi marin|🐟|cig_hayvansal asit
+Levrek marin|🐟|cig_hayvansal asit
+Somon marin|🐟|cig_hayvansal asit
+Çiroz salatası|🐟|islenmis asit cig
+Muska böreği|🥟|yag sut_az
+Kaşarlı mantar|🍄|sut_az yag
+Karışık turşu|🥒|fermente asit
+Kornişon turşu|🥒|fermente asit
+Acur turşusu|🥒|fermente asit
+Pancar turşusu|🫚|fermente asit
+Kırma zeytin|🫒|yag_hafif asit
+Biberli zeytin|🫒|aci_hafif yag_hafif
+Zeytin salatası|🫒|yag_hafif asit cig
+Arapsaçı (rezene) salatası|🌿|cig lif
+Şevketi bostan|🌿|lif yag_hafif
+Turp otu salatası|🌿|cig lif lahana
+Hardal otu|🌿|lif
+Kaya koruğu|🌿|cig lif
+Ege otları kavurma|🌿|lif yag_hafif
+Kaşık salata|🥗|aci asit cig
+Yoğurtlu biber kızartması|🫑|yag kabuk fermente lahana
 # Meyve
 Olgun muz|🍌|hafif
 Ham muz|🍌|lif
@@ -1100,6 +1139,12 @@ Fındıklı lokum|🍬|seker kuruyemis
 Jelibon|🍬|seker katki
 Şekersiz sakız|🍬|tatlandirici
 Şekersiz şeker|🍬|tatlandirici
+Tuzlu badem|🌰|kuruyemis
+Wasabi fıstık|🥜|kuruyemis aci
+Kokteyl çerez|🥜|kuruyemis yag islenmis
+Kavrulmuş mısır çerezi|🌽|yag islenmis
+Siyah çekirdek|🌻|cekirdek kuruyemis
+Çerez tabağı|🥜|kuruyemis yag
 # Tatlı
 Sütlaç|🍮|sut seker
 Fırın sütlaç|🍮|sut seker
@@ -1590,16 +1635,183 @@ Gazoz|🥤|gazli seker
 Enerji içeceği|⚡|kafein seker gazli katki
 Spor içeceği|🧃|seker
 ORS (elektrolit)|🧃|hafif
-Bira|🍺|alkol gazli
 Alkolsüz bira|🍺|gazli
-Şarap|🍷|alkol
 Alkolsüz şarap|🍷|seker asit
+Hardaliye|🍇|seker fermente
+Turşu suyu|🥤|fermente asit aci_hafif
+Alkolsüz kokteyl (mocktail)|🍹|seker
+Efes Alkolsüz|🍺|gazli
+Alkolsüz Radler|🍺|gazli seker
+# Alkollü içecekler
+Bira|🍺|alkol gazli
+Şarap|🍷|alkol
 Şampanya|🥂|alkol gazli
 Rakı|🥃|alkol
 Viski|🥃|alkol
 Votka|🥃|alkol
 Cin tonik|🍸|alkol gazli
 Kokteyl|🍸|alkol seker
+Efes Pilsen|🍺|alkol gazli
+Efes Malt|🍺|alkol gazli
+Efes Light|🍺|alkol gazli
+Efes Özel Seri|🍺|alkol gazli
+Efes Xtra|🍺|alkol gazli
+Efes Draft|🍺|alkol gazli
+Bomonti Filtresiz|🍺|alkol gazli fermente
+Bomonti Black|🍺|alkol gazli
+Tuborg Gold|🍺|alkol gazli
+Tuborg Filtresiz|🍺|alkol gazli fermente
+Tuborg Amber|🍺|alkol gazli
+Carlsberg|🍺|alkol gazli
+Miller|🍺|alkol gazli
+Beck's|🍺|alkol gazli
+Corona Extra|🍺|alkol gazli
+Heineken|🍺|alkol gazli
+Amsterdam Navigator|🍺|alkol gazli
+Skol|🍺|alkol gazli
+Budweiser|🍺|alkol gazli
+Stella Artois|🍺|alkol gazli
+Leffe Blonde|🍺|alkol gazli
+Leffe Brune|🍺|alkol gazli
+Hoegaarden|🍺|alkol gazli fermente
+Guinness|🍺|alkol gazli
+Erdinger Weissbier|🍺|alkol gazli fermente
+Paulaner Hefe-Weissbier|🍺|alkol gazli fermente
+Grimbergen|🍺|alkol gazli
+Kronenbourg 1664 Blanc|🍺|alkol gazli
+Peroni|🍺|alkol gazli
+Duvel|🍺|alkol gazli
+Asahi|🍺|alkol gazli
+Desperados|🍺|alkol gazli seker
+Gara Guzu|🍺|alkol gazli
+Lager bira|🍺|alkol gazli
+Pilsner|🍺|alkol gazli
+IPA|🍺|alkol gazli
+Pale ale|🍺|alkol gazli
+Stout bira|🍺|alkol gazli
+Buğday birası|🍺|alkol gazli fermente
+Amber ale|🍺|alkol gazli
+Porter bira|🍺|alkol gazli
+Siyah bira|🍺|alkol gazli
+Radler (meyveli bira)|🍺|alkol gazli seker
+Fıçı bira|🍺|alkol gazli
+Craft bira|🍺|alkol gazli
+Glutensiz bira|🍺|alkol gazli
+Elma şarabı (cider)|🍏|alkol gazli seker
+Hard seltzer|🫧|alkol gazli
+Yeni Rakı|🥃|alkol
+Yeni Rakı Ala|🥃|alkol
+Yeni Rakı Yeni Seri|🥃|alkol
+Tekirdağ Rakısı|🥃|alkol
+Tekirdağ Gold Seri|🥃|alkol
+Efe Rakı|🥃|alkol
+Efe Yaş Üzüm|🥃|alkol
+Efe Gold|🥃|alkol
+Kulüp Rakı|🥃|alkol
+Beylerbeyi Göbek|🥃|alkol
+Sarı Zeybek|🥃|alkol
+Altınbaş|🥃|alkol
+Yaş üzüm rakısı|🥃|alkol
+Duble rakı|🥃|alkol
+Kırmızı şarap|🍷|alkol
+Beyaz şarap|🥂|alkol asit
+Roze şarap|🍷|alkol asit
+Köpüklü şarap|🥂|alkol gazli
+Prosecco|🥂|alkol gazli
+Cava|🥂|alkol gazli
+Sangria|🍷|alkol seker asit
+Sıcak şarap (glühwein)|🍷|alkol seker aci_hafif
+Tatlı şarap|🍷|alkol seker
+Porto şarabı|🍷|alkol seker
+Şeri|🍷|alkol
+Öküzgözü|🍷|alkol
+Boğazkere|🍷|alkol
+Kalecik Karası|🍷|alkol
+Papazkarası|🍷|alkol
+Narince|🥂|alkol asit
+Emir (beyaz şarap)|🥂|alkol asit
+Sultaniye (şarap)|🥂|alkol asit
+Bornova Misketi|🥂|alkol seker
+Cabernet Sauvignon|🍷|alkol
+Merlot|🍷|alkol
+Syrah (Shiraz)|🍷|alkol
+Pinot Noir|🍷|alkol
+Malbec|🍷|alkol
+Tempranillo|🍷|alkol
+Chardonnay|🥂|alkol asit
+Sauvignon Blanc|🥂|alkol asit
+Pinot Grigio|🥂|alkol asit
+Riesling|🥂|alkol asit
+Muscat|🥂|alkol seker
+Kavaklıdere Yakut|🍷|alkol
+Kavaklıdere Çankaya|🥂|alkol asit
+Kavaklıdere Angora|🍷|alkol
+Villa Doluca|🍷|alkol
+Doluca DLC|🍷|alkol
+Doluca Kav|🍷|alkol
+Tekila|🥃|alkol
+Rom|🥃|alkol
+Cin|🍸|alkol
+Konyak|🥃|alkol
+Brendi|🥃|alkol
+Uzo|🥃|alkol
+Absent|🥃|alkol
+Sake|🍶|alkol
+Soju|🍶|alkol
+Likör|🍸|alkol seker
+Baileys|🥃|alkol seker sut
+Kahlua|🥃|alkol seker kafein_hafif
+Malibu|🥥|alkol seker
+Amaretto|🥃|alkol seker
+Limoncello|🍋|alkol seker
+Cointreau|🍊|alkol seker
+Aperol|🍹|alkol seker
+Campari|🍹|alkol seker
+Jägermeister|🥃|alkol seker
+Sambuca|🥃|alkol seker
+Jack Daniel's|🥃|alkol
+Johnnie Walker Red Label|🥃|alkol
+Johnnie Walker Black Label|🥃|alkol
+Chivas Regal|🥃|alkol
+Jameson|🥃|alkol
+Glenfiddich|🥃|alkol
+Ballantine's|🥃|alkol
+J&B|🥃|alkol
+Absolut Vodka|🥃|alkol
+Smirnoff|🥃|alkol
+Grey Goose|🥃|alkol
+İstanblue Votka|🥃|alkol
+Gordon's Gin|🍸|alkol
+Bombay Sapphire|🍸|alkol
+Hendrick's|🍸|alkol
+Tanqueray|🍸|alkol
+Beefeater|🍸|alkol
+Bacardi|🥃|alkol
+Captain Morgan|🥃|alkol seker
+Havana Club|🥃|alkol
+Jose Cuervo|🥃|alkol
+Patrón|🥃|alkol
+Viski kola|🥃|alkol gazli seker kafein_hafif
+Votka portakal|🍹|alkol seker asit
+Votka soda|🥃|alkol gazli
+Tekila shot|🥃|alkol asit
+Mojito|🍹|alkol seker gazli
+Margarita|🍸|alkol asit seker
+Aperol Spritz|🍹|alkol gazli seker
+Negroni|🍸|alkol seker
+Moscow Mule|🍹|alkol gazli aci_hafif seker
+Piña colada|🍹|alkol seker yag
+Cuba libre|🥤|alkol gazli seker kafein_hafif
+Bloody Mary|🍅|alkol asit aci
+Long Island Iced Tea|🍹|alkol seker kafein_hafif gazli
+Martini|🍸|alkol
+Espresso martini|🍸|alkol kafein seker
+Daiquiri|🍸|alkol asit seker
+Whisky sour|🥃|alkol asit seker
+Cosmopolitan|🍸|alkol asit seker
+Old fashioned|🥃|alkol seker
+Caipirinha|🍹|alkol asit seker
+Sex on the beach|🍹|alkol seker
 # Paketli atıştırmalık & çikolata
 Ülker Çikolatalı Gofret|🍫|seker yag katki sut_az
 Ülker Albeni|🍫|seker yag katki sut_az
@@ -1782,6 +1994,55 @@ Vitaminli su|💧|seker katki
 Tonik (sade)|🥤|gazli seker
 Zencefilli gazoz (ginger ale)|🥤|gazli seker
 # Kafe zincirleri
+Starbucks Caffè Americano|☕|kafein
+Starbucks Iced Caffè Americano|🧋|kafein
+Starbucks Caffè Latte|☕|kafein sut
+Starbucks Iced Caffè Latte|🧋|kafein sut
+Starbucks Cappuccino|☕|kafein sut
+Starbucks Flat White|☕|kafein sut
+Starbucks Cortado|☕|kafein sut_az
+Starbucks Ristretto Bianco|☕|kafein sut
+Starbucks Espresso|☕|kafein
+Starbucks Latte Macchiato|☕|kafein sut
+Starbucks Caramel Macchiato|☕|kafein sut seker
+Starbucks Iced Caramel Macchiato|🧋|kafein sut seker
+Starbucks Caffè Mocha|☕|kafein sut seker
+Starbucks White Chocolate Mocha|☕|kafein sut seker katki
+Starbucks Iced White Chocolate Mocha|🧋|kafein sut seker katki
+Starbucks Filtre Kahve|☕|kafein
+Starbucks Cold Brew|🧋|kafein
+Starbucks Iced Brown Sugar Oat Shaken Espresso|🧋|kafein seker
+Starbucks Doubleshot Iced Shaken Espresso|🧋|kafein seker
+Starbucks Türk Kahvesi|☕|kafein
+Starbucks Chai Tea Latte|🍵|kafein_hafif sut seker aci_hafif
+Starbucks Iced Chai Tea Latte|🧋|kafein_hafif sut seker aci_hafif
+Starbucks Hot Chocolate|🍫|sut seker kafein_hafif
+Starbucks Caramel Frappuccino|🥤|kafein sut seker katki yag_hafif
+Starbucks Mocha Frappuccino|🥤|kafein sut seker katki
+Starbucks Java Chip Frappuccino|🥤|kafein sut seker katki yag_hafif
+Starbucks Espresso Frappuccino|🥤|kafein sut seker katki
+Starbucks Strawberries & Cream Frappuccino|🥤|sut seker katki
+Starbucks Cool Lime|🍈|kafein_hafif seker asit
+Starbucks Very Berry Hibiscus|🌺|kafein_hafif seker
+Starbucks Orange Mango|🥭|kafein_hafif seker asit
+Starbucks Mango Dragonfruit|🐉|kafein_hafif seker
+Starbucks Matcha Latte|🍵|kafein_hafif sut seker
+Starbucks Matcha Pistachio Latte|🍵|kafein_hafif sut seker
+Starbucks Spanish Cream Matcha Latte|🍵|kafein_hafif sut seker
+Starbucks Iced Strawberry Cream Matcha Latte|🧋|kafein_hafif sut seker katki
+Starbucks Iced Apple Crumble Matcha Latte|🧋|kafein_hafif sut seker katki
+Starbucks Pumpkin Spice Latte|🎃|kafein sut seker aci_hafif
+Starbucks Iced Pumpkin Spice Latte|🧋|kafein sut seker aci_hafif
+Starbucks Pumpkin Spice Frappuccino|🥤|kafein sut seker katki aci_hafif
+Starbucks Pecan Maple Latte|☕|kafein sut seker
+Starbucks Toffee Nut Latte|☕|kafein sut seker
+Starbucks Earl Grey|🫖|kafein_hafif
+Starbucks Mint Blend|🫖|hafif
+Starbucks Kruvasan|🥐|yag sut_az
+Starbucks Cheesecake|🍰|sut seker yag
+Starbucks Brownie|🍫|seker yag sut_az
+Starbucks Muffin|🧁|seker yag_hafif katki
+Starbucks Cookie|🍪|seker yag
 Kahve Dünyası Türk Kahvesi|☕|kafein
 Kahve Dünyası Damla Sakızlı Türk Kahvesi|☕|kafein
 Kahve Dünyası Dibek Kahvesi|☕|kafein
@@ -1843,56 +2104,6 @@ Whey protein tozu|🥛|sut_az katki
 Bitkisel protein tozu|🥛|baklagil_az katki
 Kolajen tozu|🥄|hafif
 Kemik suyu tozu|🦴|hafif
-# Starbucks
-Starbucks Caffè Americano|☕|kafein
-Starbucks Iced Caffè Americano|🧋|kafein
-Starbucks Caffè Latte|☕|kafein sut
-Starbucks Iced Caffè Latte|🧋|kafein sut
-Starbucks Cappuccino|☕|kafein sut
-Starbucks Flat White|☕|kafein sut
-Starbucks Cortado|☕|kafein sut_az
-Starbucks Ristretto Bianco|☕|kafein sut
-Starbucks Espresso|☕|kafein
-Starbucks Latte Macchiato|☕|kafein sut
-Starbucks Caramel Macchiato|☕|kafein sut seker
-Starbucks Iced Caramel Macchiato|🧋|kafein sut seker
-Starbucks Caffè Mocha|☕|kafein sut seker
-Starbucks White Chocolate Mocha|☕|kafein sut seker katki
-Starbucks Iced White Chocolate Mocha|🧋|kafein sut seker katki
-Starbucks Filtre Kahve|☕|kafein
-Starbucks Cold Brew|🧋|kafein
-Starbucks Iced Brown Sugar Oat Shaken Espresso|🧋|kafein seker
-Starbucks Doubleshot Iced Shaken Espresso|🧋|kafein seker
-Starbucks Türk Kahvesi|☕|kafein
-Starbucks Chai Tea Latte|🍵|kafein_hafif sut seker aci_hafif
-Starbucks Iced Chai Tea Latte|🧋|kafein_hafif sut seker aci_hafif
-Starbucks Hot Chocolate|🍫|sut seker kafein_hafif
-Starbucks Caramel Frappuccino|🥤|kafein sut seker katki yag_hafif
-Starbucks Mocha Frappuccino|🥤|kafein sut seker katki
-Starbucks Java Chip Frappuccino|🥤|kafein sut seker katki yag_hafif
-Starbucks Espresso Frappuccino|🥤|kafein sut seker katki
-Starbucks Strawberries & Cream Frappuccino|🥤|sut seker katki
-Starbucks Cool Lime|🍈|kafein_hafif seker asit
-Starbucks Very Berry Hibiscus|🌺|kafein_hafif seker
-Starbucks Orange Mango|🥭|kafein_hafif seker asit
-Starbucks Mango Dragonfruit|🐉|kafein_hafif seker
-Starbucks Matcha Latte|🍵|kafein_hafif sut seker
-Starbucks Matcha Pistachio Latte|🍵|kafein_hafif sut seker
-Starbucks Spanish Cream Matcha Latte|🍵|kafein_hafif sut seker
-Starbucks Iced Strawberry Cream Matcha Latte|🧋|kafein_hafif sut seker katki
-Starbucks Iced Apple Crumble Matcha Latte|🧋|kafein_hafif sut seker katki
-Starbucks Pumpkin Spice Latte|🎃|kafein sut seker aci_hafif
-Starbucks Iced Pumpkin Spice Latte|🧋|kafein sut seker aci_hafif
-Starbucks Pumpkin Spice Frappuccino|🥤|kafein sut seker katki aci_hafif
-Starbucks Pecan Maple Latte|☕|kafein sut seker
-Starbucks Toffee Nut Latte|☕|kafein sut seker
-Starbucks Earl Grey|🫖|kafein_hafif
-Starbucks Mint Blend|🫖|hafif
-Starbucks Kruvasan|🥐|yag sut_az
-Starbucks Cheesecake|🍰|sut seker yag
-Starbucks Brownie|🍫|seker yag sut_az
-Starbucks Muffin|🧁|seker yag_hafif katki
-Starbucks Cookie|🍪|seker yag
 # Fast food zincirleri
 McDonald's Big Mac|🍔|yag katki sut_az
 McDonald's Double Big Mac|🍔|yag katki sut_az
@@ -2147,6 +2358,22 @@ Soda|Maden suyu
 Sade soda|Maden suyu
 Ev yapımı limonata (az şekerli)|Limonata
 # yaygın kısa adlar ve eş anlamlılar
+Efes|Efes Pilsen
+Tuborg|Tuborg Gold
+Bomonti|Bomonti Filtresiz
+Corona|Corona Extra
+Tekirdağ|Tekirdağ Rakısı
+Kırmızı şarap kadehi|Kırmızı şarap
+Beyaz şarap kadehi|Beyaz şarap
+Glühwein|Sıcak şarap (glühwein)
+Cider|Elma şarabı (cider)
+Spritz|Aperol Spritz
+Jäger|Jägermeister
+Gin|Cin
+Tequila|Tekila
+Whisky|Viski
+Vodka|Votka
+Rum|Rom
 Coca Cola|Coca-Cola
 Coke|Coca-Cola
 Kola zero|Coca-Cola Zero
