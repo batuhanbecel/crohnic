@@ -202,8 +202,51 @@ export async function listPhases(db: SQLiteDatabase) {
   return db.getAllAsync<{ phase: Phase; started_at: number }>('SELECT phase, started_at FROM phases ORDER BY started_at');
 }
 
+const END = Number.MAX_SAFE_INTEGER;
+
+/** The phase that applies just before `t` (remisyon when nothing was recorded). */
+async function phaseBefore(db: SQLiteDatabase, t: number): Promise<Phase> {
+  const r = await db.getFirstAsync<{ phase: Phase }>('SELECT phase FROM phases WHERE started_at < ? ORDER BY started_at DESC LIMIT 1', t);
+  return r?.phase ?? 'remisyon';
+}
+
+/** Drop changes that repeat the phase before them, so "since" is the start of the real period. */
+async function collapsePhases(db: SQLiteDatabase) {
+  await db.runAsync(
+    `DELETE FROM phases WHERE id IN (
+       SELECT p.id FROM phases p
+       WHERE p.phase = (SELECT q.phase FROM phases q WHERE q.started_at < p.started_at ORDER BY q.started_at DESC LIMIT 1)
+     )`,
+  );
+}
+
+/**
+ * Switch phase. A switch undone within 15 minutes was a slip or a try-out: the last change is
+ * dropped instead of leaving a few-minutes-long period in the history (and in the report).
+ */
 export async function setPhase(db: SQLiteDatabase, phase: Phase) {
-  await db.runAsync('INSERT INTO phases (phase, started_at) VALUES (?, ?)', phase, Date.now());
+  const t = Date.now();
+  await db.withTransactionAsync(async () => {
+    const last = await db.getFirstAsync<{ id: number; started_at: number }>('SELECT id, started_at FROM phases ORDER BY started_at DESC LIMIT 1');
+    if (last && t - last.started_at < 15 * 60000) {
+      await db.runAsync('DELETE FROM phases WHERE id = ?', last.id);
+      await db.runAsync('UPDATE meals SET phase = ? WHERE eaten_at >= ?', phase, last.started_at);
+      if ((await phaseBefore(db, END)) === phase) return; // back where it was
+    }
+    await db.runAsync('INSERT INTO phases (phase, started_at) VALUES (?, ?)', phase, t);
+  });
+}
+
+/**
+ * Remove a period from the history (from … to, `to` null for the current one). The time it
+ * covered falls back to the phase before it, and meals eaten in it are re-labelled to match.
+ */
+export async function deletePhasePeriod(db: SQLiteDatabase, from: number, to: number | null) {
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM phases WHERE started_at >= ? AND started_at < ?', from, to ?? END);
+    await db.runAsync('UPDATE meals SET phase = ? WHERE eaten_at >= ? AND eaten_at < ?', await phaseBefore(db, from), from, to ?? END);
+    await collapsePhases(db);
+  });
 }
 
 // ---------- meals ----------

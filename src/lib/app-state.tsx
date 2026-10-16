@@ -25,6 +25,8 @@ type AppState = {
   pending: PendingResult | null;
   setPending: (p: PendingResult | null) => void;
   changePhase: (p: Phase) => Promise<void>;
+  /** re-read the current phase after the history was edited */
+  reloadPhase: () => Promise<void>;
   saveAi: (cfg: AiConfig | null) => Promise<void>;
   saveName: (n: string) => Promise<void>;
   bump: () => void;
@@ -83,13 +85,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (dataVersion) loadCustomEmojis(sql);
   }, [sql, dataVersion]);
 
+  const reloadPhase = useCallback(async () => {
+    const p = await db.getPhase(sql);
+    setPhaseState(p.phase);
+    setPhaseSince(p.since);
+  }, [sql]);
+
   const changePhase = useCallback(
     async (p: Phase) => {
       await db.setPhase(sql, p);
-      setPhaseState(p);
-      setPhaseSince(Date.now());
+      await reloadPhase();
+      setDataVersion((v) => v + 1);
     },
-    [sql],
+    [sql, reloadPhase],
   );
 
   const saveAi = useCallback(
@@ -121,8 +129,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [sql]);
 
   const value = useMemo(
-    () => ({ ready, name, phase, phaseSince, ai, onboarded, finishOnboarding, dataVersion, pending, setPending, changePhase, saveAi, saveName, bump }),
-    [ready, name, phase, phaseSince, ai, onboarded, finishOnboarding, dataVersion, pending, changePhase, saveAi, saveName, bump],
+    () => ({ ready, name, phase, phaseSince, ai, onboarded, finishOnboarding, dataVersion, pending, setPending, changePhase, reloadPhase, saveAi, saveName, bump }),
+    [ready, name, phase, phaseSince, ai, onboarded, finishOnboarding, dataVersion, pending, changePhase, reloadPhase, saveAi, saveName, bump],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

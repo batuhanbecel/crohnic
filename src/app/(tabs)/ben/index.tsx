@@ -1,12 +1,12 @@
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, View } from 'react-native';
 import { bristolTone } from '../../../components/bristol';
 import { Mascot } from '../../../components/Mascot';
-import { Card, Empty, Icon, Row, Screen, SectionTitle, T } from '../../../components/ui';
+import { Card, Empty, Icon, Row, Screen, SectionTitle, T, Tap } from '../../../components/ui';
 import { useApp } from '../../../lib/app-state';
-import { dayKey, now } from '../../../lib/dates';
+import { dayKey, now, timeLabel } from '../../../lib/dates';
 import * as db from '../../../lib/db';
 import { TAGS } from '../../../lib/foods';
 import { flareDaysBetween, lifestyleEffects, phasePeriods, suspectFoods, type PhasePeriod } from '../../../lib/insights';
@@ -31,19 +31,30 @@ export default function Insights() {
   const [phaseLog, setPhaseLog] = useState<{ phase: 'remisyon' | 'atak'; started_at: number }[]>([]);
   const [loadedAt, setLoadedAt] = useState(0);
 
+  const load = useCallback(() => {
+    Promise.all([db.allRatedMeals(sql), db.listMeals(sql, 600), db.listBowel(sql, 600), db.listSymptoms(sql, 600), db.listDaily(sql, 120), db.listPhases(sql)]).then(([r, m, b, s, d, ph]) => {
+      setPhaseLog(ph);
+      setRated(r);
+      setAllMeals(m);
+      setBowel(b);
+      setSymptoms(s);
+      setDaily(d);
+      setLoadedAt(now());
+    });
+  }, [sql]);
+
   useFocusEffect(
     useCallback(() => {
-      Promise.all([db.allRatedMeals(sql), db.listMeals(sql, 600), db.listBowel(sql, 600), db.listSymptoms(sql, 600), db.listDaily(sql, 120), db.listPhases(sql)]).then(([r, m, b, s, d, ph]) => {
-        setPhaseLog(ph);
-        setRated(r);
-        setAllMeals(m);
-        setBowel(b);
-        setSymptoms(s);
-        setDaily(d);
-        setLoadedAt(now());
-      });
-    }, [sql]),
+      load();
+    }, [load, app.dataVersion]), // eslint-disable-line react-hooks/exhaustive-deps
   );
+
+  const deletePeriod = async (p: PhasePeriod) => {
+    await db.deletePhasePeriod(sql, p.from, p.to);
+    await app.reloadPhase();
+    app.bump();
+    load();
+  };
 
   const { triggers, safe } = useMemo(() => triggerInsights(rated), [rated]);
   const suspects = useMemo(() => suspectFoods(allMeals, symptoms, bowel), [allMeals, symptoms, bowel]);
@@ -118,7 +129,7 @@ export default function Insights() {
         </View>
       </Card>
 
-      {periods.length ? <PhaseHistory periods={periods} at={loadedAt} /> : null}
+      {periods.length ? <PhaseHistory periods={periods} at={loadedAt} onDelete={deletePeriod} /> : null}
 
       {!enough ? (
         <Empty art={<Mascot mood="arastirma" size={100} />} title="Biraz daha kayıt lazım" text={`4 öğünün nasıl geçtiğini yazınca tetikleyicilerini göstermeye başlarım. Şu an ${rated.length} tane var.`} />
@@ -412,9 +423,42 @@ function FoodList({ title, items, color }: { title: string; items: string[]; col
 
 const fmtDay = (ms: number) => new Date(ms).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
 
-function PhaseHistory({ periods, at }: { periods: PhasePeriod[]; at: number }) {
+/** "40 dk", "5 saat", "12 gün": a test switch shouldn't read as a whole day. */
+function spanOf(p: PhasePeriod, at: number) {
+  const ms = (p.to ?? at) - p.from;
+  if (ms < 3600000) return `${Math.max(1, Math.round(ms / 60000))} dk`;
+  if (ms < 86400000) return `${Math.round(ms / 3600000)} saat`;
+  return `${p.days} gün`;
+}
+
+/** "16 Eki 09:12 – 09:40" on one day, "3 Eki – 16 Eki" across days. */
+function rangeOf(p: PhasePeriod) {
+  if (!p.to) return `${fmtDay(p.from)} – devam ediyor`;
+  if (dayKey(p.from) === dayKey(p.to)) return `${fmtDay(p.from)}, ${timeLabel(p.from)} – ${timeLabel(p.to)}`;
+  return `${fmtDay(p.from)} – ${fmtDay(p.to)}`;
+}
+
+function PhaseHistory({ periods, at, onDelete }: { periods: PhasePeriod[]; at: number; onDelete: (p: PhasePeriod) => void }) {
   const flares = periods.filter((p) => p.phase === 'atak');
   const last90 = flareDaysBetween(periods, at - 90 * 86400000, at);
+
+  // a period entered by mistake or as a try-out: remove it, the time goes back to the phase before
+  const ask = (p: PhasePeriod, i: number) => {
+    const name = p.phase === 'atak' ? 'atak' : 'remisyon';
+    const before = periods[i + 1]?.phase ?? 'remisyon';
+    const title = `Bu ${name} dönemi silinsin mi?`;
+    const message = `${rangeOf(p)}. Bu aralık ${before === 'atak' ? 'atak' : 'remisyon'} dönemine sayılır, öğünlerin de ona göre işaretlenir.${p.to ? '' : ' Şu anki dönemin de değişir.'}`;
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions({ title, message, options: ['Dönemi sil', 'Vazgeç'], destructiveButtonIndex: 0, cancelButtonIndex: 1 }, (b) => {
+        if (b === 0) onDelete(p);
+      });
+      return;
+    }
+    Alert.alert(title, message, [
+      { text: 'Vazgeç', style: 'cancel' },
+      { text: 'Dönemi sil', style: 'destructive', onPress: () => onDelete(p) },
+    ]);
+  };
   return (
     <>
       <SectionTitle title="Dönemler" />
@@ -428,7 +472,7 @@ function PhaseHistory({ periods, at }: { periods: PhasePeriod[]; at: number }) {
           const flare = p.phase === 'atak';
           const tone = flare ? palette.flareDeep : palette.lettuceDeep;
           return (
-            <View key={p.from}>
+            <Tap key={p.from} onPress={() => ask(p, i)} accessibilityRole="button" accessibilityLabel={`${flare ? 'Atak' : 'Remisyon'}, ${rangeOf(p)}, ${spanOf(p, at)}`} accessibilityHint="Silmek için dokun">
               {i > 0 ? <View style={{ height: 1, backgroundColor: palette.hairline, marginLeft: 38 }} /> : null}
               <Row gap={12} style={{ paddingVertical: 9 }}>
                 <View
@@ -448,16 +492,20 @@ function PhaseHistory({ periods, at }: { periods: PhasePeriod[]; at: number }) {
                     {flare ? 'Atak' : 'Remisyon'}
                   </T>
                   <T v="small" color={palette.inkSoft}>
-                    {fmtDay(p.from)} – {p.to ? fmtDay(p.to) : 'devam ediyor'}
+                    {rangeOf(p)}
                   </T>
                 </View>
                 <T v="callout" style={type.semibold}>
-                  {p.days} gün
+                  {spanOf(p, at)}
                 </T>
+                <Icon name="ellipsis" size={14} color={palette.inkFaint} fallback="⋯" />
               </Row>
-            </View>
+            </Tap>
           );
         })}
+        <T v="caption" color={palette.inkFaint} style={{ marginTop: 4 }}>
+          Yanlışlıkla ya da deneme için girdiğin bir dönemi silmek için üstüne dokun.
+        </T>
       </Card>
     </>
   );
