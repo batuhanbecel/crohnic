@@ -335,6 +335,20 @@ const NEAR: Partial<Record<Category, Category[]>> = {
   'Beslenme destekleri': ['İçecek'],
 };
 const NEVER_SWAP: Category[] = ['Alkollü içecekler', 'Sigara & tütün'];
+const DRINK = /🥤|🧃|🧋|☕|🍵|🥛|🍋|⚡|🫧|🍺|🍷|🍸|🍹|🥂|🍶|🧉|🍾|🥃|💧|🫖/u;
+const SWEET = /🍰|🍮|🍨|🍦|🍫|🍪|🍩|🧁|🥧|🍯|🍬|🍭|🎂|🧇|🥞|🍧|🍡|🥮/u;
+const SWEET_NAME = /künefe|kadayıf|baklava|tatlı|helva|sütlaç|puding|pasta|cheesecake|tiramisu|sufle|dondurma|lokum|kurabiye|cookie/i;
+/** A burger is swapped for a dish, a soup for a soup, a cola for a drink, a dessert for something sweet. */
+const kindOf = (f: Food) =>
+  f.cat === 'Soslar & baharat'
+    ? 'sos'
+    : DRINK.test(f.emoji)
+      ? 'icecek'
+      : f.cat === 'Çorba' || f.emoji === '🍲'
+        ? 'corba'
+        : f.cat === 'Tatlı' || SWEET.test(f.emoji) || SWEET_NAME.test(f.name)
+          ? 'tatli'
+          : 'yemek';
 const words = (name: string) => new Set(normalizeName(name).split(/[^a-zçğıöşü0-9]+/).filter((w) => w.length >= 3));
 
 /**
@@ -347,15 +361,19 @@ export function alternativesFor(food: Food, phase: Phase, limit = 4, stats?: Ret
   const cats = [food.cat, ...(NEAR[food.cat] ?? [])].filter((c) => !NEVER_SWAP.includes(c));
   const mine = words(food.name);
   const tags = new Set(food.tags);
+  const kind = kindOf(food);
   const scored: { food: Food; a: FoodAssessment; score: number }[] = [];
   for (const f of FOODS) {
     if (f.id === food.id || !cats.includes(f.cat)) continue;
+    // fruit stands in for a dessert; otherwise only the same kind of thing
+    const k = kindOf(f);
+    if (k !== kind && !(kind === 'tatli' && f.cat === 'Meyve')) continue;
     const a = assessFood(f, phase, undefined, stats);
     if (a.verdict !== 'iyi') continue;
     const shared = [...words(f.name)].filter((w) => mine.has(w)).length;
     const union = new Set([...tags, ...f.tags]).size || 1;
     const jaccard = f.tags.filter((t) => tags.has(t)).length / union;
-    const score = (a.confidence === 'kişisel' ? 50 : 0) + shared * 8 + jaccard * 4 + (f.cat === food.cat ? 6 : 0) + (f.tags.includes('hafif') ? 2 : 0) - (RARE_FOOD.test(f.name) ? 6 : 0);
+    const score = (a.confidence === 'kişisel' ? 50 : 0) + shared * 8 + jaccard * 4 + (f.cat === food.cat ? 6 : 0) + (f.emoji === food.emoji ? 4 : 0) + (f.tags.includes('hafif') ? 2 : 0) - (RARE_FOOD.test(f.name) ? 6 : 0);
     scored.push({ food: f, a, score });
   }
   return scored.sort((x, y) => y.score - x.score || x.food.name.length - y.food.name.length).slice(0, limit);

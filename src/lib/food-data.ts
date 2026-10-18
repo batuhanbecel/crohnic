@@ -1525,6 +1525,17 @@ Tarçın|🟤|hafif
 Kekik|🌿|hafif
 Kuru nane|🌿|hafif
 Sumak|🌿|asit
+Sarımsaklı mayonez|🧄|yag lahana
+Ballı hardal sos|🍯|seker yag_hafif
+Buffalo sos|🌶️|aci asit yag
+Chipotle sos|🌶️|aci yag
+Cheddar sos|🧀|sut yag katki
+Kokteyl sos|🥣|yag seker asit
+Bin ada sos|🥣|yag seker asit
+Acılı mayonez|🌶️|yag aci
+Trüf mayonez|🍄|yag
+Gravy sos|🥣|yag katki
+Algerienne sos|🥣|yag aci_hafif
 # İçecek
 Su|💧|hafif
 Limonlu su|🍋|asit
@@ -2017,6 +2028,17 @@ Elektrolitli su|💧|hafif
 Vitaminli su|💧|seker katki
 Tonik (sade)|🥤|gazli seker
 Zencefilli gazoz (ginger ale)|🥤|gazli seker
+Fruko|🥤|gazli seker
+Cappy Elma|🧃|seker
+Cappy Kayısı|🧃|seker
+Cappy Portakal|🧃|seker asit
+Cappy Atom|🧃|seker
+Tropicana Karışık|🧃|seker
+Tropicana Şeftali|🧃|seker
+Tropicana Vişne|🧃|seker
+Capri-Sun|🧃|seker
+Fuse Tea Mango|🧃|seker kafein_hafif
+Lipton Ice Tea Karpuz|🧃|seker kafein_hafif
 # Kafe zincirleri
 Starbucks Caffè Americano|☕|kafein
 Starbucks Iced Caffè Americano|🧋|kafein
@@ -2115,6 +2137,111 @@ Saray Muhallebicisi Kazandibi|🍮|sut seker
 Hafız Mustafa Baklava|🍯|seker yag kuruyemis
 Hafız Mustafa Lokum|🍬|seker
 Koska Helva|🍯|seker yag kuruyemis
+Simit Sarayı Dopdolu Simit|🥯|yag islenmis sut_az cekirdek
+Simit Sarayı Simit Arası Kaşar|🥯|yag_hafif sut_az cekirdek
+Simit Sarayı Simit Pizza|🍕|yag sut_az asit islenmis cekirdek
+Simit Sarayı Menemen|🍳|yag asit
+Simit Sarayı Pratik Kahvaltı|🍳|yag sut_az
+Simit Sarayı Su Böreği|🥧|yag sut
+Simit Sarayı Gül Böreği|🥧|yag sut_az
+Simit Sarayı Kalem Börek|🥧|yag
+Simit Sarayı Saray Börek|🥧|yag sut_az
+Simit Sarayı Zeytinli Poğaça|🥐|yag
+Simit Sarayı Kaşarlı Poğaça|🥐|yag sut_az
+Simit Sarayı Ay Çöreği|🥐|seker yag kuruyemis
+Simit Sarayı Çıtır Hot Dog|🌭|yag islenmis katki
+Simit Sarayı Ciabatta Sandviç|🥪|yag sut_az
+Simit Sarayı Saray Dürüm|🌯|yag
+Simit Sarayı Bask Cheesecake|🍰|sut seker yag
+Simit Sarayı Tiramisu|🍰|sut seker yag kafein_hafif
+Simit Sarayı Muffin|🧁|seker yag
+Simit Sarayı Pasta (dilim)|🍰|seker yag sut
+Simit Sarayı Kurabiye|🍪|seker yag
+Simit Sarayı Milkshake|🥤|sut seker
+Simit Sarayı Tahinli Çıtır Sarma|🥐|seker yag
+Kahve Dünyası Filtre Kahve|☕|kafein
+Kahve Dünyası Americano|☕|kafein
+Kahve Dünyası Cappuccino|☕|kafein sut
+Kahve Dünyası Flat White|☕|kafein sut
+Kahve Dünyası Beyaz Çikolatalı Mocha|☕|kafein sut seker
+Kahve Dünyası Gofrik Latte|☕|kafein sut seker
+Kahve Dünyası Salepli Kahve|☕|kafein sut seker
+Kahve Dünyası Cold Brew|🧋|kafein
+Kahve Dünyası Buzlu Latte|🧋|kafein sut
+Kahve Dünyası Espresso Freddo|🧋|kafein
+Kahve Dünyası Soğuk Türk Kahvesi|🧋|kafein
+Kahve Dünyası Salep|🥛|sut seker
+Kahve Dünyası Milkshake|🥤|sut seker
+Kahve Dünyası Limonata|🍋|seker asit
+Kahve Dünyası Sandviç|🥪|yag_hafif sut_az
+Kahve Dünyası Kruvasan Sandviç|🥐|yag sut_az
+Kahve Dünyası Börekitas|🥟|yag
+Kahve Dünyası Bagel|🥯|yag_hafif sut_az
+Kahve Dünyası Dilim Kek|🍰|seker yag
+Kahve Dünyası Pasta (dilim)|🍰|seker yag sut kafein_hafif
+Kahve Dünyası Cheesecake|🍰|sut seker yag
+Kahve Dünyası Cookie|🍪|seker yag
+Kahve Dünyası Profiterol|🍮|seker sut yag kafein_hafif
+Kahve Dünyası Dondurma|🍨|sut seker
+Kahve Dünyası Fit Brownie|🍫|yag kafein_hafif
+Kahve Dünyası Müsli|🥣|lif sut_az
+Espressolab Espresso|☕|kafein
+Espressolab White Chocolate Mocha|☕|kafein sut seker
+Espressolab Spanish Latte|☕|kafein sut seker
+Espressolab Lotus Latte|☕|kafein sut seker
+Espressolab Salted Caramel Latte|☕|kafein sut seker
+Espressolab Tahinli Latte|☕|kafein sut seker
+Espressolab Türk Kahvesi|☕|kafein
+Espressolab V60|☕|kafein
+Espressolab Chai Tea Latte|🍵|kafein_hafif sut seker
+Espressolab Matcha Latte|🍵|kafein_hafif sut
+Espressolab Hot Chocolate|☕|sut seker kafein_hafif
+Espressolab Milkshake|🥤|sut seker
+Espressolab Kombucha|🧃|fermente asit
+Espressolab Mojito Hibiscus|🧃|seker asit
+Espressolab Kruvasan|🥐|yag sut_az
+Espressolab Poğaça|🥐|yag
+Espressolab Sandviç|🥪|yag_hafif sut_az
+Espressolab Levain Kuki|🍪|seker yag
+Espressolab Mermer Kek|🍰|seker yag
+Espressolab San Sebastian Cheesecake|🍰|sut seker yag
+Espressolab Tiramisu|🍰|sut seker yag kafein_hafif
+Espressolab Brownie|🍫|seker yag kafein_hafif
+Espressolab Donut|🍩|seker yag
+Espressolab İzmir Bombası|🍫|seker yag kafein_hafif
+Mado Menemen|🍳|yag asit
+Mado Omlet|🍳|yag
+Mado Tost|🥪|yag sut_az
+Mado Gözleme|🫓|yag sut_az
+Mado Su Böreği|🥧|yag sut
+Mado Mantı|🥟|yag sut lahana
+Mado İçli Köfte|🧆|yag
+Mado Kasap Köfte|🍖|yag
+Mado Beğendili Kebap|🍖|yag sut
+Mado Izgara Tavuk|🍗|yag_hafif
+Mado Burger|🍔|yag katki
+Mado Pizza|🍕|yag sut asit katki
+Mado Pide|🫓|yag sut_az
+Mado Salata|🥗|cig yag_hafif
+Mado Makarna|🍝|yag sut_az asit
+Mado Dürüm|🌯|yag
+Mado Fıstıklı Dondurma|🍨|sut seker kuruyemis
+Mado Çikolatalı Dondurma|🍨|sut seker kafein_hafif
+Mado Şeker İlavesiz Dondurma|🍨|sut tatlandirici
+Mado Vegan Dondurma|🍨|seker
+Mado Kesme Dondurma|🍨|sut seker
+Mado Sütlü Soğuk Baklava|🍮|seker sut yag kuruyemis
+Mado Kadayıf|🍮|seker yag kuruyemis
+Mado Şöbiyet|🍮|seker yag kuruyemis sut_az
+Mado Havuç Dilimi|🍮|seker yag kuruyemis
+Mado Şekerpare|🍪|seker yag
+Mado Ekmek Kadayıfı|🍮|seker sut
+Mado Revani|🍰|seker yag
+Mado Pasta (dilim)|🍰|seker yag sut
+Mado Cheesecake|🍰|sut seker yag
+Mado Waffle|🧇|seker yag sut_az
+Mado Salep|🥛|sut seker
+Mado Kağıt Helva|🍦|seker
 # Beslenme destekleri
 Modulen IBD|🥛|hafif
 Ensure|🥛|seker
@@ -2297,6 +2424,277 @@ Five Guys Burger|🍔|yag
 Five Guys Patates|🍟|yag
 Chipotle Burrito Bowl|🥗|baklagil aci_hafif lif
 Panda Express Orange Chicken|🥡|yag seker
+McDonald's McWings (tavuk kanat)|🍗|yag aci_hafif katki
+McDonald's McCrispy|🍔|yag katki
+McDonald's Spicy McCrispy|🍔|yag katki aci
+McDonald's McCrispy Deluxe|🍔|yag katki cig
+McDonald's Spicy McCrispy Deluxe|🍔|yag katki aci cig
+McDonald's Crispy Tenders|🍗|yag katki
+McDonald's Çıtır Tavuk Burger|🍔|yag katki
+McDonald's Triple Cheeseburger|🍔|yag katki sut_az
+McDonald's Quarter Pounder Deluxe|🍔|yag katki sut_az cig
+McDonald's Double Quarter Pounder Deluxe|🍔|yag katki sut_az cig
+McDonald's Tenders Dürüm (acılı mayonezli)|🌯|yag katki aci_hafif cig
+McDonald's Tenders Dürüm (tatlı turşulu)|🌯|yag katki asit cig
+McDonald's Spicy McFlavor Fries|🍟|yag aci_hafif katki
+McDonald's Çıtır Mix|🍗|yag katki
+McDonald's Mixology|🧃|seker asit
+Burger King Triple Whopper|🍔|yag katki cig lahana
+Burger King Double Whopper Jr.|🍔|yag katki cig
+Burger King Chicken Big King|🍔|yag katki
+Burger King Big King XXL|🍔|yag katki sut_az
+Burger King Double Texas Smokehouse Burger|🍔|yag katki islenmis aci_hafif
+Burger King Double King Chicken|🍔|yag katki
+Burger King Double Chicken Royale|🍔|yag katki
+Burger King Double Cheeseburger|🍔|yag katki sut_az
+Burger King Mega Double Cheeseburger|🍔|yag katki sut_az
+Burger King Hamburger|🍔|yag katki
+Burger King Etli Barbekü Brioche|🍔|yag katki seker
+Burger King Tavuklu Barbekü Brioche|🍔|yag katki seker
+Burger King Macaroni Bites|🧀|yag sut katki
+Burger King Tırtıklı Patates|🍟|yag
+Burger King Elmalı Tatlı|🥧|seker yag
+Burger King Vişneli Tatlı|🥧|seker yag
+Burger King Cookie|🍪|seker yag
+Burger King King Sundae|🍨|sut seker katki
+Burger King King Mix|🍦|sut seker katki
+Burger King Milkshake|🥤|sut seker katki
+KFC Cruncher Burger|🍔|yag katki
+KFC Mighty Cruncher Burger|🍔|yag katki
+KFC Double Cruncher Burger|🍔|yag katki
+KFC Strips|🍗|yag katki
+KFC Soğan Halkası|🧅|yag lahana
+KFC Mozaik Kek|🍰|seker yag sut_az kafein_hafif
+Popeyes XL Sandviç|🥪|yag katki
+Popeyes Smoky XL Sandviç|🥪|yag katki aci_hafif
+Popeyes Popchicken|🍔|yag katki
+Popeyes Tavukburger|🍔|yag katki
+Popeyes Mini Burger|🍔|yag katki
+Popeyes Pop Dürüm|🌯|yag katki cig
+Popeyes Nuggets|🍗|yag katki islenmis
+Popeyes Nuggets Salata|🥗|yag katki cig
+Popeyes Tatlı Acı Soslu Kanat|🍗|yag aci_hafif seker
+Popeyes Ballı Barbekü Soslu Kanat|🍗|yag seker
+Popeyes Buffalo Soslu Kanat|🍗|yag aci asit
+Popeyes Golden But|🍗|yag katki
+Popeyes Soğan Halkası|🧅|yag lahana
+Popeyes Sarımsaklı Ekmek|🥖|yag lahana
+Popeyes Sufle|🍫|seker yag sut_az
+Domino's Süperix Pizza|🍕|yag sut islenmis asit katki
+Domino's Kantin Pizza|🍕|yag sut_az islenmis asit katki
+Domino's Sosyal Pizza|🍕|yag sut islenmis asit katki
+Domino's Bol Etli Pizza|🍕|yag sut islenmis asit katki
+Domino's Italiano Pizza|🍕|yag sut islenmis asit katki
+Domino's Barbekü Soslu Tavuklu Pizza|🍕|yag_hafif sut_az seker asit katki
+Domino's Ballı Hardallı Tavuklu Pizza|🍕|yag_hafif sut_az seker katki
+Domino's Mangal Sucuklu Pizza|🍕|yag sut islenmis aci_hafif asit katki
+Domino's Konyalım Pizza|🍕|yag sut asit katki
+Domino's Üç Peynirli Pizza|🍕|yag sut katki
+Domino's Ocakbaşı Pizza|🍕|yag sut aci_hafif asit katki
+Domino's Callypso Pizza|🍕|yag sut_az islenmis asit katki
+Domino's Pastırma & Sucuk Pizza|🍕|yag sut islenmis aci_hafif asit katki
+Domino's Peynirsever Pizza|🍕|yag sut katki
+Domino's Roll (sucuklu)|🌯|yag sut islenmis katki
+Domino's Roll (jalapenolu)|🌯|yag sut aci katki
+Domino's Pizzetta|🍕|yag sut_az islenmis asit katki
+Domino's Dürümos|🌯|yag sut_az islenmis katki
+Domino's Tavuklu Dürümos|🌯|yag_hafif sut_az katki
+Domino's Tavuk Parçaları|🍗|yag katki
+Domino's Çıtır Tavuk Finger|🍗|yag katki
+Domino's Çıtır Karışık Kova|🍗|yag katki
+Domino's Baharatlı Gurme Patates|🍟|yag aci_hafif
+Domino's Sucuklu Bol Peynirli Ekmek|🥖|yag sut islenmis
+Domino's Cinnamon Roll|🥐|seker yag sut_az
+Little Caesars Sucuk Mısır Pizza|🍕|yag sut_az islenmis kabuk asit katki
+Little Caesars Piknik Pizza|🍕|yag sut islenmis asit katki
+Little Caesars Parti Pizza|🍕|yag sut islenmis asit katki
+Little Caesars Sucukbol Pizza|🍕|yag sut islenmis aci_hafif asit katki
+Little Caesars Çıtır Ranch Pizza|🍕|yag sut katki
+Little Caesars Veggie Pizza|🍕|yag_hafif sut_az asit lif katki
+Little Caesars Akdeniz Pizza|🍕|yag sut_az asit katki
+Little Caesars Italiano Pizza|🍕|yag sut islenmis asit katki
+Little Caesars Çok Karışık Pizza|🍕|yag sut islenmis asit katki
+Little Caesars Süper Sezar Pizza|🍕|yag sut islenmis asit katki
+Little Caesars Barbekü Soslu Tavuklu Pizza|🍕|yag_hafif sut_az seker asit katki
+Little Caesars Kavurmalı Pizza|🍕|yag sut asit katki
+Little Caesars Etibol Pizza|🍕|yag sut asit katki
+Little Caesars Turkish Mix Pizza|🍕|yag sut islenmis aci_hafif asit katki
+Little Caesars Yanar Döner Pizza|🍕|yag sut aci asit katki
+Little Caesars Sezar Puffs|🥟|yag sut_az katki
+Little Caesars Peynirli Ekmek|🥖|yag sut
+Little Caesars Sucuk Ekmek|🥖|yag islenmis
+Little Caesars Sezar Patates|🍟|yag
+Little Caesars Çıtır Tavuk Topları|🍗|yag katki
+Little Caesars Çıtır Tavuk Parçaları|🍗|yag katki
+Little Caesars Sufle|🍫|seker yag sut_az
+Sbarro Margarita Pizza|🍕|yag sut asit katki
+Sbarro Sucuklu Pizza|🍕|yag sut islenmis aci_hafif asit katki
+Sbarro Sosisli Mısırlı Pizza|🍕|yag sut_az islenmis kabuk asit katki
+Sbarro Karışık Pizza|🍕|yag sut islenmis asit katki
+Sbarro Süper Karışık Pizza|🍕|yag sut islenmis asit katki
+Sbarro Barbekü Tavuklu Pizza|🍕|yag_hafif sut_az seker asit katki
+Sbarro Meksikalı Pizza|🍕|yag sut aci asit katki
+Sbarro Cheeseburger Pizza|🍕|yag sut katki
+Sbarro Bol Etli Pizza|🍕|yag sut asit katki
+Sbarro Turka Kıymalı Pide|🫓|yag
+Sbarro Lahmacun|🫓|yag aci_hafif
+Sbarro Efsane Kanat|🍗|yag aci_hafif
+Sbarro Wrap|🌯|yag islenmis katki
+Sbarro Tereyağlı Fırın Patates|🥔|yag sut_az
+Subway Baharatlı İtalyan Sandviç|🥪|islenmis yag aci_hafif cig
+Subway Melt Sandviç|🥪|islenmis yag sut_az cig
+Subway Tavuk Fileto Sandviç|🥪|yag_hafif cig
+Subway Hindi Jambon Sandviç|🥪|islenmis cig
+Subway Teriyaki Tavuk & Peynir Sandviç|🥪|seker yag_hafif sut_az cig
+Subway Egelim|🥪|yag_hafif sut_az cig
+Subway Sicilyano|🥪|islenmis yag cig
+Subway Tex-Mex|🥪|yag aci_hafif cig
+Subway Club|🥪|islenmis yag cig
+Subway Et Sever|🥪|islenmis yag sut_az
+Subway Dürüm|🌯|yag_hafif cig
+Subway Salata|🥗|cig yag_hafif
+Subway Fırında Patates|🥔|yag_hafif
+Subway 3 Peynirli Baget|🥖|yag sut
+Arby's Beef'n Cheddar|🥪|yag islenmis sut_az katki
+Arby's Jalapeno Beef'n Cheddar|🥪|yag islenmis sut_az aci katki
+Arby's Barbekü Deluxe|🥪|yag islenmis seker katki
+Arby's Roast Chicken Deluxe|🥪|yag_hafif islenmis cig
+Arby's Smoky Chicken Sandviç|🥪|yag katki aci_hafif
+Arby's Gurme Tavuk Sandviç|🥪|yag katki
+Arby's Çıtır Baget|🥖|yag katki
+Arby's Biftek Philly Sandviç|🥪|yag sut_az
+Arby's Füme Kaburga Sandviç|🥪|yag islenmis
+Arby's Golden Curly Chicken Burger|🍔|yag katki aci_hafif
+Arby's Beef'n Curly Burger|🍔|yag katki aci_hafif
+Arby's Soğan Halkası|🧅|yag lahana
+Arby's Cheese Sticks|🧀|yag sut katki
+Arby's Tenders|🍗|yag katki
+Arby's Tırtıklı Patates|🍟|yag
+Arby's Sufle|🍫|seker yag sut_az
+Arby's Refresha|🧃|seker asit
+Tavuk Dünyası Kekiklim|🍗|yag_hafif
+Tavuk Dünyası Bademli Çıtır Schnitzel|🍗|yag kuruyemis
+Tavuk Dünyası Tavuk Teriyaki|🍗|seker yag_hafif
+Tavuk Dünyası Şefin Tavası|🍳|yag
+Tavuk Dünyası Alinazik Tavuk|🍗|yag sut_az lif
+Tavuk Dünyası Baharatlım|🍗|yag aci_hafif
+Tavuk Dünyası Barbeküs|🍗|yag seker
+Tavuk Dünyası Bi'köri|🍛|yag sut_az aci_hafif
+Tavuk Dünyası Café de Paris Soslu Tavuk|🍗|yag sut
+Tavuk Dünyası Chili Lokumu|🍗|yag aci_hafif
+Tavuk Dünyası Efsane Buffalo|🍗|yag aci
+Tavuk Dünyası Fülfül|🍗|yag aci
+Tavuk Dünyası Közlüce|🍗|yag_hafif lif
+Tavuk Dünyası Kremantar|🍗|yag sut
+Tavuk Dünyası Labiate|🍗|yag sut_az
+Tavuk Dünyası Sriracha Soslu Tavuk|🍗|yag aci
+Tavuk Dünyası Bi'margarita|🍗|yag sut asit
+Tavuk Dünyası Mucidinden Soslu Tavuk|🍗|yag aci_hafif
+Tavuk Dünyası Peynirlim|🍗|yag sut
+Tavuk Dünyası Mangal Köfte|🍖|yag
+Tavuk Dünyası Sezar Salata|🥗|cig yag sut_az
+Tavuk Dünyası Çıtır Tavuklu Salata|🥗|cig yag
+Tavuk Dünyası Falafel|🧆|yag baklagil
+Tavuk Dünyası Humus|🫘|baklagil yag_hafif
+Tavuk Dünyası Peynirli Patates Topları|🥔|yag sut_az
+Tavuk Dünyası Çıtır Tavuk Küpleri|🍗|yag katki
+Tavuk Dünyası Mercimek Çorbası|🍲|yag_hafif baklagil_az
+Tavuk Dünyası Fındıklı Fırın Sütlaç|🍮|sut seker kuruyemis
+Tavuk Dünyası Pastel de Nata|🥧|seker yag sut
+Usta Dönerci Ekmek Arası Et Döner|🥙|yag lahana
+Usta Dönerci Ekmek Arası Tavuk Döner|🥙|yag
+Usta Dönerci Tombik Döner|🥙|yag
+Usta Dönerci Beyti Döner|🌯|yag sut_az asit
+Usta Dönerci İskender|🍖|yag sut asit fermente
+Usta Dönerci Acılı Kebap Dürüm|🌯|yag aci lahana
+Usta Dönerci Çıtır Humus Dürüm|🌯|yag baklagil
+Usta Dönerci Tavuk Lokum Dürüm|🌯|yag_hafif
+Usta Dönerci Köfte Ekmek|🥖|yag
+Usta Dönerci Köfte Dürüm|🌯|yag lahana
+Usta Dönerci Köfte Porsiyon|🍖|yag
+Usta Dönerci Karışık Bowl|🥗|yag cig
+Usta Dönerci Patso Box|🍟|yag katki
+Usta Dönerci Çıtır Hellim|🧀|yag sut_az
+Usta Dönerci Patates Kroket|🥔|yag
+Usta Dönerci Tahinli Sufle|🍫|seker yag sut_az
+Bereket Döner Et Döner Dürüm|🌯|yag lahana
+Bereket Döner Ekmek Arası Döner|🥙|yag
+Bereket Döner Porsiyon Döner|🍖|yag
+Bereket Döner Sarma Döner|🌯|yag
+Bereket Döner Tako|🌮|yag aci_hafif
+Bereket Döner Burrito|🌯|yag baklagil_az
+Bereket Döner Dönburger|🍔|yag katki
+Bereket Döner İskender|🍖|yag sut asit fermente
+Bereket Döner Doritos Dolutos|🌯|yag katki aci_hafif
+Bereket Döner Pilav Üstü Döner|🍚|yag
+Bereket Döner Dönerli Salata|🥗|cig yag
+Maydonoz Döner Tavuk Döner Dürüm|🌯|yag
+Maydonoz Döner Et Döner Dürüm|🌯|yag lahana
+Maydonoz Döner Ekmek Arası Döner|🥙|yag
+Maydonoz Döner Tombik Döner|🥙|yag
+Maydonoz Döner Pilav Üstü Döner|🍚|yag
+Maydonoz Döner Döner Beyti|🌯|yag sut_az asit
+Maydonoz Döner İskender|🍖|yag sut asit fermente
+Maydonoz Döner May Burrito|🌯|yag
+Maydonoz Döner Döner Burger|🍔|yag katki
+Maydonoz Döner Maytako|🌮|yag katki aci_hafif
+Maydonoz Döner Katmer|🥞|seker yag kuruyemis sut_az
+Paşa Döner Gurme Lavaş Döner|🌯|yag
+Paşa Döner Ekmek Arası Döner|🥙|yag
+Paşa Döner Porsiyon|🍖|yag
+Paşa Döner Pilav Üstü|🍚|yag
+Paşa Döner Çıtır Butlar|🍗|yag katki
+Komagene Doritos'lu Çiğ Köfte Dürüm|🌯|aci cig lif katki
+Komagene Şuşi|🍣|aci cig lif
+Komagene Çiğ Köfte Tako|🌮|aci cig lif
+Komagene Bowl|🥗|aci cig lif
+Komagene İçli Köfte|🧆|yag
+Komagene Tavuklu Pilav|🍚|yag_hafif
+Komagene Pilav Üstü Tavuk Döner|🍚|yag
+Komagene Acılı Ezme|🌶️|aci cig asit
+Komagene Tavukgöğsü|🍮|sut seker
+Komagene İrmik Helvası|🍮|seker yag sut_az
+Komagene Acılı Ayran|🥛|fermente aci
+Köfteci Yusuf Köfte-Sucuk|🍖|yag islenmis
+Köfteci Yusuf Dana Bonfile|🥩|yag_hafif
+Köfteci Yusuf Dana Antrikot|🥩|yag
+Köfteci Yusuf Dana Kavurma|🥩|yag
+Köfteci Yusuf Kuzu Şiş|🍢|yag
+Köfteci Yusuf Kuzu Pirzola|🍖|yag
+Köfteci Yusuf Sucuk|🌭|yag islenmis aci_hafif
+Köfteci Yusuf Piliç İncik|🍗|yag_hafif
+Köfteci Yusuf Piliç Kanat|🍗|yag
+Köfteci Yusuf Döner|🥙|yag
+Köfteci Yusuf Piyaz|🫘|baklagil cig asit
+Köfteci Yusuf Mercimek Çorbası|🍲|baklagil_az yag_hafif
+Köfteci Yusuf Et Çorbası|🍲|yag_hafif
+Köfteci Yusuf İçli Köfte|🧆|yag
+Köfteci Yusuf Kahvaltı Tabağı|🍳|yag sut islenmis
+Köfteci Yusuf Ekmek Kadayıfı|🍮|seker sut yag
+Köfteci Yusuf Trileçe|🍰|sut seker
+Köfteci Yusuf Burger|🍔|yag katki
+Köfteci Yusuf Kaşarlı Tost|🥪|yag sut_az
+Köfteci Yusuf İlikli Kemik Suyu|🍲|hafif
+Burger Yiyelim Cheese Burger|🍔|yag katki sut_az
+Burger Yiyelim Kasap Burger|🍔|yag
+Burger Yiyelim Mexicano Burger|🍔|yag aci
+Burger Yiyelim Gurme Barbekü Burger|🍔|yag seker
+Burger Yiyelim Steak Burger|🍔|yag
+Burger Yiyelim Lokum Burger|🍔|yag
+Burger Yiyelim Dublex Burger|🍔|yag sut_az
+Burger Yiyelim Smash Burger|🍔|yag sut_az
+Burger Yiyelim Truff Smash Burger|🍔|yag sut_az
+Burger Yiyelim Cherry Smash Burger|🍔|yag sut_az seker
+Burger Yiyelim Tavuk Burger|🍔|yag katki
+Burger Yiyelim Patates Bomba|🍟|yag sut katki
+Burger Yiyelim Nugget|🍗|yag katki islenmis
+Burger Yiyelim Çıtır Peynir|🧀|yag sut_az
+Burger Yiyelim Churros|🥖|seker yag
+Burger Yiyelim Patates Kızartması|🍟|yag
+Baydöner Acılı Atom İskender|🍖|yag sut asit fermente aci
+Baydöner Ayran Aşı Çorbası|🍲|fermente baklagil_az
+Baydöner Mercimek Çorbası|🍲|baklagil_az yag_hafif
+Baydöner Sufle|🍫|seker yag sut_az
 # Sigara & tütün
 Sigara|🚬|sigara
 Elektronik sigara (vape)|💨|sigara
@@ -2382,6 +2780,18 @@ Soda|Maden suyu
 Sade soda|Maden suyu
 Ev yapımı limonata (az şekerli)|Limonata
 # yaygın kısa adlar ve eş anlamlılar
+McWings|McDonald's McWings (tavuk kanat)
+McDonald's kanat|McDonald's McWings (tavuk kanat)
+McDonald's tavuk kanadı|McDonald's McWings (tavuk kanat)
+McCrispy|McDonald's McCrispy
+KFC Hot Wings|KFC Acılı Kanat
+KFC kanat|KFC Acılı Kanat
+Popeyes acılı kanat|Popeyes Kanat
+Little Caesars Çılgın Ekmek|Little Caesars Crazy Bread
+Honey mustard|Ballı hardal sos
+Garlic sos|Sarımsaklı mayonez
+BBQ sos|Barbekü sosu
+Barbekü sos|Barbekü sosu
 Fırında patates|Fırın patates
 Fırında somon|Fırın somon
 Fırında levrek|Fırın levrek
