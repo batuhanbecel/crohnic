@@ -42,7 +42,7 @@ export function SlotCard({ slot, next, onReroll, compact }: { slot: SlotPlan; ne
           {slot.items.map((it, i) => (
             <View key={it.food.id}>
               {i > 0 ? <View style={{ height: 1, marginLeft: 58, backgroundColor: palette.hairline }} /> : null}
-              <Tap onPress={() => router.push(`/besin/${it.food.id}`)} accessibilityLabel={`${it.role}: ${it.food.name}${it.personal ? ', sana iyi geliyor' : ''}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12 }}>
+              <Tap onPress={() => router.push(`/besin/${it.food.id}`)} accessibilityLabel={`${it.role}: ${it.food.name}${it.personal ? ', sana dokunmuyor' : ''}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12 }}>
                 <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: surface.card }}>
                   <Text style={{ fontSize: 19 }}>{it.food.emoji || '🍽️'}</Text>
                 </View>
@@ -58,7 +58,7 @@ export function SlotCard({ slot, next, onReroll, compact }: { slot: SlotPlan; ne
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 1, borderRadius: radius.pill, backgroundColor: palette.goodSoft }}>
                         <Icon name="heart.fill" size={9} color={palette.good} fallback="♥" />
                         <T v="caption" color={palette.good} style={{ fontSize: 11, fontWeight: '700' }}>
-                          Sana iyi geliyor
+                          Sana dokunmuyor
                         </T>
                       </View>
                     ) : null}

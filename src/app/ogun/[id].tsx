@@ -15,7 +15,7 @@ import { cancelMealReminder } from '../../lib/reminders';
 import { FOOD_BY_ID, TAGS, type Food, type Phase } from '../../lib/foods';
 import { deletePhoto, photoUri } from '../../lib/photos';
 import { palette, radius, surface } from '../../lib/theme';
-import { generalVerdict, tagsOf } from '../../lib/tolerance';
+import { assessFood, tagsOf } from '../../lib/tolerance';
 
 export default function MealDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -59,7 +59,7 @@ export default function MealDetail() {
         items.map((m) => {
           const food = m.food_id ? FOOD_BY_ID[m.food_id] : undefined;
           // List foods get re-scored for the new phase; AI verdicts are kept as they were.
-          return { id: m.id, verdict: food ? generalVerdict(food.tags, phase).verdict : m.ai_verdict };
+          return { id: m.id, verdict: food ? assessFood(food, phase).verdict : m.ai_verdict };
         }),
         phase,
       );
@@ -73,7 +73,7 @@ export default function MealDetail() {
       name,
       food_id: food?.id ?? null,
       tags: food?.tags.join(',') ?? '',
-      ai_verdict: food ? generalVerdict(food.tags, phase).verdict : null,
+      ai_verdict: food ? assessFood(food, phase).verdict : null,
     });
     app.bump();
     await load();

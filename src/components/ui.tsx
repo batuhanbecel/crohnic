@@ -596,7 +596,7 @@ export function ChoiceRow({ title, subtitle, emoji, active, color, onPress }: { 
 
 // ---------- verdict ----------
 export const VERDICT_UI: Record<Verdict, { label: string; short: string; icon: SymbolName; dot: string; fg: string; bg: string }> = {
-  iyi: { label: 'Rahat ye', short: 'İyi gelir', icon: 'checkmark.circle.fill', dot: '🟢', fg: palette.good, bg: palette.goodSoft },
+  iyi: { label: 'Rahat ye', short: 'Uygun', icon: 'checkmark.circle.fill', dot: '🟢', fg: palette.good, bg: palette.goodSoft },
   dikkat: { label: 'Az ve dikkatli', short: 'Dikkat', icon: 'exclamationmark.circle.fill', dot: '🟡', fg: palette.warn, bg: palette.warnSoft },
   riskli: { label: 'Bugün geç', short: 'Riskli', icon: 'xmark.circle.fill', dot: '🔴', fg: palette.bad, bg: palette.badSoft },
 };

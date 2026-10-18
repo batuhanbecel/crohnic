@@ -1,6 +1,6 @@
 import type { Meal } from './db';
-import { FOODS, type Food, type Phase } from './foods';
-import { assessFood, personalVerdict, statsByName } from './tolerance';
+import { FOODS, RARE_FOOD, type Food, type Phase } from './foods';
+import { assessFood, statsByName } from './tolerance';
 
 /**
  * "Bugün ne yesem?": a varied plan for the day, built only from foods that come out
@@ -85,7 +85,7 @@ const SLOTS: SlotDef[] = [
 ];
 
 /** Fine to eat, just not something to suggest on an ordinary day. */
-const RARE = /ıstakoz|yengeç|beyin|böbrek|ciğer|sushi|bulgogi|dim sum|yakitori|udon|onigiri|liçi|papaya|kuru kızılcık|spor içeceği|ors|boza|salep|şerbet|cezerye|cevizli sucuk|kestane kebap/i;
+const RARE = RARE_FOOD;
 /** Grapefruit and pomelo change how budesonide and some other drugs are absorbed: never suggested. */
 const NEVER = /greyfurt|pomelo|^su$|limonlu su|ors \(|alkolsüz/i;
 
@@ -179,7 +179,8 @@ function candidates(phase: Phase, rated: Meal[]) {
     if (NEVER.test(f.name)) continue;
     const a = assessFood(f, phase, rated, stats);
     if (a.verdict !== 'iyi') continue;
-    const personal = !!a.stat && personalVerdict(a.stat) === 'iyi';
+    // tolerated in this very phase (or even in a flare), not just "fine once in remission"
+    const personal = a.confidence === 'kişisel' && a.personal === 'iyi';
     byCat.set(f.cat, [...(byCat.get(f.cat) ?? []), { food: f, personal }]);
   }
   return byCat;

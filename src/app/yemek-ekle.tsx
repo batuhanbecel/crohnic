@@ -16,7 +16,7 @@ import { afterMealSaved } from '../lib/reminders';
 import { FOOD_BY_ID, findFoodByName, type Food, type Phase } from '../lib/foods';
 import { savePhoto } from '../lib/photos';
 import { palette, radius, surface } from '../lib/theme';
-import { generalVerdict } from '../lib/tolerance';
+import { assessFood } from '../lib/tolerance';
 import { useConfirmDiscard } from '../lib/use-confirm-discard';
 
 type Item = { key: string; name: string; food: Food | null };
@@ -81,7 +81,7 @@ export default function AddMeal() {
           food_id: it.food?.id ?? null,
           tags: it.food?.tags.join(',') ?? '',
           photo: i === 0 ? file : null,
-          ai_verdict: it.food ? generalVerdict(it.food.tags, phase).verdict : null,
+          ai_verdict: it.food ? assessFood(it.food, phase).verdict : null,
         })),
         { eaten_at: at, phase, reaction },
       );

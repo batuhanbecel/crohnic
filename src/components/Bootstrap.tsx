@@ -35,7 +35,7 @@ export function Bootstrap() {
     if (!ready || Platform.OS === 'web') return;
     const go = async (r: Notifications.NotificationResponse | null) => {
       if (!r) return;
-      // "İyi geldi" / "Aldım" pressed on the notification: save it, don't navigate
+      // "Normal" / "Aldım" pressed on the notification: save it, don't navigate
       if (await handleNotificationAction(sql, r)) {
         bump();
         return;

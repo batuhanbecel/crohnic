@@ -11,7 +11,7 @@ import * as db from '../../../lib/db';
 import { TAGS } from '../../../lib/foods';
 import { flareDaysBetween, lifestyleEffects, phasePeriods, suspectFoods, type PhasePeriod } from '../../../lib/insights';
 import { onTint, palette, radius, surface, type } from '../../../lib/theme';
-import { personalVerdict, statsByName, triggerInsights } from '../../../lib/tolerance';
+import { foodPatterns, triggerInsights, type FoodPattern } from '../../../lib/tolerance';
 
 const SLOTS = [
   { label: 'Sabah', from: 5, to: 11 },
@@ -60,13 +60,7 @@ export default function Insights() {
   const suspects = useMemo(() => suspectFoods(allMeals, symptoms, bowel), [allMeals, symptoms, bowel]);
   const periods = useMemo(() => phasePeriods(phaseLog, loadedAt || 0), [phaseLog, loadedAt]);
   const lifestyle = useMemo(() => lifestyleEffects(daily, symptoms, bowel, allMeals), [daily, symptoms, bowel, allMeals]);
-  const foods = useMemo(() => {
-    const list = [...statsByName(rated).values()];
-    return {
-      bad: list.filter((x) => personalVerdict(x) === 'riskli').sort((a, b) => b.bad - a.bad || b.n - a.n).slice(0, 6),
-      good: list.filter((x) => personalVerdict(x) === 'iyi' && x.n >= 2).sort((a, b) => b.n - a.n).slice(0, 6),
-    };
-  }, [rated]);
+  const foods = useMemo(() => foodPatterns(rated), [rated]);
 
   const last14 = useMemo(() => {
     const days: { key: string; label: string; count: number; bristol: number | null; pain: number | null }[] = [];
@@ -159,7 +153,7 @@ export default function Insights() {
 
       {safe.length ? (
         <>
-          <SectionTitle title="Sorun çıkarmayanlar" />
+          <SectionTitle title="Sorun çıkarmayan içerikler" />
           <Card style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {safe.slice(0, 8).map((t) => (
               <View key={t.tag} style={{ backgroundColor: palette.goodSoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
@@ -236,11 +230,34 @@ export default function Insights() {
         <Empty art={<Mascot mood="uyku" size={100} />} title="Stres ve uyku" text="Akşamları “Bugün nasıldı” kaydını doldurursan, stres ve uykunun şikayetlerinle ilişkisini burada gösteririm." />
       )}
 
-      {foods.bad.length || foods.good.length ? (
-        <Row gap={10} style={{ alignItems: 'stretch' }}>
-          <FoodList title="Dokunanlar" items={foods.bad.map((x) => `${x.name} (${x.bad + x.mild}/${x.n})`)} color={palette.bad} />
-          <FoodList title="İyi gelenler" items={foods.good.map((x) => `${x.name} (${x.n})`)} color={palette.good} />
-        </Row>
+      {foods.dokunan.length || foods.bazen.length || foods.dokunmayan.length ? (
+        <>
+          <SectionTitle title="Yemekler ve sen" />
+          <FoodGroup
+            title="Dokunanlar"
+            hint="Çoğu zaman ya da tek denemede dokunanlar"
+            items={foods.dokunan}
+            color={palette.bad}
+            right={(x) => `${x.hits}/${x.n}`}
+          />
+          <FoodGroup
+            title="Bazen dokunanlar"
+            hint="Her seferinde değil; porsiyona ve döneme bak"
+            items={foods.bazen}
+            color={palette.warn}
+            right={(x) => `${x.hits}/${x.n}`}
+          />
+          <FoodGroup
+            title="Dokunmayanlar"
+            hint="En az 2 kez yedin, sorun çıkmadı"
+            items={foods.dokunmayan}
+            color={palette.good}
+            right={(x) => `${x.n} kez`}
+          />
+          <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400', paddingHorizontal: 4 }}>
+            Noktalar son kayıtların, en sağdaki en yenisi. Sadece atakta dokunan bir yemek “bazen” sayılır; son iki kayıt da hesaba katılır. Bir kez sorunsuz geçen yemek ikinci kayıtta buraya girer.
+          </T>
+        </>
       ) : null}
 
       <SectionTitle title="Tuvalet, son 14 gün" />
@@ -399,24 +416,66 @@ function Legend({ c, l }: { c: string; l: string }) {
   );
 }
 
-function FoodList({ title, items, color }: { title: string; items: string[]; color: string }) {
+const DOT = [palette.good, palette.warn, palette.bad];
+
+/** One group of foods: name, the latest reactions as dots, and the count. Taps open the food. */
+function FoodGroup({ title, hint, items, color, right }: { title: string; hint: string; items: FoodPattern[]; color: string; right: (x: FoodPattern) => string }) {
+  const [all, setAll] = useState(false);
+  if (!items.length) return null;
+  const shown = all ? items : items.slice(0, 6);
   return (
-    <Card style={{ flex: 1, gap: 6, padding: 14 }}>
-      <Row gap={6}>
-        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} />
-        <T v="h3">{title}</T>
-      </Row>
-      {items.length ? (
-        items.map((x) => (
-          <T key={x} v="small" numberOfLines={2}>
-            {x}
-          </T>
-        ))
-      ) : (
-        <T v="small" color={palette.inkSoft}>
-          Henüz yok
+    <Card style={{ gap: 2, paddingVertical: 12 }}>
+      <Row gap={8} style={{ marginBottom: 2 }}>
+        <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: color }} />
+        <T v="h3" style={{ flex: 1 }}>
+          {title}
         </T>
-      )}
+        <T v="small" color={palette.inkSoft}>
+          {items.length}
+        </T>
+      </Row>
+      <T v="small" color={palette.inkSoft} style={{ marginBottom: 4 }}>
+        {hint}
+      </T>
+      {shown.map((x, i) => (
+        <Tap
+          key={x.key}
+          onPress={x.foodId ? () => router.push(`/besin/${x.foodId}`) : undefined}
+          haptic={!!x.foodId}
+          accessibilityRole={x.foodId ? 'button' : undefined}
+          accessibilityLabel={`${x.name}, ${x.n} kayıtta ${x.hits} kez dokundu${x.note ? `, ${x.note}` : ''}`}
+        >
+          {i > 0 ? <View style={{ height: 1, backgroundColor: palette.hairline }} /> : null}
+          <Row gap={10} style={{ paddingVertical: 8 }}>
+            <View style={{ flex: 1, gap: 1 }}>
+              <T v="callout" numberOfLines={1} style={type.medium}>
+                {x.name}
+              </T>
+              {x.note ? (
+                <T v="caption" color={palette.inkSoft}>
+                  {x.note}
+                </T>
+              ) : null}
+            </View>
+            <Row gap={3}>
+              {x.recent.slice(-6).map((r, j) => (
+                <View key={j} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: DOT[r] }} />
+              ))}
+            </Row>
+            <T v="small" color={palette.inkSoft} style={{ minWidth: 38, textAlign: 'right' }}>
+              {right(x)}
+            </T>
+            {x.foodId ? <Icon name="chevron.right" size={11} color={palette.inkFaint} fallback="›" /> : <View style={{ width: 11 }} />}
+          </Row>
+        </Tap>
+      ))}
+      {items.length > 6 ? (
+        <Tap onPress={() => setAll(!all)} accessibilityRole="button">
+          <T v="small" color={palette.lettuceDeep} style={{ paddingTop: 6, fontWeight: '700' }}>
+            {all ? 'Daha az göster' : `Tümünü göster (${items.length})`}
+          </T>
+        </Tap>
+      ) : null}
     </Card>
   );
 }

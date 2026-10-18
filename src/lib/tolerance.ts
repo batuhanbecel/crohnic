@@ -1,6 +1,21 @@
-import type { Meal } from './db';
-import { medHits, medLine, type MedHit } from './med-food';
-import { FOOD_BY_ID, LACTOSE_WEIGHTS, STRICTURE_TAGS, TAGS, isTag, normalizeName, type Food, type Phase, type Tag, type Verdict } from './foods';
+import type { Meal, Reaction } from './db';
+import { medFloor, medHits, medLine, ratingMedLabels, type MedHit } from './med-food';
+import {
+  FOODS,
+  FOOD_BY_ID,
+  RARE_FOOD,
+  LACTOSE_WEIGHTS,
+  STRICTURE_TAGS,
+  TAGS,
+  findFoodByName,
+  isTag,
+  normalizeName,
+  type Category,
+  type Food,
+  type Phase,
+  type Tag,
+  type Verdict,
+} from './foods';
 
 export const VERDICT_RANK: Record<Verdict, number> = { iyi: 0, dikkat: 1, riskli: 2 };
 
@@ -44,8 +59,11 @@ export function hasLactose() {
  * tolerates stops counting against them.
  */
 let tagHistory = new Map<Tag, PersonalStat>();
+/** Per food, so a screen without its own copy of the meals rates foods the same way. */
+let nameHistory: ReturnType<typeof statsByName> = new Map();
 export function setTagHistory(meals: Meal[]) {
   tagHistory = statsByTag(meals);
+  nameHistory = statsByName(meals);
 }
 
 const TAG_MIN_N = 3;
@@ -75,8 +93,8 @@ function weight(t: Tag, phase: Phase) {
 function reasonFor(t: Tag) {
   const r = tagRate(t);
   const label = TAGS[t].label.toLocaleLowerCase('tr-TR');
-  if (r && r.rate >= 0.5) return `${TAGS[t].reason}. Kayıtlarında ${label} içeren yemekler ${r.s.n} kezden ${r.s.mild + r.s.bad}'inde dokundu`;
-  if (r && r.rate < 0.2) return `${TAGS[t].label} içeren yemekler sana ${r.s.n} kezdir iyi geldi`;
+  if (r && r.rate >= 0.5) return `${TAGS[t].reason}. Kayıtlarında ${label} içeren yemekler ${r.s.n} kayıtta ${r.s.mild + r.s.bad} kez dokundu`;
+  if (r && r.rate < 0.2) return `${TAGS[t].label} içeren yemekler ${r.s.n} kayıttır sana dokunmadı`;
   return TAGS[t].reason;
 }
 
@@ -90,20 +108,41 @@ export function generalVerdict(tags: Tag[], phase: Phase): { verdict: Verdict; r
   return { verdict, reasons };
 }
 
-export type PersonalStat = { n: number; good: number; mild: number; bad: number; avg: number; last: number };
+type Counts = { n: number; good: number; mild: number; bad: number };
+
+export type PersonalStat = Counts & {
+  /** 0 … 2: mild counts 1, bad counts 2 */
+  avg: number;
+  last: number;
+  /** the same counts split by the phase the meal was eaten in */
+  phases: Record<Phase, Counts>;
+  /** the latest reactions, oldest first (at most 8) */
+  recent: { r: Reaction; phase: Phase; at: number }[];
+};
+
+const counts = (): Counts => ({ n: 0, good: 0, mild: 0, bad: 0 });
 
 function emptyStat(): PersonalStat {
-  return { n: 0, good: 0, mild: 0, bad: 0, avg: 0, last: 0 };
+  return { ...counts(), avg: 0, last: 0, phases: { remisyon: counts(), atak: counts() }, recent: [] };
+}
+
+function add(c: Counts, r: Reaction) {
+  c.n += 1;
+  if (r === 0) c.good += 1;
+  if (r === 1) c.mild += 1;
+  if (r === 2) c.bad += 1;
 }
 
 function push(stat: PersonalStat, m: Meal) {
   if (m.reaction == null) return;
-  stat.n += 1;
-  if (m.reaction === 0) stat.good += 1;
-  if (m.reaction === 1) stat.mild += 1;
-  if (m.reaction === 2) stat.bad += 1;
+  const phase: Phase = m.phase === 'atak' ? 'atak' : 'remisyon';
+  add(stat, m.reaction);
+  add(stat.phases[phase], m.reaction);
   stat.avg = (stat.mild + stat.bad * 2) / stat.n;
   stat.last = Math.max(stat.last, m.eaten_at);
+  stat.recent.push({ r: m.reaction, phase, at: m.eaten_at });
+  stat.recent.sort((a, b) => a.at - b.at);
+  if (stat.recent.length > 8) stat.recent.shift();
 }
 
 export function statsByName(meals: Meal[]): Map<string, PersonalStat & { name: string }> {
@@ -131,18 +170,91 @@ export function statsByTag(meals: Meal[]): Map<Tag, PersonalStat> {
   return map;
 }
 
+function verdictOf(c: Counts): Verdict | null {
+  if (!c.n) return null;
+  const avg = (c.mild + c.bad * 2) / c.n;
+  return avg < 0.5 ? 'iyi' : avg < 1.3 ? 'dikkat' : 'riskli';
+}
+
+/** Over every phase; use assessFood for "what does it mean now". */
 export function personalVerdict(stat: PersonalStat | undefined): Verdict | null {
-  if (!stat || stat.n === 0) return null;
-  return stat.avg < 0.5 ? 'iyi' : stat.avg < 1.3 ? 'dikkat' : 'riskli';
+  return stat ? verdictOf(stat) : null;
+}
+
+const maxV = (...vs: Verdict[]) => vs.reduce((a, b) => (VERDICT_RANK[b] > VERDICT_RANK[a] ? b : a));
+const minV = (a: Verdict, b: Verdict) => (VERDICT_RANK[a] <= VERDICT_RANK[b] ? a : b);
+const otherPhase = (p: Phase): Phase => (p === 'atak' ? 'remisyon' : 'atak');
+const PHASE_IN: Record<Phase, string> = { remisyon: 'Remisyonda', atak: 'Atakta' };
+
+function outcome(c: Counts) {
+  const hits = c.mild + c.bad;
+  if (!hits) return c.n === 1 ? 'dokunmadı' : 'hiç dokunmadı';
+  if (hits === c.n) return c.n === 1 ? (c.bad ? 'çok dokundu' : 'biraz dokundu') : c.bad === c.n ? 'her seferinde çok dokundu' : 'her seferinde dokundu';
+  return `${hits} kez dokundu`;
+}
+
+/** "Remisyonda 3 kez yedin, hiç dokunmadı" */
+export function phaseSummary(phase: Phase, c: Counts) {
+  return `${PHASE_IN[phase]} ${c.n} kez yedin, ${outcome(c)}`;
+}
+
+/**
+ * What the user's own records say for the phase they're in now. The same phase counts fully; the
+ * other one only partly, because the gut is a different gut in a flare: "fine in remission" says
+ * little about a flare, and "bothered me during a flare" may have been the flare itself.
+ */
+function personalFor(stat: PersonalStat, phase: Phase, g: Verdict): { verdict: Verdict; confidence: 'karışık' | 'kişisel'; note: string; advice?: string } {
+  const o = otherPhase(phase);
+  const S = stat.phases[phase];
+  const O = stat.phases[o];
+  const vS = verdictOf(S);
+  const vO = verdictOf(O);
+  const both = [S.n ? phaseSummary(phase, S) : null, O.n ? phaseSummary(o, O) : null].filter(Boolean).join('; ');
+
+  // enough in this very phase: that's the answer
+  if (S.n >= 2 && vS) return { verdict: vS, confidence: 'kişisel', note: both };
+
+  if (S.n === 1 && vS) {
+    if (vS === 'iyi') {
+      // once fine now, and fine in the other phase too
+      if (vO === 'iyi' && (phase === 'remisyon' || O.n >= 2)) {
+        return { verdict: phase === 'atak' && g === 'riskli' ? 'dikkat' : 'iyi', confidence: 'kişisel', note: both };
+      }
+      return { verdict: g, confidence: 'karışık', note: both, advice: 'Bir iki kayıt daha olunca sana göre söylerim.' };
+    }
+    // one bad time in this phase is a warning, not a ban (it may have been something else that day);
+    // what the other phase showed can add to it
+    let v = maxV(minV(vS, 'dikkat'), g);
+    if (vO && vO !== 'iyi') v = maxV(v, phase === 'atak' ? vO : minV(vO, 'dikkat'));
+    return { verdict: v, confidence: 'karışık', note: both, advice: O.n ? undefined : 'Tek kayıt. Yine yersen az ye ve nasıl geçtiğini yaz.' };
+  }
+
+  // only the other phase
+  if (phase === 'atak') {
+    if (vO && vO !== 'iyi') return { verdict: maxV(g, vO), confidence: 'karışık', note: both, advice: 'Remisyonda bile dokunduysa atakta daha temkinli ol.' };
+    const v = g === 'riskli' && O.n >= 3 ? 'dikkat' : g;
+    return { verdict: v, confidence: 'karışık', note: both, advice: v === 'iyi' ? undefined : 'Remisyonda dokunmaması atakta da dokunmayacağı anlamına gelmez; az dene.' };
+  }
+  if (vO === 'iyi') return O.n >= 2 ? { verdict: 'iyi', confidence: 'kişisel', note: both, advice: 'Atakta bile dokunmadıysa remisyonda rahat olabilirsin.' } : { verdict: g, confidence: 'karışık', note: both };
+  return { verdict: maxV(g, 'dikkat'), confidence: 'karışık', note: both, advice: 'Atakta dokunmuş; bu atağın etkisi olabilir. Remisyonda az deneyip nasıl geçtiğini yaz.' };
 }
 
 export type FoodAssessment = {
   verdict: Verdict;
   general: Verdict;
+  /** what the user's records mean for this phase (null without records) */
   personal: Verdict | null;
   stat?: PersonalStat;
   reasons: string[];
   confidence: 'genel' | 'karışık' | 'kişisel';
+  /** what decided the verdict: the general rules, the user's records, or a medicine */
+  driver: 'genel' | 'kisisel' | 'ilac';
+  /** one line on why, matching the driver (list rows) */
+  why: string;
+  /** the user's records for this food, per phase ("Remisyonda 3 kez yedin, hiç dokunmadı") */
+  personalNote?: string;
+  /** what to make of them when the records come from the other phase or are few */
+  personalAdvice?: string;
   /** what the user's medicines say about this food (shown apart from the reasons) */
   meds?: MedHit[];
 };
@@ -154,48 +266,108 @@ export type FoodAssessment = {
 function withMeds(a: FoodAssessment, food: Food): FoodAssessment {
   const hits = medHits(food);
   if (!hits.length) return a;
-  let verdict = a.verdict;
-  for (const h of hits) {
-    const floor: Verdict | null = h.level === 'kacin' ? 'riskli' : h.level === 'dikkat' ? 'dikkat' : null;
-    if (floor && VERDICT_RANK[floor] > VERDICT_RANK[verdict]) verdict = floor;
-  }
-  const lines = hits.filter((h) => h.level !== 'bilgi').map(medLine);
-  return { ...a, verdict, reasons: [...lines, ...a.reasons], meds: hits };
+  const floor = medFloor(hits);
+  const raised = !!floor && VERDICT_RANK[floor] > VERDICT_RANK[a.verdict];
+  // the medicine also explains the verdict when it asks for exactly that much care (baklava on cortisone)
+  const explains = !!floor && VERDICT_RANK[floor] >= VERDICT_RANK[a.verdict];
+  const rated = hits.filter((h) => h.level !== 'bilgi');
+  const top = rated.find((h) => (h.level === 'kacin' ? 'riskli' : 'dikkat') === floor);
+  return {
+    ...a,
+    verdict: raised ? floor! : a.verdict,
+    reasons: [...rated.map(medLine), ...a.reasons],
+    meds: hits,
+    driver: explains ? 'ilac' : a.driver,
+    why: explains && top ? medLine(top) : a.why,
+  };
 }
 
-/** Combine general knowledge with the user's own history. Personal data wins once there's enough of it. */
-export function assessFood(food: Food, phase: Phase, meals: Meal[], stats?: ReturnType<typeof statsByName>): FoodAssessment {
+/**
+ * The one verdict every screen shows: general rules for the phase, adjusted by personal factors,
+ * the user's own records (phase-aware) and the medicines switched on.
+ */
+export function assessFood(food: Food, phase: Phase, meals?: Meal[], stats?: ReturnType<typeof statsByName>): FoodAssessment {
   const g = generalVerdict(food.tags, phase);
-  const map = stats ?? statsByName(meals);
+  const map = stats ?? (meals ? statsByName(meals) : nameHistory);
   const stat = map.get(food.id) ?? map.get(normalizeName(food.name));
-  const p = personalVerdict(stat);
-
-  let verdict = g.verdict;
-  let confidence: FoodAssessment['confidence'] = 'genel';
+  const base: FoodAssessment = { verdict: g.verdict, general: g.verdict, personal: null, stat, reasons: g.reasons, confidence: 'genel', driver: 'genel', why: g.reasons[0] };
   // tobacco harms over months, not hours: how one cigarette felt never makes it "iyi"
-  if (food.tags.includes('sigara')) return withMeds({ verdict, general: g.verdict, personal: p, stat, reasons: g.reasons, confidence }, food);
-  if (p && stat) {
-    if (stat.n >= 2) {
-      verdict = p;
-      confidence = 'kişisel';
-    } else {
-      // one data point: lean towards the more careful option
-      verdict = VERDICT_RANK[p] >= VERDICT_RANK[g.verdict] ? p : g.verdict;
-      confidence = 'karışık';
-    }
-    // a flare makes everything a notch more sensitive
-    if (phase === 'atak' && verdict === 'iyi' && g.verdict !== 'iyi') verdict = 'dikkat';
+  if (food.tags.includes('sigara') || !stat?.n) return withMeds(base, food);
+  const p = personalFor(stat, phase, g.verdict);
+  return withMeds(
+    { ...base, verdict: p.verdict, personal: p.verdict, confidence: p.confidence, driver: p.verdict === g.verdict && p.confidence !== 'kişisel' ? 'genel' : 'kisisel', why: p.note, personalNote: p.note, personalAdvice: p.advice },
+    food,
+  );
+}
+
+/** What a verdict was based on, for a one-line "Remisyon · Kortizon · Laktoz" context. */
+export function assessContext(phase: Phase) {
+  return {
+    phase: phase === 'atak' ? 'Atak' : 'Remisyon',
+    extras: [profile.stricture ? 'Darlık' : null, profile.stoma ? 'Stoma' : null, profile.lactose ? 'Laktoz' : null, ...ratingMedLabels()].filter((x): x is string => !!x),
+  };
+}
+
+/** Categories that can stand in for each other ("instead of baklava: fruit"). Alcohol and tobacco never do. */
+const NEAR: Partial<Record<Category, Category[]>> = {
+  Tatlı: ['Meyve'],
+  'Paketli atıştırmalık & çikolata': ['Kuruyemiş & atıştırmalık', 'Meyve', 'Tatlı'],
+  'Kuruyemiş & atıştırmalık': ['Meyve'],
+  'Fast food & sokak lezzetleri': ['Et & tavuk', 'Hamur işi & börek', 'Dünya mutfağı'],
+  'Fast food zincirleri': ['Fast food & sokak lezzetleri', 'Et & tavuk'],
+  'Alkollü içecekler': ['İçecek', 'Hazır içecekler'],
+  'Hazır içecekler': ['İçecek'],
+  'Kafe zincirleri': ['İçecek'],
+  İçecek: ['Hazır içecekler'],
+  'Salata & mezeler': ['Sebze yemekleri', 'Sebze & yeşillik'],
+  'Sebze & yeşillik': ['Sebze yemekleri'],
+  'Sebze yemekleri': ['Sebze & yeşillik'],
+  Bakliyat: ['Çorba', 'Sebze yemekleri'],
+  Ekmek: ['Pilav & tahıl', 'Kahvaltı'],
+  'Hamur işi & börek': ['Ekmek', 'Kahvaltı'],
+  'Makarna & mantı': ['Pilav & tahıl'],
+  'Pilav & tahıl': ['Makarna & mantı'],
+  'Et & tavuk': ['Balık & deniz ürünleri'],
+  'Balık & deniz ürünleri': ['Et & tavuk'],
+  Kahvaltı: ['Süt ürünleri & peynir', 'Ekmek'],
+  'Süt ürünleri & peynir': ['Kahvaltı'],
+  'Dünya mutfağı': ['Et & tavuk', 'Pilav & tahıl'],
+  'Beslenme destekleri': ['İçecek'],
+};
+const NEVER_SWAP: Category[] = ['Alkollü içecekler', 'Sigara & tütün'];
+const words = (name: string) => new Set(normalizeName(name).split(/[^a-zçğıöşü0-9]+/).filter((w) => w.length >= 3));
+
+/**
+ * "Bunun yerine": foods that come out 'iyi' with the very same assessment as the food page
+ * (phase, factors, records, medicines), closest first: ones the user already eats without
+ * trouble, then the same main ingredient or way of cooking, then similar contents.
+ */
+export function alternativesFor(food: Food, phase: Phase, limit = 4, stats?: ReturnType<typeof statsByName>) {
+  if (food.tags.includes('sigara')) return [];
+  const cats = [food.cat, ...(NEAR[food.cat] ?? [])].filter((c) => !NEVER_SWAP.includes(c));
+  const mine = words(food.name);
+  const tags = new Set(food.tags);
+  const scored: { food: Food; a: FoodAssessment; score: number }[] = [];
+  for (const f of FOODS) {
+    if (f.id === food.id || !cats.includes(f.cat)) continue;
+    const a = assessFood(f, phase, undefined, stats);
+    if (a.verdict !== 'iyi') continue;
+    const shared = [...words(f.name)].filter((w) => mine.has(w)).length;
+    const union = new Set([...tags, ...f.tags]).size || 1;
+    const jaccard = f.tags.filter((t) => tags.has(t)).length / union;
+    const score = (a.confidence === 'kişisel' ? 50 : 0) + shared * 8 + jaccard * 4 + (f.cat === food.cat ? 6 : 0) + (f.tags.includes('hafif') ? 2 : 0) - (RARE_FOOD.test(f.name) ? 6 : 0);
+    scored.push({ food: f, a, score });
   }
-  return withMeds({ verdict, general: g.verdict, personal: p, stat, reasons: g.reasons, confidence }, food);
+  return scored.sort((x, y) => y.score - x.score || x.food.name.length - y.food.name.length).slice(0, limit);
 }
 
 export type TriggerInsight = { tag: Tag; stat: PersonalStat; rate: number };
 
-/** Tags that the user reacted badly to. Needs at least 2 rated meals with that tag. */
+/** Tags that the user reacted badly to. Needs 3 rated meals with that tag, like the weights that use it. */
 export function triggerInsights(meals: Meal[]): { triggers: TriggerInsight[]; safe: TriggerInsight[] } {
   const all: TriggerInsight[] = [];
   statsByTag(meals).forEach((stat, tag) => {
-    if (stat.n < 2 || tag === 'hafif') return;
+    if (stat.n < TAG_MIN_N || tag === 'hafif') return;
     all.push({ tag, stat, rate: (stat.mild * 0.5 + stat.bad) / stat.n });
   });
   return {
@@ -204,15 +376,85 @@ export function triggerInsights(meals: Meal[]): { triggers: TriggerInsight[]; sa
   };
 }
 
+export type FoodPattern = {
+  key: string;
+  name: string;
+  foodId: string | null;
+  n: number;
+  hits: number;
+  bad: number;
+  /** latest reactions, oldest first */
+  recent: Reaction[];
+  /** why it sits in this group when that's not obvious ("sadece atakta dokundu") */
+  note: string | null;
+  group: 'dokunan' | 'bazen' | 'dokunmayan';
+};
+
+/**
+ * Foods sorted into "Dokunanlar / Bazen dokunanlar / Dokunmayanlar" from the user's ratings.
+ * - Dokunanlar: bothered at least half the time, or the one time it was eaten.
+ * - Dokunmayanlar: eaten at least twice without trouble (one mild time in 5+ is noise).
+ * - Bazen dokunanlar: the rest with any trouble.
+ * Two refinements: trouble only during a flare while it went fine in remission points at the
+ * flare, not the food; and the last two times count extra, because the gut changes.
+ * A single "normal" isn't shown: once proves little.
+ */
+export function foodPatterns(meals: Meal[]) {
+  const all: (FoodPattern & { sev: number; share: number; last: number })[] = [];
+  for (const [key, s] of statsByName(meals)) {
+    const hits = s.mild + s.bad;
+    const share = hits / s.n;
+    const rem = s.phases.remisyon;
+    let group: FoodPattern['group'] | null = null;
+    let note: string | null = null;
+    if (s.n === 1) {
+      if (hits) {
+        group = 'dokunan';
+        note = s.phases.atak.n ? 'tek kayıt, atakta' : 'tek kayıt';
+      }
+    } else if (!hits) group = 'dokunmayan';
+    else if (share >= 0.5) group = 'dokunan';
+    else if (s.n >= 5 && share <= 0.2 && !s.bad) {
+      group = 'dokunmayan';
+      note = 'bir kez hafif dokundu';
+    } else group = 'bazen';
+    if (!group) continue;
+
+    const flareOnly = hits > 0 && rem.n > 0 && rem.mild + rem.bad === 0;
+    const last2 = s.recent.slice(-2).map((x) => x.r);
+    if (group === 'dokunan' && s.n >= 2 && flareOnly) {
+      group = 'bazen';
+      note = 'sadece atakta dokundu';
+    } else if (group === 'bazen' && flareOnly) note = 'sadece atakta dokundu';
+    if (s.n >= 3 && last2.length === 2) {
+      if (group === 'dokunan' && last2.every((r) => r === 0)) {
+        group = 'bazen';
+        note = 'son 2 kez sorun çıkmadı';
+      } else if (group === 'bazen' && last2.every((r) => r > 0)) {
+        group = 'dokunan';
+        note = 'son 2 kez dokundu';
+      }
+    }
+    const food = FOOD_BY_ID[key] ?? findFoodByName(s.name);
+    all.push({ key, name: s.name, foodId: food?.id ?? null, n: s.n, hits, bad: s.bad, recent: s.recent.map((x) => x.r), note, group, sev: (s.mild * 0.5 + s.bad) / s.n, share, last: s.last });
+  }
+  const pick = (g: FoodPattern['group']) => all.filter((x) => x.group === g);
+  return {
+    dokunan: pick('dokunan').sort((a, b) => Number(b.n >= 2) - Number(a.n >= 2) || b.sev - a.sev || b.n - a.n),
+    bazen: pick('bazen').sort((a, b) => b.share - a.share || b.n - a.n),
+    dokunmayan: pick('dokunmayan').sort((a, b) => b.n - a.n || b.last - a.last),
+  };
+}
+
 /** Compact summary sent to the AI so it can personalise. */
 export function historyForAI(meals: Meal[]) {
-  const byName = [...statsByName(meals).values()].sort((a, b) => b.last - a.last).slice(0, 60);
-  const verdictOf = (s: PersonalStat) => personalVerdict(s);
+  const p = foodPatterns(meals);
+  const fmt = (x: FoodPattern) => `${x.name} (${x.n} kayıtta ${x.hits} kez dokundu${x.note ? `, ${x.note}` : ''})`;
   const { triggers } = triggerInsights(meals);
   return {
-    iyi_gelenler: byName.filter((s) => verdictOf(s) === 'iyi').map((s) => `${s.name} (${s.n}x)`),
-    biraz_dokunanlar: byName.filter((s) => verdictOf(s) === 'dikkat').map((s) => `${s.name} (${s.n}x)`),
-    dokunanlar: byName.filter((s) => verdictOf(s) === 'riskli').map((s) => `${s.name} (${s.n}x)`),
+    dokunanlar: p.dokunan.slice(0, 25).map(fmt),
+    bazen_dokunanlar: p.bazen.slice(0, 25).map(fmt),
+    dokunmayanlar: p.dokunmayan.slice(0, 30).map((x) => `${x.name} (${x.n}x)`),
     olasi_tetikleyiciler: triggers.map((t) => `${TAGS[t.tag].label} (${t.stat.n} kayıtta ${t.stat.mild + t.stat.bad} kez dokundu)`),
   };
 }

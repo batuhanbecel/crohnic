@@ -6,7 +6,7 @@ import { useCallback, useState } from 'react';
 import { Alert, DevSettings, Linking, Switch, View } from 'react-native';
 import { TextInput } from '../components/text';
 import { Logo } from '../components/Mascot';
-import { Button, Card, Icon, Row, Screen, T, Tap, st } from '../components/ui';
+import { Button, Card, Chip, Icon, Row, Screen, T, Tap, st } from '../components/ui';
 import { DEFAULT_AI, analyze, type AiConfig } from '../lib/ai';
 import { useApp } from '../lib/app-state';
 import { applyBackup, lastAutoBackup, lastBackup, latestSnapshot, pickBackup, shareBackup } from '../lib/backup';
@@ -17,6 +17,7 @@ import { palette } from '../lib/theme';
 import { hasLactose, hasStoma, hasStricture, setLactose, setStoma, setStricture } from '../lib/tolerance';
 import { hasSystemActions } from '../lib/alarm';
 import { wipeEverything } from '../lib/wipe';
+import { MED_CLASSES, MED_ORDER, classesIn, namesIn } from '../lib/med-food';
 
 const PRIVACY_URL = 'https://crohnic.vercel.app/gizlilik';
 
@@ -34,6 +35,7 @@ export default function Settings() {
   const [backupAt, setBackupAt] = useState<number | null>(null);
   const [autoAt, setAutoAt] = useState<number | null>(null);
   const [backingUp, setBackingUp] = useState(false);
+  const [medNames, setMedNames] = useState<string[]>([]);
   // personal factors that change how foods are rated
   const [factors, setFactors] = useState({ stricture: hasStricture(), stoma: hasStoma(), lactose: hasLactose() });
   const SETTERS = { stricture: setStricture, stoma: setStoma, lactose: setLactose };
@@ -53,6 +55,7 @@ export default function Settings() {
         setRemindDaily(await isOn(sql, SETTINGS.daily));
         setBackupAt(await lastBackup(sql));
         setAutoAt(await lastAutoBackup(sql));
+        setMedNames((await db.listMeds(sql)).map((m) => m.name));
       })();
     }, [sql]),
   );
@@ -250,6 +253,8 @@ export default function Settings() {
             <Switch value={factors[x.key]} onValueChange={(on) => toggleFactor(x.key, on)} trackColor={{ true: palette.lettuce }} accessibilityLabel={x.title} />
           </Row>
         ))}
+        <View style={{ height: 1, backgroundColor: palette.hairline }} />
+        <MedFactors on={app.medFactors} names={medNames} onToggle={app.setMedFactor} />
       </Card>
 
       <Card style={{ gap: 14 }}>
@@ -416,5 +421,52 @@ function LinkRow({ icon, title, onPress }: { icon: 'pills.fill' | 'doc.text.fill
         <Icon name="chevron.right" size={14} color={palette.inkFaint} fallback="›" />
       </Row>
     </Tap>
+  );
+}
+
+/**
+ * "Şu an kullandığım ilaçlar": the medicine groups foods are rated with. Switched on by the user,
+ * not taken from İlaçlarım, because cortisone is usually for weeks, not for life.
+ */
+function MedFactors({ on, names, onToggle }: { on: string[]; names: string[]; onToggle: (cls: (typeof MED_ORDER)[number], on: boolean) => void }) {
+  const inList = classesIn(names).filter((c) => !on.includes(c));
+  return (
+    <View style={{ gap: 10 }}>
+      <View style={{ gap: 2 }}>
+        <T v="callout" style={{ fontWeight: '600' }}>
+          Şu an kullandığım ilaçlar
+        </T>
+        <T v="small" color={palette.inkSoft}>
+          Seçtiklerine göre yemekleri değerlendiririm. İlacı bırakınca kapat, uyarıları da kalkar.
+        </T>
+      </View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {MED_ORDER.map((cls) => {
+          const active = on.includes(cls);
+          return <Chip key={cls} label={MED_CLASSES[cls].label} active={active} color={palette.peri} onPress={() => onToggle(cls, !active)} />;
+        })}
+      </View>
+      {MED_ORDER.filter((c) => on.includes(c)).map((cls) => {
+        const mine = namesIn(cls, names);
+        return (
+          <View key={cls} style={{ gap: 1 }}>
+            <T v="small" style={{ fontWeight: '700' }}>
+              {`${MED_CLASSES[cls].label}${mine.length ? ` (${[...new Set(mine)].join(', ')})` : ''}`}
+            </T>
+            <T v="small" color={palette.inkSoft}>
+              {MED_CLASSES[cls].effect}
+            </T>
+          </View>
+        );
+      })}
+      {inList.length ? (
+        <T v="small" color={palette.inkSoft}>
+          {`İlaçlarında ${inList.map((c) => `${namesIn(c, names)[0]} (${MED_CLASSES[c].label.toLocaleLowerCase('tr-TR')})`).join(', ')} var ama seçili değil. Şu an kullanıyorsan seç.`}
+        </T>
+      ) : null}
+      <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
+        {`Örnekler: ${MED_ORDER.slice(0, 4).map((c) => `${MED_CLASSES[c].label}: ${MED_CLASSES[c].examples}`).join(' · ')}`}
+      </T>
+    </View>
   );
 }

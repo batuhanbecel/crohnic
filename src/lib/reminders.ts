@@ -55,9 +55,9 @@ async function setupCategories() {
   categoriesSet = true;
   try {
     await Notifications.setNotificationCategoryAsync(CATEGORY.meal, [
-      { identifier: 'r0', buttonTitle: '😌 İyi geldi' },
-      { identifier: 'r1', buttonTitle: '😕 Biraz dokundu' },
-      { identifier: 'r2', buttonTitle: '😣 Çok dokundu' },
+      { identifier: 'r0', buttonTitle: '😌 Normal' },
+      { identifier: 'r1', buttonTitle: '😕 Dokundu' },
+      { identifier: 'r2', buttonTitle: '😣 Kötü' },
     ]);
     await Notifications.setNotificationCategoryAsync(CATEGORY.med, [{ identifier: 'taken', buttonTitle: '✓ Aldım' }]);
   } catch {

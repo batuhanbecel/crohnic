@@ -17,7 +17,7 @@ import { palette, type } from '../lib/theme';
 const POINTS: { icon: SymbolName; color: string; title: string; text: string }[] = [
   { icon: 'camera.fill', color: palette.good, title: 'Bunu yesem mi?', text: 'Tabağın ya da menünün fotoğrafını çek, sor. Daha güvenle seç.' },
   { icon: 'fork.knife', color: palette.flareDeep, title: 'Yediklerini kolayca kaydet', text: 'Öğün, tuvalet, semptom ve ilaç, her biri birkaç dokunuş.' },
-  { icon: 'chart.bar.fill', color: palette.plum, title: 'Neyin iyi geldiğini birlikte bulalım', text: 'Kayıtlar biriktikçe örüntüleri çıkarırım, kontrole hazır gidersin.' },
+  { icon: 'chart.bar.fill', color: palette.plum, title: 'Neyin dokunduğunu birlikte bulalım', text: 'Kayıtlar biriktikçe örüntüleri çıkarırım, kontrole hazır gidersin.' },
 ];
 
 const STEPS = 4;
