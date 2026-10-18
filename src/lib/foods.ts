@@ -172,8 +172,52 @@ export const FOOD_BY_ID: Record<string, Food> = {
 
 const BY_NAME = new Map<string, Food>([...ALIASES.map(([from, food]) => [normalizeName(from), food] as [string, Food]), ...FOODS.map((x) => [normalizeName(x.name), x] as [string, Food])]);
 
+/**
+ * One word without its Turkish case or possessive ending, consonants hardened back:
+ * "fırında" → firin, "çorbası" → corba, "kebabı" → kebap, "tavuklu" → tavuk. Applied the same
+ * way to the query and the names, so only the comparison has to agree, not the dictionary.
+ */
+const ENDINGS: [RegExp, number][] = [
+  [/(dan|den|tan|ten)$/, 4],
+  [/(lari|leri)$/, 4],
+  [/(lar|ler)$/, 4],
+  [/(da|de|ta|te)$/, 5], // locative; 5 keeps "salata" and "pasta" whole
+  [/(si|su)$/, 3],
+  [/(li|lu)$/, 4],
+  [/(i|u)$/, 3],
+];
+function stem(word: string) {
+  let w = word;
+  for (const [re, min] of ENDINGS) {
+    const m = w.match(re);
+    if (m && w.length - m[0].length >= min) {
+      w = w.slice(0, -m[0].length);
+      break;
+    }
+  }
+  return w.replace(/b$/, 'p').replace(/g$/, 'k').replace(/d$/, 't');
+}
+
+/** Order-free, ending-free form of a name: "Fırında somon" and "Somon fırın" meet here. */
+function looseKey(name: string) {
+  return slug(name)
+    .split('-')
+    .filter(Boolean)
+    .map(stem)
+    .sort()
+    .join(' ');
+}
+
+const BY_LOOSE = new Map<string, Food | null>();
+for (const [n, f] of [...FOODS.map((x) => [x.name, x] as [string, Food]), ...ALIASES]) {
+  const k = looseKey(n);
+  const prev = BY_LOOSE.get(k);
+  // two different foods with the same loose form: don't guess between them
+  BY_LOOSE.set(k, prev === undefined || prev?.id === f.id ? f : null);
+}
+
 export function findFoodByName(name: string): Food | undefined {
-  return BY_NAME.get(normalizeName(name)) ?? BY_SLUG.get(slug(name)) ?? FOOD_BY_ID[slug(name)];
+  return BY_NAME.get(normalizeName(name)) ?? BY_SLUG.get(slug(name)) ?? FOOD_BY_ID[slug(name)] ?? BY_LOOSE.get(looseKey(name)) ?? undefined;
 }
 
 /**
@@ -217,7 +261,7 @@ function matches(target: string, words: string[][]) {
 export function searchFoods(q: string, list: Food[] = FOODS) {
   const n = searchKey(q);
   if (!n) return list;
-  const words = n.split('-').map(wordForms);
+  const words = n.split('-').map((w) => [...wordForms(w), stem(w)]);
   const allowed = list === FOODS ? null : new Set(list.map((f) => f.id));
   const hits = new Map<string, Food>();
   for (const f of list) if (matches(searchKey(f.name), words)) hits.set(f.id, f);
@@ -225,14 +269,18 @@ export function searchFoods(q: string, list: Food[] = FOODS) {
     if ((!allowed || allowed.has(food.id)) && matches(searchKey(from), words)) hits.set(food.id, food);
   }
   const aliasOf = (f: Food) => ALIAS_SLUGS.get(f.id) ?? [];
-  // exact name or short name first ("muz" → Olgun muz), then names that start with the query
+  // exact name or short name first ("muz" → Olgun muz), then names that begin with the query as
+  // whole words, then names that contain it as a word ("zeytin" → Siyah zeytin before
+  // Zeytinyağlı …), then plain prefixes; shorter names first within a rank
   const rank = (f: Food) => {
     const s = searchKey(f.name);
     const al = aliasOf(f);
     if (s === n || al.includes(n)) return 0;
-    if (s.startsWith(n)) return 1;
-    if (al.some((a) => a.startsWith(n))) return 2;
-    return 3;
+    if (s.startsWith(`${n}-`)) return 1;
+    if (s.includes(`-${n}-`) || s.endsWith(`-${n}`)) return 2;
+    if (s.startsWith(n)) return 3;
+    if (al.some((a) => a.startsWith(n))) return 4;
+    return 5;
   };
-  return [...hits.values()].sort((a, b) => rank(a) - rank(b));
+  return [...hits.values()].sort((a, b) => rank(a) - rank(b) || a.name.length - b.name.length);
 }

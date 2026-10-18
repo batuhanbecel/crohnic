@@ -3,10 +3,11 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { Doses } from '../components/Doses';
-import { Button, Card, Icon, Screen, SectionTitle, T, Tap } from '../components/ui';
+import { Button, Card, Icon, IconBubble, Row, Screen, SectionTitle, T, Tap } from '../components/ui';
 import { useApp } from '../lib/app-state';
 import { now } from '../lib/dates';
 import * as db from '../lib/db';
+import { medGuide } from '../lib/med-food';
 import { adherence, scheduleLabel } from '../lib/meds';
 import { palette } from '../lib/theme';
 
@@ -71,9 +72,58 @@ export default function Meds() {
         <Button title="İlk ilacını ekle" icon="plus" onPress={() => router.push('/ilac')} />
       )}
 
+      <FoodGuide meds={meds} medsKey={app.medsKey} />
+
       <T v="caption" color={palette.inkFaint} style={{ textAlign: 'center', lineHeight: 17, fontWeight: '400', marginTop: 8 }}>
         Dozları doktorunun söylediği gibi kullan.{'\n'}Crohnic sadece hatırlatır ve kaydeder.
       </T>
     </Screen>
+  );
+}
+
+/**
+ * What to watch on the plate while taking these medicines, grouped by kind (Prednol and
+ * "kortizon" share one cortisone card). Medicines the app doesn't know get a pointer to the doctor.
+ */
+function FoodGuide({ meds }: { meds: db.Med[]; medsKey: string }) {
+  if (!meds.length) return null;
+  const guide = medGuide();
+  const known = new Set(guide.flatMap((g) => g.names));
+  const unknown = meds.filter((m) => !known.has(m.name.trim())).map((m) => m.name);
+  return (
+    <>
+      <SectionTitle title="İlaçların ve beslenme" />
+      {guide.map((g) => (
+        <Card key={g.cls} style={{ gap: 10 }}>
+          <Row gap={10}>
+            <IconBubble name="fork.knife" color={palette.peri} dim={30} fallback="🍽️" />
+            <View style={{ flex: 1 }}>
+              <T v="h3">{g.label}</T>
+              <T v="small" color={palette.inkSoft} numberOfLines={1}>
+                {g.names.join(', ')}
+              </T>
+            </View>
+          </Row>
+          {g.tips.map((tip) => (
+            <Row key={tip} gap={10} style={{ alignItems: 'flex-start' }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: palette.peri, marginTop: 8 }} />
+              <T v="callout" style={{ flex: 1 }}>
+                {tip}
+              </T>
+            </Row>
+          ))}
+        </Card>
+      ))}
+      {unknown.length ? (
+        <T v="small" color={palette.inkSoft} style={{ paddingHorizontal: 4 }}>
+          {`${unknown.join(', ')} için kayıtlı bir beslenme notum yok; yiyeceklerle ilgili bir uyarısı var mı, eczacına ya da doktoruna sor.`}
+        </T>
+      ) : null}
+      {guide.length ? (
+        <T v="caption" color={palette.inkFaint} style={{ paddingHorizontal: 4 }}>
+          Bu notlar yemek listesinde, öğün eklerken ve fotoğraf analizinde de karşına çıkar. Genel bilgidir; senin durumunu en iyi doktorun bilir.
+        </T>
+      ) : null}
+    </>
   );
 }

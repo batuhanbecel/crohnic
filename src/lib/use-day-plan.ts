@@ -52,7 +52,8 @@ export function useDayPlan() {
 
   const plan: SlotPlan[] | null = useMemo(
     () => (data ? planDay({ day, phase: app.phase, rated: data.rated, recent: data.recent, rolls }) : null),
-    [data, day, app.phase, rolls],
+    // medsKey: suggestions follow the medicines too (no sweets pushed on cortisone)
+    [data, day, app.phase, rolls, app.medsKey], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const reroll = useCallback(

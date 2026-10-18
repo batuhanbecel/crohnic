@@ -13,6 +13,7 @@ import { afterMealSaved } from '../../lib/reminders';
 import { FOOD_BY_ID, FOODS, TAGS } from '../../lib/foods';
 import { palette, radius, surface, type } from '../../lib/theme';
 import { assessFood, generalVerdict, setTagHistory } from '../../lib/tolerance';
+import { MedNotes } from '../../components/MedNotes';
 import { useAnalyze } from '../../lib/use-analyze';
 
 export default function FoodDetail() {
@@ -61,8 +62,13 @@ export default function FoodDetail() {
   };
 
   const mood = a.verdict === 'iyi' ? 'catalla' : a.verdict === 'dikkat' ? 'dusunuyor' : 'agri';
+  const medLevel = a.meds?.some((h) => h.level === 'kacin') ? 'kacin' : a.meds?.some((h) => h.level === 'dikkat') ? 'dikkat' : null;
   const line =
-    a.confidence === 'kişisel'
+    medLevel === 'kacin'
+      ? 'Kullandığın ilaçlarla birlikte bundan uzak durmak daha iyi.'
+      : medLevel === 'dikkat' && a.verdict === 'dikkat'
+        ? 'Kullandığın ilaçlar yüzünden ölçülü ol, nedeni aşağıda.'
+        : a.confidence === 'kişisel'
       ? a.verdict === 'iyi'
         ? 'Kayıtlarına bakılırsa bununla aran iyi.'
         : a.verdict === 'dikkat'
@@ -100,6 +106,8 @@ export default function FoodDetail() {
         </View>
       </Card>
 
+      <MedNotes notes={(a.meds ?? []).map((hit) => ({ hit }))} />
+
       {a.stat && a.stat.n > 0 ? (
         <Card style={{ gap: 10 }}>
           <T v="h3">Senin kayıtların</T>
@@ -117,7 +125,7 @@ export default function FoodDetail() {
 
       <Card style={{ gap: 10 }}>
         <T v="h3">Neden</T>
-        {a.reasons.map((r, i) => (
+        {a.reasons.filter((r) => !r.startsWith('💊')).map((r, i) => (
           <Row key={i} gap={10} style={{ alignItems: 'flex-start' }}>
             <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: u.fg, marginTop: 8 }} />
             <T v="callout" style={{ flex: 1 }}>

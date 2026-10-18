@@ -14,6 +14,7 @@ import { useApp } from '../../../lib/app-state';
 import { lastBackup } from '../../../lib/backup';
 import { dayKey, daysSince, isoDay, now, relative, startOfDay, timeLabel, todayLabel } from '../../../lib/dates';
 import * as db from '../../../lib/db';
+import { activeMedClasses } from '../../../lib/med-food';
 import { doseWhen, dosesForToday, type Dose } from '../../../lib/meds';
 import { alarmSupport } from '../../../lib/alarm';
 import { askPermission, cancelMealReminder, permission, syncReminders, type PermissionState } from '../../../lib/reminders';
@@ -460,6 +461,8 @@ export default function Home() {
     doseWhen(d.due, at).when === 'now'
       ? `${d.med.name} saati geldi${d.med.dose ? ` (${d.med.dose})` : ''}. Aldın mı?`
       : `${d.med.name} saati geçti (${[timeLabel(d.due), d.med.dose].filter(Boolean).join(', ')}). Aldın mı?`;
+  // on cortisone Kıvırcık keeps sugar, salt and "with food" in mind (medsKey keeps it current)
+  const onSteroid = !!app.medsKey && activeMedClasses().includes('steroid');
   const message = thanks
     ? thanks.text
     : redFlag
@@ -471,7 +474,9 @@ export default function Home() {
         : !realMeals.length && hour < 5
           ? 'Gece geç oldu. Bir şey yediysen yazalım, sonra biraz dinlen.'
           : !realMeals.length && hour < 11
-          ? 'Günaydın! Kahvaltıda ne var?'
+          ? onSteroid
+            ? 'Günaydın! Kortizonu tok karnına almak mideni korur. Kahvaltıda ne var?'
+            : 'Günaydın! Kahvaltıda ne var?'
           : !realMeals.length
             ? 'Bugün henüz bir şey yazmadın. İlk öğünle başlayalım mı?'
             : meals.some((m) => m.reaction === 2)
@@ -484,7 +489,9 @@ export default function Home() {
                 ? 'Atak günlerinde yumuşak, az yağlı ve küçük porsiyonlarla gidelim.'
                 : daily?.feel != null && daily.feel >= 3
                   ? 'İyi bir gün gibi görünüyor. Neyin iyi geldiğini yazmaya devam.'
-                  : `Bugün ${realMeals.length} öğün yazdın. Böyle devam, örüntüleri birlikte göreceğiz.`;
+                  : onSteroid
+                    ? 'Kortizon kullanırken tuzu ve şekeri azaltalım; tatlıyı küçük porsiyonla, yemekten sonra.'
+                    : `Bugün ${realMeals.length} öğün yazdın. Böyle devam, örüntüleri birlikte göreceğiz.`;
 
   return (
     <Screen tone={flare ? 'flare' : 'calm'}>

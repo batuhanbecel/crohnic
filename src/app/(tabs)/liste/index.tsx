@@ -36,7 +36,7 @@ export default function FoodList() {
     setTagHistory(meals);
     const stats = statsByName(meals);
     return FOODS.map((f) => ({ f, a: assessFood(f, app.phase, meals, stats) }));
-  }, [app.phase, meals]);
+  }, [app.phase, meals, app.medsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const counts = useMemo(() => {
     const base = assessed.filter((r) => !cat || r.f.cat === cat);

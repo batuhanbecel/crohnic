@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { DEFAULT_AI, newInstallId, setInstallId, type AiConfig, type Analysis } from './ai';
 import * as db from './db';
 import { loadCustomEmojis } from './custom-emoji';
+import { setActiveMeds } from './med-food';
 import { setLactose, setStoma, setStricture, setTagHistory } from './tolerance';
 import type { Phase } from './foods';
 
@@ -30,6 +31,8 @@ type AppState = {
   saveAi: (cfg: AiConfig | null) => Promise<void>;
   saveName: (n: string) => Promise<void>;
   bump: () => void;
+  /** changes whenever the active medicines change: memo key for anything rated with them */
+  medsKey: string;
 };
 
 const Ctx = createContext<AppState | null>(null);
@@ -44,6 +47,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [onboarded, setOnboarded] = useState(true);
   const [dataVersion, setDataVersion] = useState(0);
   const [pending, setPending] = useState<PendingResult | null>(null);
+  const [medsKey, setMedsKey] = useState('');
+  const applyMeds = useCallback((meds: db.Med[]) => {
+    const names = meds.map((m) => m.name);
+    setActiveMeds(names);
+    setMedsKey(names.join('|'));
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -58,6 +67,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setLactose((await db.getSetting(sql, 'lactose')) === '1');
       setTagHistory(await db.allRatedMeals(sql));
       await loadCustomEmojis(sql);
+      // foods are rated with the medicines in mind (cortisone: less sugar and salt…)
+      applyMeds(await db.listMeds(sql));
       const [p, url, token, n, seen, mealCount] = await Promise.all([
         db.getPhase(sql),
         db.getSetting(sql, 'ai_url'),
@@ -76,14 +87,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setName(n ?? '');
       setReady(true);
     })();
-  }, [sql]);
+  }, [sql, applyMeds]);
 
   // keep the per-tag history behind the general verdicts in step with new ratings
   useEffect(() => {
     if (dataVersion) db.allRatedMeals(sql).then(setTagHistory);
     // a restored backup brings its own emoji choices
     if (dataVersion) loadCustomEmojis(sql);
-  }, [sql, dataVersion]);
+    if (dataVersion) db.listMeds(sql).then(applyMeds);
+  }, [sql, dataVersion, applyMeds]);
 
   const reloadPhase = useCallback(async () => {
     const p = await db.getPhase(sql);
@@ -129,8 +141,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [sql]);
 
   const value = useMemo(
-    () => ({ ready, name, phase, phaseSince, ai, onboarded, finishOnboarding, dataVersion, pending, setPending, changePhase, reloadPhase, saveAi, saveName, bump }),
-    [ready, name, phase, phaseSince, ai, onboarded, finishOnboarding, dataVersion, pending, changePhase, reloadPhase, saveAi, saveName, bump],
+    () => ({ ready, name, phase, phaseSince, ai, onboarded, finishOnboarding, dataVersion, pending, setPending, changePhase, reloadPhase, saveAi, saveName, bump, medsKey }),
+    [ready, name, phase, phaseSince, ai, onboarded, finishOnboarding, dataVersion, pending, changePhase, reloadPhase, saveAi, saveName, bump, medsKey],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
