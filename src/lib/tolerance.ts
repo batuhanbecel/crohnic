@@ -311,17 +311,19 @@ export function assessContext(phase: Phase) {
 /** Categories that can stand in for each other ("instead of baklava: fruit"). Alcohol and tobacco never do. */
 const NEAR: Partial<Record<Category, Category[]>> = {
   Tatlı: ['Meyve'],
-  'Paketli atıştırmalık & çikolata': ['Kuruyemiş & atıştırmalık', 'Meyve', 'Tatlı'],
-  'Kuruyemiş & atıştırmalık': ['Meyve'],
-  'Fast food & sokak lezzetleri': ['Et & tavuk', 'Hamur işi & börek', 'Dünya mutfağı'],
-  'Fast food zincirleri': ['Fast food & sokak lezzetleri', 'Et & tavuk'],
-  'Alkollü içecekler': ['İçecek', 'Hazır içecekler'],
-  'Hazır içecekler': ['İçecek'],
-  'Kafe zincirleri': ['İçecek'],
-  İçecek: ['Hazır içecekler'],
-  'Salata & mezeler': ['Sebze yemekleri', 'Sebze & yeşillik'],
-  'Sebze & yeşillik': ['Sebze yemekleri'],
-  'Sebze yemekleri': ['Sebze & yeşillik'],
+  'Atıştırmalık & çikolata': ['Kuruyemiş & çerez', 'Meyve', 'Tatlı'],
+  'Kuruyemiş & çerez': ['Meyve'],
+  'Burger, pizza & sokak lezzetleri': ['Et & tavuk', 'Hamur işi & börek', 'Sandviç & tost', 'Dünya mutfağı'],
+  'Restoran zincirleri': ['Burger, pizza & sokak lezzetleri', 'Et & tavuk', 'Sandviç & tost'],
+  'Kafe & pastane zincirleri': ['İçecekler', 'Tatlı', 'Sandviç & tost'],
+  'Sandviç & tost': ['Kahvaltı', 'Ekmek'],
+  Kahvaltı: ['Süt ürünleri & peynir', 'Sandviç & tost', 'Ekmek'],
+  'Alkollü içecekler': ['İçecekler', 'Paketli içecekler'],
+  'Paketli içecekler': ['İçecekler'],
+  İçecekler: ['Paketli içecekler'],
+  'Salata & mezeler': ['Sebze yemekleri', 'Sade sebze & yeşillik'],
+  'Sade sebze & yeşillik': ['Sebze yemekleri'],
+  'Sebze yemekleri': ['Sade sebze & yeşillik'],
   Bakliyat: ['Çorba', 'Sebze yemekleri'],
   Ekmek: ['Pilav & tahıl', 'Kahvaltı'],
   'Hamur işi & börek': ['Ekmek', 'Kahvaltı'],
@@ -329,10 +331,9 @@ const NEAR: Partial<Record<Category, Category[]>> = {
   'Pilav & tahıl': ['Makarna & mantı'],
   'Et & tavuk': ['Balık & deniz ürünleri'],
   'Balık & deniz ürünleri': ['Et & tavuk'],
-  Kahvaltı: ['Süt ürünleri & peynir', 'Ekmek'],
   'Süt ürünleri & peynir': ['Kahvaltı'],
   'Dünya mutfağı': ['Et & tavuk', 'Pilav & tahıl'],
-  'Beslenme destekleri': ['İçecek'],
+  'Beslenme destekleri': ['İçecekler'],
 };
 const NEVER_SWAP: Category[] = ['Alkollü içecekler', 'Sigara & tütün'];
 const DRINK = /🥤|🧃|🧋|☕|🍵|🥛|🍋|⚡|🫧|🍺|🍷|🍸|🍹|🥂|🍶|🧉|🍾|🥃|💧|🫖/u;
@@ -349,7 +350,10 @@ const kindOf = (f: Food) =>
         : f.cat === 'Tatlı' || SWEET.test(f.emoji) || SWEET_NAME.test(f.name)
           ? 'tatli'
           : 'yemek';
-const words = (name: string) => new Set(normalizeName(name).split(/[^a-zçğıöşü0-9]+/).filter((w) => w.length >= 3));
+const words = (name: string) => new Set(normalizeName(name).split(/[^a-zçğıöşü0-9]+/).filter((w) => w.length >= 4));
+const CHAINS: Category[] = ['Restoran zincirleri', 'Kafe & pastane zincirleri'];
+/** "KFC", "McDonald's": at a chain, the same place's menu comes first. */
+const brandOf = (f: Food) => (CHAINS.includes(f.cat) ? normalizeName(f.name).split(' ')[0] : null);
 
 /**
  * "Bunun yerine": foods that come out 'iyi' with the very same assessment as the food page
@@ -362,6 +366,7 @@ export function alternativesFor(food: Food, phase: Phase, limit = 4, stats?: Ret
   const mine = words(food.name);
   const tags = new Set(food.tags);
   const kind = kindOf(food);
+  const brand = brandOf(food);
   const scored: { food: Food; a: FoodAssessment; score: number }[] = [];
   for (const f of FOODS) {
     if (f.id === food.id || !cats.includes(f.cat)) continue;
@@ -373,7 +378,7 @@ export function alternativesFor(food: Food, phase: Phase, limit = 4, stats?: Ret
     const shared = [...words(f.name)].filter((w) => mine.has(w)).length;
     const union = new Set([...tags, ...f.tags]).size || 1;
     const jaccard = f.tags.filter((t) => tags.has(t)).length / union;
-    const score = (a.confidence === 'kişisel' ? 50 : 0) + shared * 8 + jaccard * 4 + (f.cat === food.cat ? 6 : 0) + (f.emoji === food.emoji ? 4 : 0) + (f.tags.includes('hafif') ? 2 : 0) - (RARE_FOOD.test(f.name) ? 6 : 0);
+    const score = (a.confidence === 'kişisel' ? 50 : 0) + (brand && brandOf(f) === brand ? 10 : 0) + shared * 8 + jaccard * 4 + (f.cat === food.cat ? 6 : 0) + (f.emoji === food.emoji ? 4 : 0) + (f.tags.includes('hafif') ? 2 : 0) - (RARE_FOOD.test(f.name) ? 6 : 0);
     scored.push({ food: f, a, score });
   }
   return scored.sort((x, y) => y.score - x.score || x.food.name.length - y.food.name.length).slice(0, limit);
