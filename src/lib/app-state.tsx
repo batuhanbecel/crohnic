@@ -3,7 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { DEFAULT_AI, newInstallId, setInstallId, type AiConfig, type Analysis } from './ai';
 import * as db from './db';
 import { loadCustomEmojis } from './custom-emoji';
-import { setActiveMeds } from './med-food';
+import { classesIn, isMedClass, setMedContext, type MedClass } from './med-food';
 import { setLactose, setStoma, setStricture, setTagHistory } from './tolerance';
 import type { Phase } from './foods';
 
@@ -31,8 +31,11 @@ type AppState = {
   saveAi: (cfg: AiConfig | null) => Promise<void>;
   saveName: (n: string) => Promise<void>;
   bump: () => void;
-  /** changes whenever the active medicines change: memo key for anything rated with them */
+  /** changes whenever the medicine switches or the medicines change: memo key for anything rated with them */
   medsKey: string;
+  /** medicine groups switched on in Ayarlar › Sana özel durumlar */
+  medFactors: MedClass[];
+  setMedFactor: (cls: MedClass, on: boolean) => Promise<void>;
 };
 
 const Ctx = createContext<AppState | null>(null);
@@ -48,11 +51,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [dataVersion, setDataVersion] = useState(0);
   const [pending, setPending] = useState<PendingResult | null>(null);
   const [medsKey, setMedsKey] = useState('');
-  const applyMeds = useCallback((meds: db.Med[]) => {
-    const names = meds.map((m) => m.name);
-    setActiveMeds(names);
-    setMedsKey(names.join('|'));
+  const [medFactors, setMedFactors] = useState<MedClass[]>([]);
+  const applyMeds = useCallback((ctx: { on: MedClass[]; names: string[] }) => {
+    setMedContext(ctx.on, ctx.names);
+    setMedFactors(ctx.on);
+    setMedsKey(`${ctx.on.join(',')}|${ctx.names.join('|')}`);
   }, []);
+  // Ratings follow the switches, not the medicines list: a list entry can outlive the treatment.
+  const loadMeds = useCallback(async () => {
+    const names = (await db.listMeds(sql)).map((m) => m.name);
+    let raw = await db.getSetting(sql, 'med_factors');
+    if (raw == null) {
+      // first run with the switches: what's in the list today is what the user takes today
+      raw = classesIn(names).join(',');
+      await db.setSetting(sql, 'med_factors', raw);
+    }
+    return { on: raw.split(',').filter(isMedClass), names };
+  }, [sql]);
 
   useEffect(() => {
     (async () => {
@@ -67,8 +82,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setLactose((await db.getSetting(sql, 'lactose')) === '1');
       setTagHistory(await db.allRatedMeals(sql));
       await loadCustomEmojis(sql);
-      // foods are rated with the medicines in mind (cortisone: less sugar and salt…)
-      applyMeds(await db.listMeds(sql));
+      // foods are rated with the medicines switched on (cortisone: less sugar and salt…)
+      applyMeds(await loadMeds());
       const [p, url, token, n, seen, mealCount] = await Promise.all([
         db.getPhase(sql),
         db.getSetting(sql, 'ai_url'),
@@ -87,15 +102,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setName(n ?? '');
       setReady(true);
     })();
-  }, [sql, applyMeds]);
+  }, [sql, applyMeds, loadMeds]);
 
   // keep the per-tag history behind the general verdicts in step with new ratings
   useEffect(() => {
     if (dataVersion) db.allRatedMeals(sql).then(setTagHistory);
     // a restored backup brings its own emoji choices
     if (dataVersion) loadCustomEmojis(sql);
-    if (dataVersion) db.listMeds(sql).then(applyMeds);
-  }, [sql, dataVersion, applyMeds]);
+    if (dataVersion) loadMeds().then(applyMeds);
+  }, [sql, dataVersion, applyMeds, loadMeds]);
+
+  const setMedFactor = useCallback(
+    async (cls: MedClass, on: boolean) => {
+      const cur = ((await db.getSetting(sql, 'med_factors')) ?? '').split(',').filter(isMedClass);
+      const next = on ? [...new Set([...cur, cls])] : cur.filter((c) => c !== cls);
+      await db.setSetting(sql, 'med_factors', next.join(','));
+      await db.setSetting(sql, 'factors_seen', '1');
+      applyMeds({ on: next, names: (await db.listMeds(sql)).map((m) => m.name) });
+      setDataVersion((v) => v + 1);
+    },
+    [sql, applyMeds],
+  );
 
   const reloadPhase = useCallback(async () => {
     const p = await db.getPhase(sql);
@@ -141,8 +168,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [sql]);
 
   const value = useMemo(
-    () => ({ ready, name, phase, phaseSince, ai, onboarded, finishOnboarding, dataVersion, pending, setPending, changePhase, reloadPhase, saveAi, saveName, bump, medsKey }),
-    [ready, name, phase, phaseSince, ai, onboarded, finishOnboarding, dataVersion, pending, changePhase, reloadPhase, saveAi, saveName, bump, medsKey],
+    () => ({ ready, name, phase, phaseSince, ai, onboarded, finishOnboarding, dataVersion, pending, setPending, changePhase, reloadPhase, saveAi, saveName, bump, medsKey, medFactors, setMedFactor }),
+    [ready, name, phase, phaseSince, ai, onboarded, finishOnboarding, dataVersion, pending, changePhase, reloadPhase, saveAi, saveName, bump, medsKey, medFactors, setMedFactor],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

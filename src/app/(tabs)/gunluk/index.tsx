@@ -32,7 +32,7 @@ const fold = (s: string) => s.toLocaleLowerCase('tr');
 
 function describe(e: Entry): { title: string; sub: string } {
   if (e.kind === 'meal') {
-    const r = e.item.reaction != null ? REACTIONS[e.item.reaction].label : 'Nasıl geçtiği bekleniyor';
+    const r = e.item.reaction != null ? REACTIONS[e.item.reaction].phrase : 'Nasıl geçtiği bekleniyor';
     return { title: e.item.name, sub: [r, e.item.phase === 'atak' ? 'atakta' : null].filter(Boolean).join(', ') };
   }
   if (e.kind === 'symptom') {

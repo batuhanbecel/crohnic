@@ -11,6 +11,7 @@ import { fromIsoDay, isoDay, now } from '../lib/dates';
 import * as db from '../lib/db';
 import { fmtTime, parseTimes } from '../lib/meds';
 import { askPermission, permission } from '../lib/reminders';
+import { MED_CLASSES, classesIn } from '../lib/med-food';
 import { isDark, palette } from '../lib/theme';
 
 const EVERY = [
@@ -104,6 +105,21 @@ export default function MedEdit() {
           ]),
         );
       }
+      // a medicine with food advice (Prednol → cortisone): ask, don't switch it on silently
+      for (const cls of classesIn([name.trim()]).filter((c) => !app.medFactors.includes(c))) {
+        const def = MED_CLASSES[cls];
+        const yes = await new Promise<boolean>((done) =>
+          Alert.alert(
+            `${name.trim()}: ${def.label.toLocaleLowerCase('tr-TR')}`,
+            `Yemekleri buna göre değerlendireyim mi? ${def.effect}\n\nBırakınca Ayarlar › Sana özel durumlar’dan kapatırsın.`,
+            [
+              { text: 'Şimdi değil', style: 'cancel', onPress: () => done(false) },
+              { text: 'Evet', onPress: () => done(true) },
+            ],
+          ),
+        );
+        if (yes) await app.setMedFactor(cls, true);
+      }
       app.bump();
       router.back();
     } catch (e: any) {
@@ -122,6 +138,18 @@ export default function MedEdit() {
         onPress: async () => {
           if (!editing) return;
           await db.archiveMed(sql, editing);
+          // the last medicine of a group that's switched on: offer to drop its food warnings too
+          const rest = (await db.listMeds(sql)).map((m) => m.name);
+          const orphan = classesIn([name.trim()]).filter((c) => app.medFactors.includes(c) && !classesIn(rest).includes(c));
+          for (const cls of orphan) {
+            const off = await new Promise<boolean>((done) =>
+              Alert.alert(`${MED_CLASSES[cls].label} uyarıları da kalksın mı?`, 'Yemekleri artık bu ilaca göre değerlendirmem.', [
+                { text: 'Kalsın', style: 'cancel', onPress: () => done(false) },
+                { text: 'Kaldır', onPress: () => done(true) },
+              ]),
+            );
+            if (off) await app.setMedFactor(cls, false);
+          }
           app.bump();
           router.back();
         },

@@ -2,7 +2,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import type { Phase, Verdict } from './foods';
 import { isoDay } from './dates';
 
-export type Reaction = 0 | 1 | 2; // 0 = iyi geldi, 1 = biraz dokundu, 2 = çok dokundu
+export type Reaction = 0 | 1 | 2; // 0 = normal geçti, 1 = biraz dokundu, 2 = kötü geçti (çok dokundu)
 
 export type Meal = {
   id: number;

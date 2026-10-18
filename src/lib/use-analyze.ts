@@ -24,7 +24,7 @@ export function useAnalyze() {
   }, [app.ai]);
 
   const context = useCallback(async () => {
-    const [rated, symptoms, bowel, meds] = await Promise.all([db.allRatedMeals(sql), db.listSymptoms(sql, 3), db.listBowel(sql, 3), db.listMeds(sql)]);
+    const [rated, symptoms, bowel] = await Promise.all([db.allRatedMeals(sql), db.listSymptoms(sql, 3), db.listBowel(sql, 3)]);
     const dayAgo = Date.now() - 86400000;
     const s = symptoms.find((x) => x.at >= dayAgo);
     const b = bowel.find((x) => x.at >= dayAgo);
@@ -34,7 +34,8 @@ export function useAnalyze() {
       hasStricture() ? 'Bağırsakta bilinen darlık (striktür) var: posalı ve lifli yiyeceklerde temkinli ol' : null,
       hasStoma() ? 'İleostomisi var: tıkanma riskine karşı lifli, kabuklu ve posalı yiyeceklerde temkinli ol' : null,
       hasLactose() ? 'Laktoz intoleransı var: süt, krema ve sütlü tatlıları riskli say; yoğurt, kefir ve eski peynir genelde tolere edilir' : null,
-      medContextForAI(meds.map((m) => m.name)),
+      // only the medicines switched on in Sana özel durumlar
+      medContextForAI(),
     ]
       .filter(Boolean)
       .join('. ');

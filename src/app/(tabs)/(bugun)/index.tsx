@@ -27,14 +27,11 @@ import { useDayPlan } from '../../../lib/use-day-plan';
 
 const FEELS: { emoji: string; label: string; mood: Mood; line: string }[] = [
   { emoji: '😣', label: 'Kötü', mood: 'agri', line: 'Zor bir gün. Az ve hafif ye, bol sıvı al. Ağrın varsa semptom olarak yaz.' },
-  { emoji: '😕', label: 'Zor', mood: 'worried', line: 'Bugün denenmiş, sana iyi gelen yemeklerle git. Yenilerini başka güne bırak.' },
+  { emoji: '😕', label: 'Zor', mood: 'worried', line: 'Bugün sana dokunmadığını bildiğin yemeklerle git. Yenilerini başka güne bırak.' },
   { emoji: '😐', label: 'İdare', mood: 'ok', line: 'İdare eder. Ne yediğini yazmaya devam, örüntüyü birlikte görürüz.' },
   { emoji: '🙂', label: 'İyi', mood: 'sevgi', line: 'Güzel. İyi giden günler de karşılaştırma için çok değerli.' },
-  { emoji: '😄', label: 'Harika', mood: 'kutlama', line: 'Harika bir gün. Neyin iyi geldiğini yazarsan tekrarlaması kolaylaşır.' },
+  { emoji: '😄', label: 'Harika', mood: 'kutlama', line: 'Harika bir gün. Ne yediğini yazarsan böyle günleri tekrarlamak kolaylaşır.' },
 ];
-
-/** Short answers that fit three across in Kıvırcık's bubble (full labels go to VoiceOver). */
-const BUBBLE_LABEL: Record<db.Reaction, string> = { 0: 'İyi', 1: 'Biraz', 2: 'Kötü' };
 
 type Entry = {
   key: string;
@@ -196,7 +193,7 @@ export default function Home() {
   const answerMeal = async (group: db.MealGroup, r: db.Reaction) => {
     setThanks(
       r === 0
-        ? { text: 'Süper, kaydettim! İyi gelenleri sana daha çok öneririm.', mood: 'mutlu' }
+        ? { text: 'Süper, kaydettim! Sana dokunmayanları daha çok öneririm.', mood: 'mutlu' }
         : r === 1
           ? { text: 'Not ettim. Bunu bir süre az ve dikkatli yiyelim.', mood: 'dusunuyor' }
           : { text: 'Geçmiş olsun. Kaydettim, bir dahaki sefere seni uyarırım.', mood: 'sevgi' },
@@ -313,9 +310,9 @@ export default function Home() {
           <Row key="factors" gap={12} style={{ paddingVertical: 12 }}>
             <IconBubble name="person.fill" color={palette.plum} dim={40} fallback="🩺" />
             <View style={{ flex: 1 }}>
-              <T v="h3">Darlık, stoma ya da laktoz?</T>
+              <T v="h3">Darlık, laktoz ya da kortizon?</T>
               <T v="small" color={palette.inkSoft}>
-                Varsa söyle, yemekleri sana göre değerlendireyim
+                Varsa söyle, yemekleri sana ve ilaçlarına göre değerlendireyim
               </T>
             </View>
             <View style={{ gap: 4, alignItems: 'flex-end' }}>
@@ -350,7 +347,7 @@ export default function Home() {
       fallback: '🍽️',
       color: palette.lettuce,
       title: g.name,
-      sub: g.reaction != null ? REACTIONS[g.reaction].label : 'Nasıl geçtiği bekleniyor',
+      sub: g.reaction != null ? REACTIONS[g.reaction].phrase : 'Nasıl geçtiği bekleniyor',
       onPress: () => router.push(`/ogun/${g.ids[0]}`),
       group: g,
     })),
@@ -488,7 +485,7 @@ export default function Home() {
               : flare
                 ? 'Atak günlerinde yumuşak, az yağlı ve küçük porsiyonlarla gidelim.'
                 : daily?.feel != null && daily.feel >= 3
-                  ? 'İyi bir gün gibi görünüyor. Neyin iyi geldiğini yazmaya devam.'
+                  ? 'İyi bir gün gibi görünüyor. Yazmaya devam, neyin dokunduğunu böyle buluruz.'
                   : onSteroid
                     ? 'Kortizon kullanırken tuzu ve şekeri azaltalım; tatlıyı küçük porsiyonla, yemekten sonra.'
                     : `Bugün ${realMeals.length} öğün yazdın. Böyle devam, örüntüleri birlikte göreceğiz.`;
@@ -541,12 +538,12 @@ export default function Home() {
                     press="scale"
                     onPress={() => answerMeal(askMeal, r.value)}
                     accessibilityRole="button"
-                    accessibilityLabel={`${askMeal.name}: ${r.label}`}
+                    accessibilityLabel={`${askMeal.name}: ${r.phrase}`}
                     style={{ flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: radius.md, backgroundColor: r.bg }}
                   >
                     <Text style={{ fontSize: 22 }}>{r.emoji}</Text>
                     <T v="caption" color={r.color} style={{ fontWeight: '800' }} numberOfLines={1}>
-                      {BUBBLE_LABEL[r.value]}
+                      {r.label}
                     </T>
                   </Tap>
                 ))}

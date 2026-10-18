@@ -12,7 +12,7 @@ import { afterMealSaved } from '../lib/reminders';
 import { TAGS, findFoodByName, normalizeName, type Tag, type Verdict } from '../lib/foods';
 import { savePhoto } from '../lib/photos';
 import { palette, radius, surface, type } from '../lib/theme';
-import { medHits, medLine } from '../lib/med-food';
+import { floorVerdict, medHits, medLine } from '../lib/med-food';
 import { statsByName, type PersonalStat } from '../lib/tolerance';
 
 const MOOD: Record<Verdict, Mood> = { iyi: 'catalla', dikkat: 'dusunuyor', riskli: 'agri' };
@@ -70,7 +70,7 @@ function useSaveMeal() {
 
 function PersonalNote({ stat }: { stat?: PersonalStat }) {
   if (!stat || stat.n === 0) return null;
-  const parts = [stat.good ? `${stat.good} kez iyi geldi` : null, stat.mild ? `${stat.mild} kez biraz dokundu` : null, stat.bad ? `${stat.bad} kez çok dokundu` : null]
+  const parts = [stat.good ? `${stat.good} kez normal geçti` : null, stat.mild ? `${stat.mild} kez biraz dokundu` : null, stat.bad ? `${stat.bad} kez kötü geçti` : null]
     .filter(Boolean)
     .join(', ');
   return (
@@ -106,10 +106,12 @@ function Bullets({ items, color, icon }: { items: string[]; color: string; icon?
   );
 }
 
-function MealResult({ a, photo, foodId }: { a: MealAnalysis; photo: string | null; foodId: string | null }) {
+function MealResult({ a: raw, photo, foodId }: { a: MealAnalysis; photo: string | null; foodId: string | null }) {
   const save = useSaveMeal();
   const personal = usePersonal();
   const [saving, setSaving] = useState(false);
+  // the medicines switched on can only make the AI's verdict more careful, like everywhere else
+  const a = { ...raw, verdict: floorVerdict(raw.verdict, medHits({ name: [raw.dish, ...raw.ingredients].join(' '), tags: raw.tags })) };
   const u = VERDICT_UI[a.verdict];
 
   const onSave = async () => {
@@ -198,12 +200,13 @@ function MealResult({ a, photo, foodId }: { a: MealAnalysis; photo: string | nul
   );
 }
 
-function MenuResult({ a }: { a: MenuAnalysis }) {
+function MenuResult({ a: raw }: { a: MenuAnalysis }) {
   const sql = useSQLiteContext();
   const app = useApp();
   const personal = usePersonal();
   const [picked, setPicked] = useState<Set<number>>(new Set());
   const [saving, setSaving] = useState(false);
+  const a = useMemo(() => ({ ...raw, dishes: raw.dishes.map((d) => ({ ...d, verdict: floorVerdict(d.verdict, medHits({ name: d.name, tags: d.tags })) })) }), [raw]);
   const groups = useMemo(
     () =>
       (['iyi', 'dikkat', 'riskli'] as Verdict[])
@@ -306,7 +309,7 @@ function MenuResult({ a }: { a: MenuAnalysis }) {
                     ))}
                   {stt?.n ? (
                     <T v="caption" color={palette.lettuceDeep}>
-                      {stt.n} kez yemişsin, {stt.bad + stt.mild ? `${stt.bad + stt.mild} kez dokunmuş` : 'hep iyi gelmiş'}
+                      {stt.n} kez yemişsin, {stt.bad + stt.mild ? `${stt.bad + stt.mild} kez dokunmuş` : 'hiç dokunmamış'}
                     </T>
                   ) : null}
                 </Card>

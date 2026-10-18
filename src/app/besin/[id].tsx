@@ -5,14 +5,14 @@ import { Alert, View } from 'react-native';
 import { Text } from '../../components/text';
 import { Mascot } from '../../components/Mascot';
 import { ThinkingOverlay } from '../../components/ThinkingOverlay';
-import { Button, Card, Row, Screen, T, VERDICT_UI, VerdictBadge } from '../../components/ui';
+import { Button, Card, Icon, Row, Screen, T, Tap, VERDICT_UI, VerdictBadge } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
 import { now } from '../../lib/dates';
 import * as db from '../../lib/db';
 import { afterMealSaved } from '../../lib/reminders';
-import { FOOD_BY_ID, FOODS, TAGS } from '../../lib/foods';
+import { FOOD_BY_ID, TAGS } from '../../lib/foods';
 import { palette, radius, surface, type } from '../../lib/theme';
-import { assessFood, generalVerdict, setTagHistory } from '../../lib/tolerance';
+import { alternativesFor, assessContext, assessFood, phaseSummary, setTagHistory, statsByName } from '../../lib/tolerance';
 import { MedNotes } from '../../components/MedNotes';
 import { useAnalyze } from '../../lib/use-analyze';
 
@@ -31,19 +31,26 @@ export default function FoodDetail() {
     });
   }, [sql, app.dataVersion]);
 
-  /** Gentler foods from the same category, for the "instead" row. */
-  const alternatives = useMemo(() => {
-    if (!food) return [];
-    return FOODS.filter((f) => f.cat === food.cat && f.id !== food.id && generalVerdict(f.tags, app.phase).verdict === 'iyi').slice(0, 4);
-    // meals feed the per-tag history that generalVerdict reads
+  const stats = useMemo(() => statsByName(meals), [meals]);
+  // every verdict on this page comes from the same assessment: phase, personal factors,
+  // the records (per phase) and the medicines switched on
+  const both = useMemo(
+    () => (food ? { remisyon: assessFood(food, 'remisyon', undefined, stats), atak: assessFood(food, 'atak', undefined, stats) } : null),
+    // the medicines and the per-tag history live outside React; medsKey and meals mark their changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [food, app.phase, meals]);
+    [food, stats, app.medsKey],
+  );
+  /** Foods that come out 'iyi' under the same assessment, for the "instead" row. */
+  const alternatives = useMemo(
+    () => (food ? alternativesFor(food, app.phase, 4, stats) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [food, app.phase, stats, app.medsKey],
+  );
 
-  if (!food) return null;
-  const a = assessFood(food, app.phase, meals);
+  if (!food || !both) return null;
+  const a = both[app.phase];
   const u = VERDICT_UI[a.verdict];
-  const rem = generalVerdict(food.tags, 'remisyon').verdict;
-  const flare = generalVerdict(food.tags, 'atak').verdict;
+  const ctx = assessContext(app.phase);
 
   const ate = async () => {
     const id = await db.addMeal(sql, {
@@ -62,18 +69,18 @@ export default function FoodDetail() {
   };
 
   const mood = a.verdict === 'iyi' ? 'catalla' : a.verdict === 'dikkat' ? 'dusunuyor' : 'agri';
-  const medLevel = a.meds?.some((h) => h.level === 'kacin') ? 'kacin' : a.meds?.some((h) => h.level === 'dikkat') ? 'dikkat' : null;
+  const phaseWord = app.phase === 'atak' ? 'atakta' : 'remisyonda';
   const line =
-    medLevel === 'kacin'
-      ? 'Kullandığın ilaçlarla birlikte bundan uzak durmak daha iyi.'
-      : medLevel === 'dikkat' && a.verdict === 'dikkat'
-        ? 'Kullandığın ilaçlar yüzünden ölçülü ol, nedeni aşağıda.'
-        : a.confidence === 'kişisel'
+    a.driver === 'ilac'
+      ? a.verdict === 'riskli'
+        ? 'Kullandığın ilaçla birlikte bundan uzak durmak daha iyi.'
+        : 'Kullandığın ilaç yüzünden ölçülü ol, nedeni aşağıda.'
+      : a.driver === 'kisisel'
       ? a.verdict === 'iyi'
-        ? 'Kayıtlarına bakılırsa bununla aran iyi.'
+        ? `Kayıtlarına bakılırsa bu ${phaseWord} sana dokunmuyor.`
         : a.verdict === 'dikkat'
-          ? 'Bu sana bazen dokunmuş. Küçük porsiyon, yavaş ye.'
-          : 'Kayıtlarında bu çoğu zaman dokunmuş. Bugün başka bir şey seçmek daha iyi.'
+          ? `Bu ${phaseWord} sana bazen dokunmuş. Küçük porsiyon, yavaş ye.`
+          : `Kayıtlarında bu ${phaseWord} çoğu zaman dokunmuş. Bugün başka bir şey seçmek daha iyi.`
       : a.verdict === 'iyi'
         ? 'Çoğu kişide sorun çıkarmayan bir seçim.'
         : a.verdict === 'dikkat'
@@ -104,6 +111,7 @@ export default function FoodDetail() {
             {line}
           </T>
         </View>
+        <ContextLine phase={app.phase} label={ctx.phase} extras={ctx.extras} />
       </Card>
 
       <MedNotes notes={(a.meds ?? []).map((hit) => ({ hit }))} />
@@ -112,10 +120,22 @@ export default function FoodDetail() {
         <Card style={{ gap: 10 }}>
           <T v="h3">Senin kayıtların</T>
           <Row gap={8}>
-            <Mini label="İyi geldi" value={a.stat.good} bg={palette.goodSoft} fg={palette.good} />
-            <Mini label="Biraz" value={a.stat.mild} bg={palette.warnSoft} fg={palette.warn} />
-            <Mini label="Çok dokundu" value={a.stat.bad} bg={palette.badSoft} fg={palette.bad} />
+            <Mini label="Normal" value={a.stat.good} bg={palette.goodSoft} fg={palette.good} />
+            <Mini label="Dokundu" value={a.stat.mild} bg={palette.warnSoft} fg={palette.warn} />
+            <Mini label="Kötü" value={a.stat.bad} bg={palette.badSoft} fg={palette.bad} />
           </Row>
+          {(['remisyon', 'atak'] as const)
+            .filter((p) => a.stat!.phases[p].n)
+            .map((p) => (
+              <T key={p} v="small" color={p === app.phase ? palette.ink : palette.inkSoft}>
+                {`${phaseSummary(p, a.stat!.phases[p])}.`}
+              </T>
+            ))}
+          {a.personalAdvice ? (
+            <T v="caption" color={palette.inkSoft}>
+              {a.personalAdvice}
+            </T>
+          ) : null}
         </Card>
       ) : (
         <Card tint={palette.lettuceSoft}>
@@ -148,27 +168,43 @@ export default function FoodDetail() {
 
       <Card style={{ gap: 10 }}>
         <T v="h3">Döneme göre</T>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <T v="callout">Remisyonda</T>
-          <VerdictBadge verdict={rem} size="sm" />
-        </Row>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <T v="callout">Atakta</T>
-          <VerdictBadge verdict={flare} size="sm" />
-        </Row>
+        {(['remisyon', 'atak'] as const).map((p) => (
+          <Row key={p} style={{ justifyContent: 'space-between' }}>
+            <T v="callout" style={p === app.phase ? type.semibold : undefined}>
+              {p === 'atak' ? 'Atakta' : 'Remisyonda'}
+              {p === app.phase ? <T v="small" color={palette.inkSoft}>{'  şu an'}</T> : null}
+            </T>
+            <VerdictBadge verdict={both[p].verdict} size="sm" />
+          </Row>
+        ))}
+        {ctx.extras.length || a.stat?.n ? (
+          <T v="caption" color={palette.inkSoft}>
+            {`${andList([...ctx.extras, ...(a.stat?.n ? ['kayıtların'] : [])])} iki dönemde de hesaba katıldı.`}
+          </T>
+        ) : null}
       </Card>
 
       {a.verdict !== 'iyi' && alternatives.length ? (
-        <Card style={{ gap: 10 }}>
+        <Card style={{ gap: 4 }}>
           <T v="h3">Bunun yerine</T>
-          {alternatives.map((f) => (
-            <Row key={f.id} gap={10}>
-              <Text style={{ fontSize: 22 }}>{f.emoji}</Text>
-              <T v="callout" style={{ flex: 1 }} onPress={() => router.replace(`/besin/${f.id}`)}>
-                {f.name}
-              </T>
-              <VerdictBadge verdict="iyi" size="sm" />
-            </Row>
+          <T v="small" color={palette.inkSoft} style={{ marginBottom: 4 }}>
+            {`${app.phase === 'atak' ? 'Atak' : 'Remisyon'} dönemine${ctx.extras.length ? `, ${ctx.extras.join(', ').toLocaleLowerCase('tr-TR')}` : ''} ve kayıtlarına göre uygun`}
+          </T>
+          {alternatives.map(({ food: f, a: fa }) => (
+            <Tap key={f.id} onPress={() => router.replace(`/besin/${f.id}`)} accessibilityRole="button" accessibilityLabel={`${f.name}, uygun`}>
+              <Row gap={10} style={{ paddingVertical: 6 }}>
+                <Text style={{ fontSize: 22 }}>{f.emoji}</Text>
+                <View style={{ flex: 1 }}>
+                  <T v="callout">{f.name}</T>
+                  {fa.confidence === 'kişisel' ? (
+                    <T v="caption" color={palette.good}>
+                      Sana dokunmuyor
+                    </T>
+                  ) : null}
+                </View>
+                <VerdictBadge verdict={fa.verdict} size="sm" />
+              </Row>
+            </Tap>
           ))}
         </Card>
       ) : null}
@@ -192,4 +228,33 @@ function Mini({ label, value, bg, fg }: { label: string; value: number; bg: stri
       </T>
     </View>
   );
+}
+
+/** What the verdict was based on: "Remisyon · Kortizon · Laktoz". */
+function ContextLine({ phase, label, extras }: { phase: 'remisyon' | 'atak'; label: string; extras: string[] }) {
+  const tone = phase === 'atak' ? palette.flareDeep : palette.lettuceDeep;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }} accessible accessibilityLabel={`Değerlendirme: ${[label, ...extras].join(', ')}`}>
+      <T v="caption" color={palette.inkSoft}>
+        Değerlendirme:
+      </T>
+      <Row gap={4}>
+        <Icon name={phase === 'atak' ? 'flame.fill' : 'leaf.fill'} size={11} color={tone} fallback={phase === 'atak' ? '🔥' : '🌿'} />
+        <T v="caption" color={tone} style={type.semibold}>
+          {label}
+        </T>
+      </Row>
+      {extras.map((x) => (
+        <T key={x} v="caption" color={palette.inkSoft} style={type.semibold}>
+          {`· ${x}`}
+        </T>
+      ))}
+    </View>
+  );
+}
+
+/** "Kortizon, Laktoz ve kayıtların" */
+function andList(xs: string[]) {
+  const s = xs.length > 1 ? `${xs.slice(0, -1).join(', ')} ve ${xs[xs.length - 1]}` : (xs[0] ?? '');
+  return s.charAt(0).toLocaleUpperCase('tr-TR') + s.slice(1);
 }

@@ -4,13 +4,13 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, ScrollView, View } from 'react-native';
 import { ThinkingOverlay } from '../../../components/ThinkingOverlay';
 import { Text } from '../../../components/text';
-import { Button, Card, Chip, Row, T, Tap, VERDICT_UI, usePageInsets } from '../../../components/ui';
+import { Button, Card, Chip, Icon, Row, T, Tap, VERDICT_UI, usePageInsets } from '../../../components/ui';
 import { useApp } from '../../../lib/app-state';
 import { lastTab } from '../../../lib/last-tab';
 import * as db from '../../../lib/db';
 import { CATEGORIES, FOODS, searchFoods, type Category, type Verdict } from '../../../lib/foods';
 import { palette, radius, surface, type } from '../../../lib/theme';
-import { assessFood, setTagHistory, statsByName } from '../../../lib/tolerance';
+import { assessContext, assessFood, setTagHistory, statsByName } from '../../../lib/tolerance';
 import { useAnalyze } from '../../../lib/use-analyze';
 
 type VF = Verdict | 'hepsi' | 'denedim';
@@ -58,7 +58,7 @@ export default function FoodList() {
 
   const filters: { key: VF; label: string; color: string }[] = [
     { key: 'hepsi', label: 'Hepsi', color: palette.ink },
-    { key: 'iyi', label: 'İyi gelir', color: palette.good },
+    { key: 'iyi', label: 'Uygun', color: palette.good },
     { key: 'dikkat', label: 'Dikkat', color: palette.warn },
     { key: 'riskli', label: 'Riskli', color: palette.bad },
     { key: 'denedim', label: 'Denediklerim', color: palette.lettuce },
@@ -67,17 +67,19 @@ export default function FoodList() {
   const explain = () =>
     Alert.alert(
       'Bu değerlendirme nasıl yapılıyor?',
-      'Üç katmanda değerlendiririm:\n\n1. Genel kural: Her yemeğin içeriği (lif, yağ, acı, laktoz, kafein, katkı gibi) etiketlenir ve dönemine göre puanlanır. Ağırlıklar IOIBD (2020) ve ESPEN (2023) beslenme önerilerine göre: doymuş yağ, işlenmiş et ve çok işlenmiş gıdalar azaltılır; lif yalnızca darlık varsa ya da atakta kısıtlanır; çiğ hayvansal gıdalar enfeksiyon riski yüzünden temkinli sayılır.\n\n2. Sana özel durumlar: Ayarlar’da darlık, stoma ya da laktoz intoleransını açarsan puanlar ona göre değişir.\n\n3. Senin kayıtların: Bir yemeği 2 kez yiyip nasıl geçtiğini yazınca senin sonucun geçerli olur. Bir içerik (örneğin baklagil) sana 3 kayıtta tekrar tekrar dokunursa, hiç denemediğin benzer yemekler de daha riskli görünür.\n\nCrohn’da herkese uyan tek bir liste yok. Kılavuzlar da bunu söylüyor; en doğru sonucu senin kayıtların verir. Diyetini değiştirmeden önce doktorun ya da diyetisyeninle konuş.',
+      'Üç katmanda değerlendiririm:\n\n1. Genel kural: Her yemeğin içeriği (lif, yağ, acı, laktoz, kafein, katkı gibi) etiketlenir ve dönemine göre puanlanır. Ağırlıklar IOIBD (2020) ve ESPEN (2023) beslenme önerilerine göre: doymuş yağ, işlenmiş et ve çok işlenmiş gıdalar azaltılır; lif yalnızca darlık varsa ya da atakta kısıtlanır; çiğ hayvansal gıdalar enfeksiyon riski yüzünden temkinli sayılır.\n\n2. Sana özel durumlar: Ayarlar’da darlık, stoma ya da laktoz intoleransını açarsan puanlar ona göre değişir.\n\n3. Senin kayıtların: Bir yemeği aynı dönemde 2 kez yiyip nasıl geçtiğini yazınca senin sonucun geçerli olur. Diğer dönemdeki kayıtlar yarım sayılır: remisyonda dokunmaması atakta da dokunmayacağı anlamına gelmez, atakta dokunması da atağın etkisi olabilir. Bir içerik (örneğin baklagil) sana 3 kayıtta tekrar tekrar dokunursa, hiç denemediğin benzer yemekler de daha riskli görünür.\n\n4. İlaçların: Sana özel durumlar’da açtığın ilaçlar en son bakılır ve sonucu sadece daha temkinli yapabilir. Örneğin kortizon kullanırken tatlılar ve tuzlu yiyecekler en az Dikkat olur. İlacı bırakınca kapatırsan bu uyarılar da kalkar.\n\nCrohn’da herkese uyan tek bir liste yok. Kılavuzlar da bunu söylüyor; en doğru sonucu senin kayıtların verir. Diyetini değiştirmeden önce doktorun ya da diyetisyeninle konuş.',
     );
 
+  const ctx = assessContext(app.phase);
   const header = (
     <View style={{ gap: 12, marginBottom: 12 }}>
       <T v="large" accessibilityRole="header">Yemekler</T>
       <Tap onPress={explain} haptic={false}>
         <Row gap={6} style={{ paddingHorizontal: 2, marginTop: -6 }}>
           <T v="small" color={app.phase === 'atak' ? palette.flareDeep : palette.inkSoft} style={{ flex: 1 }}>
-            {FOODS.length} yemek, {app.phase === 'atak' ? 'atak' : 'remisyon'} dönemine göre
+            {`${FOODS.length} yemek, ${app.phase === 'atak' ? 'atak' : 'remisyon'} dönemine göre${ctx.extras.length ? ` · ${ctx.extras.join(', ')}` : ''}`}
           </T>
+          <Icon name="info.circle" size={13} color={palette.inkFaint} fallback="ⓘ" />
         </Row>
       </Tap>
       <View style={{ gap: 8 }}>
@@ -141,7 +143,7 @@ export default function FoodList() {
                     {f.name}
                   </T>
                   <T v="small" color={palette.inkSoft} numberOfLines={1}>
-                    {a.confidence === 'kişisel' ? `Senin kayıtlarına göre, ${a.stat?.n} kez` : a.reasons[0] ?? f.cat}
+                    {a.why || f.cat}
                   </T>
                 </View>
                 <Row gap={5} style={{ backgroundColor: u.bg, borderRadius: radius.pill, paddingHorizontal: 9, paddingVertical: 5 }}>

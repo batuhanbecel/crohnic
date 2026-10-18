@@ -145,6 +145,9 @@ const parsed = parse(FOOD_SOURCE);
 export const FOODS: Food[] = parsed.foods;
 export const CATEGORIES: Category[] = parsed.cats;
 
+/** Foods most people rarely eat: suggestions and "instead" lists push them back. */
+export const RARE_FOOD = /ıstakoz|yengeç|beyin|böbrek|ciğer|sushi|bulgogi|dim sum|yakitori|udon|onigiri|liçi|papaya|rambutan|ejder meyvesi|pitaya|longan|mangostan|yıldız meyvesi|guava|marakuya|kumkuat|kuru kızılcık|spor içeceği|ors|boza|salep|şerbet|cezerye|cevizli sucuk|kestane kebap/i;
+
 export function normalizeName(s: string): string {
   return s.toLocaleLowerCase('tr-TR').replace(/\s+/g, ' ').trim();
 }

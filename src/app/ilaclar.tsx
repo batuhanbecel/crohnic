@@ -7,7 +7,7 @@ import { Button, Card, Icon, IconBubble, Row, Screen, SectionTitle, T, Tap } fro
 import { useApp } from '../lib/app-state';
 import { now } from '../lib/dates';
 import * as db from '../lib/db';
-import { medGuide } from '../lib/med-food';
+import { MED_CLASSES, classesIn, medGuide, namesIn, type MedClass } from '../lib/med-food';
 import { adherence, scheduleLabel } from '../lib/meds';
 import { palette } from '../lib/theme';
 
@@ -72,7 +72,7 @@ export default function Meds() {
         <Button title="İlk ilacını ekle" icon="plus" onPress={() => router.push('/ilac')} />
       )}
 
-      <FoodGuide meds={meds} medsKey={app.medsKey} />
+      <FoodGuide meds={meds} on={app.medFactors} onToggle={app.setMedFactor} />
 
       <T v="caption" color={palette.inkFaint} style={{ textAlign: 'center', lineHeight: 17, fontWeight: '400', marginTop: 8 }}>
         Dozları doktorunun söylediği gibi kullan.{'\n'}Crohnic sadece hatırlatır ve kaydeder.
@@ -83,16 +83,34 @@ export default function Meds() {
 
 /**
  * What to watch on the plate while taking these medicines, grouped by kind (Prednol and
- * "kortizon" share one cortisone card). Medicines the app doesn't know get a pointer to the doctor.
+ * "kortizon" share one cortisone card). Only the groups switched on in Sana özel durumlar count;
+ * a recognised medicine that's off gets a one-tap switch. Unknown ones get a pointer to the doctor.
  */
-function FoodGuide({ meds }: { meds: db.Med[]; medsKey: string }) {
-  if (!meds.length) return null;
+function FoodGuide({ meds, on, onToggle }: { meds: db.Med[]; on: MedClass[]; onToggle: (cls: MedClass, on: boolean) => void }) {
+  const names = meds.map((m) => m.name);
   const guide = medGuide();
-  const known = new Set(guide.flatMap((g) => g.names));
-  const unknown = meds.filter((m) => !known.has(m.name.trim())).map((m) => m.name);
+  const recognised = classesIn(names);
+  const off = recognised.filter((c) => !on.includes(c));
+  const unknown = names.filter((n) => !classesIn([n]).length);
+  if (!guide.length && !off.length && !unknown.length) return null;
   return (
     <>
       <SectionTitle title="İlaçların ve beslenme" />
+      {off.map((cls) => (
+        <Card key={cls} style={{ gap: 10 }}>
+          <Row gap={10}>
+            <IconBubble name="fork.knife" color={palette.inkSoft} dim={30} fallback="🍽️" />
+            <View style={{ flex: 1 }}>
+              <T v="h3">{`${namesIn(cls, names).join(', ')}: ${MED_CLASSES[cls].label.toLocaleLowerCase('tr-TR')}`}</T>
+              <T v="small" color={palette.inkSoft}>
+                Yemek uyarıları kapalı. Şu an kullanıyorsan aç, bırakınca kapatırsın.
+              </T>
+            </View>
+          </Row>
+          <T v="small">{MED_CLASSES[cls].effect}</T>
+          <Button title="Uyarıları aç" kind="glass" icon="checkmark" compact onPress={() => onToggle(cls, true)} style={{ alignSelf: 'flex-start' }} />
+        </Card>
+      ))}
       {guide.map((g) => (
         <Card key={g.cls} style={{ gap: 10 }}>
           <Row gap={10}>
@@ -103,6 +121,7 @@ function FoodGuide({ meds }: { meds: db.Med[]; medsKey: string }) {
                 {g.names.join(', ')}
               </T>
             </View>
+            <Button title="Kapat" kind="plain" compact onPress={() => onToggle(g.cls, false)} />
           </Row>
           {g.tips.map((tip) => (
             <Row key={tip} gap={10} style={{ alignItems: 'flex-start' }}>
@@ -121,7 +140,7 @@ function FoodGuide({ meds }: { meds: db.Med[]; medsKey: string }) {
       ) : null}
       {guide.length ? (
         <T v="caption" color={palette.inkFaint} style={{ paddingHorizontal: 4 }}>
-          Bu notlar yemek listesinde, öğün eklerken ve fotoğraf analizinde de karşına çıkar. Genel bilgidir; senin durumunu en iyi doktorun bilir.
+          Açık olan ilaçların notları yemek listesinde, öğün eklerken ve fotoğraf analizinde de karşına çıkar. Ayarlar › Sana özel durumlar’dan değiştirebilirsin. Genel bilgidir; senin durumunu en iyi doktorun bilir.
         </T>
       ) : null}
     </>

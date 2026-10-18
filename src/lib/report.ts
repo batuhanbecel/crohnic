@@ -4,7 +4,7 @@ import { dateLabel, isoDay, startOfDay } from './dates';
 import { TAGS, type Phase } from './foods';
 import { lifestyleEffects, suspectFoods } from './insights';
 import { adherence, scheduleLabel } from './meds';
-import { personalVerdict, statsByName, triggerInsights } from './tolerance';
+import { foodPatterns, triggerInsights } from './tolerance';
 
 export type ReportInput = {
   name: string;
@@ -79,9 +79,9 @@ export function summarize(r: ReportInput) {
 }
 
 const REACTION = [
-  { label: 'iyi geldi', color: C.good },
-  { label: 'biraz dokundu', color: C.warn },
-  { label: 'çok dokundu', color: C.bad },
+  { label: 'sorunsuz', color: C.good },
+  { label: 'hafif şikayet', color: C.warn },
+  { label: 'belirgin şikayet', color: C.bad },
 ];
 const weekday = (ms: number) => new Date(ms).toLocaleDateString('tr-TR', { weekday: 'short' });
 const hhmm = (ms: number) => new Date(ms).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
@@ -251,15 +251,14 @@ export function reportHtml(r: ReportInput) {
   const smokeDays = new Set(r.meals.filter(isTobacco).map((m) => isoDay(m.eaten_at))).size;
   const byReaction = [0, 1, 2].map((v) => rated.filter((m) => m.reaction === v).length);
   const foodSummary = [
-    `${food.length} yemek kaydı: ${byReaction[0]} iyi geldi, ${byReaction[1]} biraz dokundu, ${byReaction[2]} çok dokundu, ${food.length - rated.length} işaretlenmedi.`,
+    `${food.length} yemek kaydı: ${byReaction[0]} sorunsuz, ${byReaction[1]} hafif şikayet, ${byReaction[2]} belirgin şikayet, ${food.length - rated.length} işaretlenmedi.`,
     smokeDays ? `Sigara/tütün ${smokeDays} gün kaydedildi.` : '',
   ]
     .filter(Boolean)
     .join(' ');
   const { triggers } = triggerInsights(rated);
   const suspects = suspectFoods(food, r.symptoms, r.bowel).foods;
-  const badFoods = [...statsByName(rated).values()].filter((x) => personalVerdict(x) === 'riskli').sort((a, b) => b.bad - a.bad || b.n - a.n).slice(0, 8);
-  const goodFoods = [...statsByName(rated).values()].filter((x) => personalVerdict(x) === 'iyi' && x.n >= 2).sort((a, b) => b.n - a.n).slice(0, 8);
+  const patterns = foodPatterns(rated);
   // only mention stress/sleep when the difference is worth a doctor's attention
   const life = lifestyleEffects(r.daily.filter((d) => d.day >= isoDay(r.from) && d.day <= isoDay(r.to)), r.symptoms, r.bowel, r.meals).filter(
     (e) => Math.abs(e.high - e.low) >= 0.15,
@@ -401,16 +400,17 @@ export function reportHtml(r: ReportInput) {
   <h2>Beslenme ve olası tetikleyiciler</h2>
   <div class="cols">
     <div>
-      <b>Dokunan içerikler</b>
+      <b>Şikayetle ilişkili içerikler</b>
       ${li(triggers.slice(0, 6).map((t) => `${esc(TAGS[t.tag].label)} <span class="soft">(${t.stat.n} kayıtta ${t.stat.mild + t.stat.bad} kez)</span>`))}
       <b style="display:block;margin-top:8px">Şikayetten 2–24 saat önce sık yenenler</b>
       ${li(suspects.map((f) => `${esc(f.name)} <span class="soft">(${f.hit}/${f.n})</span>`))}
     </div>
     <div>
-      <b>Dokunduğunu işaretlediği yemekler</b>
-      ${li(badFoods.map((x) => `${esc(x.name)} <span class="soft">(${x.bad + x.mild}/${x.n})</span>`))}
-      <b style="display:block;margin-top:8px">Rahat ettiği yemekler</b>
-      ${li(goodFoods.map((x) => `${esc(x.name)} <span class="soft">(${x.n})</span>`))}
+      <b>Çoğu zaman şikayet yaptığını işaretlediği yemekler</b>
+      ${li(patterns.dokunan.slice(0, 8).map((x) => `${esc(x.name)} <span class="soft">(${x.hits}/${x.n}${x.note ? `, ${esc(x.note)}` : ''})</span>`))}
+      ${patterns.bazen.length ? `<b style="display:block;margin-top:8px">Ara sıra şikayet yaptığı yemekler</b>${li(patterns.bazen.slice(0, 6).map((x) => `${esc(x.name)} <span class="soft">(${x.hits}/${x.n}${x.note ? `, ${esc(x.note)}` : ''})</span>`))}` : ''}
+      <b style="display:block;margin-top:8px">Sorunsuz yediği yemekler</b>
+      ${li(patterns.dokunmayan.slice(0, 8).map((x) => `${esc(x.name)} <span class="soft">(${x.n} kez)</span>`))}
     </div>
   </div>
   ${
