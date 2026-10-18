@@ -34,6 +34,8 @@ type Part = {
 type SlotDef = { key: SlotKey; title: string; parts: Part[] };
 
 const SPREADS = /zeytin|tereyağı|^bal$|reçel|pekmez|ezmesi/i;
+/** Plain snacks from the snack shelf; branded chocolate bars and crisps aren't suggested. */
+const GENERIC_SNACK = /^(kraker|bisküvi|pirinç patlağı|galeta|granola bar|kuru meyve bar|enerji topu|protein bar|patlamış mısır)/i;
 const BREAD_INSIDE = /tost|sandviç|simit|ekmek|yulaf|oats|müsli|chia|pankek|krep|kayganak|puding|pide|gözleme/i;
 
 const SLOTS: SlotDef[] = [
@@ -41,10 +43,10 @@ const SLOTS: SlotDef[] = [
     key: 'kahvalti',
     title: 'Kahvaltı',
     parts: [
-      { role: 'Ana', cats: ['Kahvaltı'], not: SPREADS },
+      { role: 'Ana', cats: ['Kahvaltı', 'Sandviç & tost'], not: SPREADS },
       { role: 'Yanına', cats: ['Süt ürünleri & peynir', 'Kahvaltı'], ok: (f) => (f.cat === 'Kahvaltı' ? SPREADS.test(f.name) : !/süt$|kefir/i.test(f.name)) },
       { role: 'Ekmek', cats: ['Ekmek'], not: /hamburger|galeta|grissini|bagel|tortilla/i, skipAfter: BREAD_INSIDE },
-      { role: 'İçecek', cats: ['İçecek'], only: /çay|ıhlamur|adaçayı|kafeinsiz kahve|süt$|sütü|ballı süt|tarçınlı süt|portakal suyu|smoothie/i, not: /soya|badem/i },
+      { role: 'İçecek', cats: ['İçecekler'], only: /çay|ıhlamur|adaçayı|kafeinsiz kahve|süt$|sütü|ballı süt|tarçınlı süt|portakal suyu|smoothie/i, not: /soya|badem/i },
     ],
   },
   {
@@ -54,10 +56,10 @@ const SLOTS: SlotDef[] = [
       { role: 'Çorba', cats: ['Çorba'] },
       {
         role: 'Ana yemek',
-        cats: ['Sebze yemekleri', 'Makarna & mantı', 'Bakliyat', 'Hamur işi & börek', 'Fast food & sokak lezzetleri', 'Dünya mutfağı'],
+        cats: ['Sebze yemekleri', 'Makarna & mantı', 'Bakliyat', 'Hamur işi & börek', 'Burger, pizza & sokak lezzetleri', 'Sandviç & tost', 'Dünya mutfağı'],
         not: /püresi|^naan$|focaccia|^simit$|tempeh|soya kıyması|maş/i,
       },
-      { role: 'Yanına', cats: ['Salata & mezeler', 'Süt ürünleri & peynir', 'İçecek'], only: /salata|yoğurt|cacık|ayran|kefir|ezme|haşlanmış sebze|tabule|caprese/i, not: /turşu/i },
+      { role: 'Yanına', cats: ['Salata & mezeler', 'Süt ürünleri & peynir', 'Sade sebze & yeşillik', 'İçecekler'], only: /salata|yoğurt|cacık|ayran|kefir|ezme|haşlanmış sebze|tabule|caprese/i, not: /turşu/i },
     ],
   },
   {
@@ -65,7 +67,7 @@ const SLOTS: SlotDef[] = [
     title: 'Ara öğün',
     parts: [
       { role: 'Meyve', cats: ['Meyve'], not: /^limon$|greyfurt|pomelo|bebek/i },
-      { role: 'Atıştırmalık', cats: ['Kuruyemiş & atıştırmalık', 'Tatlı', 'Süt ürünleri & peynir', 'Hamur işi & börek'], not: /peynir|kaşar|^lor|çökelek|mozzarella|feta|parmesan|gravyer|cheddar|tohumu|susam|börek|pide|gözleme|^süt$/i },
+      { role: 'Atıştırmalık', cats: ['Kuruyemiş & çerez', 'Atıştırmalık & çikolata', 'Tatlı', 'Süt ürünleri & peynir', 'Hamur işi & börek'], ok: (f) => f.cat !== 'Atıştırmalık & çikolata' || GENERIC_SNACK.test(f.name), not: /peynir|kaşar|^lor|çökelek|mozzarella|feta|parmesan|gravyer|cheddar|tohumu|susam|börek|pide|gözleme|^süt$/i },
     ],
   },
   {
@@ -75,8 +77,8 @@ const SLOTS: SlotDef[] = [
       { role: 'Ana yemek', cats: ['Et & tavuk', 'Balık & deniz ürünleri'] },
       {
         role: 'Yanına',
-        cats: ['Pilav & tahıl', 'Makarna & mantı', 'Sebze yemekleri'],
-        only: /pilav|pirinç|kuskus|bulgur|şehriye|makarna|erişte|püre|patates|zeytinyağlı|fırın|sote|graten|buharda|közlenmiş|kinoa|karabuğday/i,
+        cats: ['Pilav & tahıl', 'Makarna & mantı', 'Sebze yemekleri', 'Sade sebze & yeşillik'],
+        only: /pilav|pirinç|kuskus|bulgur|şehriye|makarna|erişte|püre|patates|zeytinyağlı|fırın|sote|graten|buharda|közlenmiş|haşlanmış|ızgara sebze|kinoa|karabuğday/i,
         not: /etli|kıymalı|dolması|sarma|musakka|oturtma|köfte/i,
       },
       { role: 'Salata / yoğurt', cats: ['Salata & mezeler', 'Süt ürünleri & peynir'], only: /salata|yoğurt|cacık|kefir|ezme|haşlanmış sebze|tabule|caprese|semizotu|börülce/i, not: /turşu|ton balıklı|tavuklu|somon/i },

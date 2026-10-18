@@ -277,6 +277,7 @@ Tavuk kıyma (pişmiş)|🍗|yag_hafif
 Tepsi kebabı|🍖|yag aci_hafif
 Ev yapımı hamburger|🍔|yag_hafif
 Tavuk sote (sebzeli)|🍗|yag_hafif lif
+Fırında sebzeli tavuk|🍗|yag_hafif lif
 # Balık & deniz ürünleri
 Izgara somon|🐟|hafif
 Fırın somon|🐟|hafif
@@ -459,11 +460,6 @@ Kabak püresi|🥒|pure
 Bezelye püresi|🫛|pure baklagil_az
 Ispanak püresi|🥬|pure
 Sebze püresi|🥣|pure
-Buharda brokoli ve havuç|🥦|lahana
-Fırın kabak|🥒|hafif
-Fırın balkabağı|🎃|hafif
-Közlenmiş kabak|🥒|kabuk
-Közlenmiş mantar|🍄|lif
 Kabak spagetti|🥒|hafif
 Zeytinyağlı taze bakla|🫛|baklagil lif kabuk
 Zeytinyağlı lahana dolması|🥬|lahana lif
@@ -480,13 +476,10 @@ Patatesli pırasa|🥬|lahana
 Kabak oturtma|🥒|yag_hafif asit
 Ayva dolması|🍐|yag_hafif seker
 Sebze köftesi|🥕|yag
-Haşlanmış Brüksel lahanası|🥬|lahana lif
-Fırında brokoli|🥦|lahana yag_hafif
 Sebzeli patates püresi|🥔|pure sut_az
 Mantarlı patates|🍄|yag_hafif
 Fırında kabak çiçeği|🌼|yag_hafif
 Zeytinyağlı kabak çiçeği|🌼|yag_hafif
-Fırında sebzeli tavuk|🍗|yag_hafif lif
 Hellimli sebze ızgara|🧀|sut_az yag_hafif kabuk
 Közlenmiş sebze tabağı|🫑|yag_hafif kabuk
 Kıymalı biber dolması|🫑|yag kabuk
@@ -499,16 +492,9 @@ Tavuklu patates püresi|🥔|pure sut_az
 Tavuklu kabak yemeği|🥒|yag_hafif
 Tavuklu havuç yemeği|🥕|yag_hafif
 Sütlü kabak|🥒|sut seker
-Haşlanmış tatlı patates|🍠|hafif pure
 Karnabahar püresi|🥦|pure lahana
 Baharatlı patates (fırın)|🥔|yag aci_hafif
-Fırında mantar|🍄|lif yag_hafif
-Fırında patlıcan|🍆|kabuk yag_hafif
-Izgara sebze|🫑|kabuk yag_hafif
-Buharda sebze|🥦|hafif lif
-Haşlanmış sebze|🥕|hafif
-Haşlanmış brokoli|🥦|lahana
-# Sebze & yeşillik
+# Sade sebze & yeşillik
 Haşlanmış patates|🥔|hafif
 Haşlanmış havuç|🥕|hafif
 Haşlanmış kabak|🥒|hafif
@@ -592,6 +578,20 @@ Ebegümeci|🌿|lif
 Radika|🌿|lif cig
 Hindiba|🥬|lif cig
 Su teresi|🌿|cig
+Buharda brokoli ve havuç|🥦|lahana
+Fırın kabak|🥒|hafif
+Fırın balkabağı|🎃|hafif
+Közlenmiş kabak|🥒|kabuk
+Közlenmiş mantar|🍄|lif
+Haşlanmış Brüksel lahanası|🥬|lahana lif
+Fırında brokoli|🥦|lahana yag_hafif
+Haşlanmış tatlı patates|🍠|hafif pure
+Fırında mantar|🍄|lif yag_hafif
+Fırında patlıcan|🍆|kabuk yag_hafif
+Izgara sebze|🫑|kabuk yag_hafif
+Buharda sebze|🥦|hafif lif
+Haşlanmış sebze|🥕|hafif
+Haşlanmış brokoli|🥦|lahana
 # Bakliyat
 Etli kuru fasulye|🫘|baklagil yag_hafif
 Zeytinyağlı kuru fasulye|🫘|baklagil
@@ -833,12 +833,6 @@ Fındık kreması|🍫|seker yag kuruyemis
 Domates salatalık söğüş|🥗|cig kabuk
 Serpme kahvaltı|🍳|yag_hafif sut_az kabuk
 Simit + beyaz peynir|🥯|kuruyemis sut_az
-Kaşarlı tost|🥪|sut_az yag_hafif
-Karışık tost|🥪|islenmis sut_az yag_hafif
-Sucuklu tost|🥪|islenmis aci yag
-Avokadolu tost|🥑|yag_hafif
-Peynirli sandviç|🥪|sut_az
-Hindi füme sandviç|🥪|islenmis
 Tahinli ekmek|🍞|yag_hafif kuruyemis
 Yulaf lapası|🥣|pure
 Sütlü yulaf lapası|🥣|pure sut
@@ -859,9 +853,6 @@ Sucuklu omlet|🍳|islenmis yag aci_hafif
 Kaşarlı omlet|🍳|sut_az yag_hafif
 Domatesli omlet|🍳|asit yag_hafif
 Patatesli omlet|🍳|yag
-Hellimli tost|🥪|sut_az yag_hafif
-Bazlama tost|🥪|sut_az yag_hafif
-Avokadolu yumurta tost|🥑|yag_hafif lif
 Ballı yoğurt|🥣|fermente seker
 Muzlu yoğurt|🍌|fermente
 Corn flakes (sade)|🥣|islenmis
@@ -870,13 +861,27 @@ Kakaolu mısır gevreği|🥣|seker katki kafein_hafif
 Ballı mısır gevreği|🥣|seker katki
 Yumurta beyazı (haşlanmış)|🥚|hafif
 Peynirli pankek|🥞|sut_az yag_hafif
-Labneli bagel|🥯|sut_az
-Somonlu bagel|🥯|cig_hayvansal sut_az
 Kahvaltılık krep (peynirli)|🥞|sut_az yag_hafif
 Tahinli pekmezli ekmek|🍞|yag kuruyemis seker
 Kaymaklı bal ekmek|🍞|sut yag seker
 Zeytinli ekmek|🍞|yag_hafif
+# Sandviç & tost
+Kaşarlı tost|🥪|sut_az yag_hafif
+Karışık tost|🥪|islenmis sut_az yag_hafif
+Sucuklu tost|🥪|islenmis aci yag
+Avokadolu tost|🥑|yag_hafif
+Peynirli sandviç|🥪|sut_az
+Hindi füme sandviç|🥪|islenmis
+Hellimli tost|🥪|sut_az yag_hafif
+Bazlama tost|🥪|sut_az yag_hafif
+Avokadolu yumurta tost|🥑|yag_hafif lif
+Labneli bagel|🥯|sut_az
+Somonlu bagel|🥯|cig_hayvansal sut_az
 Pastırmalı tost|🥪|islenmis yag aci_hafif
+Ayvalık tostu|🥪|islenmis yag sut_az
+Club sandviç|🥪|islenmis yag_hafif cig
+Tavuklu sandviç|🥪|yag_hafif
+Ton balıklı sandviç|🥪|yag_hafif
 # Süt ürünleri & peynir
 Beyaz peynir|🧀|sut_az
 Beyaz peynir (tam yağlı)|🧀|sut_az yag_hafif
@@ -1012,6 +1017,165 @@ Kaya koruğu|🌿|cig lif
 Ege otları kavurma|🌿|lif yag_hafif
 Kaşık salata|🥗|aci asit cig
 Yoğurtlu biber kızartması|🫑|yag kabuk fermente lahana
+# Burger, pizza & sokak lezzetleri
+Hamburger|🍔|yag islenmis
+Cheeseburger|🍔|yag islenmis sut
+Double burger|🍔|yag islenmis
+Tavuk burger|🍔|yag
+Islak hamburger|🍔|yag lahana asit
+Hot dog|🌭|islenmis yag
+Tavuk wrap|🌯|yag_hafif cig
+Tavuk dürüm (sade)|🌯|hafif yag_hafif
+Tavuk döner dürüm|🌯|yag
+Dürüm döner|🌯|yag lahana
+Kebab dürüm|🌯|yag aci
+Çiğ köfte dürüm|🌯|aci cig lif
+Falafel dürüm|🌯|baklagil yag cig
+Kokoreç dürüm|🌯|yag aci
+Shawarma|🥙|yag lahana
+Köfte ekmek|🥖|yag_hafif
+Sucuk ekmek|🥖|islenmis yag aci
+Kumru|🥪|islenmis yag sut_az
+Patso|🍟|islenmis yag
+Kumpir|🥔|yag sut_az islenmis kabuk
+Pilav üstü tavuk|🍚|yag_hafif
+Pilav üstü nohut|🍚|baklagil
+Soğan halkası|🧅|yag lahana
+Mozzarella stick|🧀|yag sut_az
+Pizza (margherita)|🍕|yag sut_az asit
+Pizza (peynirli)|🍕|sut_az yag
+Pizza (karışık)|🍕|yag sut islenmis asit
+Pizza (sucuklu)|🍕|yag islenmis aci asit
+Pizza (tavuklu)|🍕|asit sut_az yag_hafif
+Pizza (vejetaryen)|🍕|asit sut_az lif
+Calzone|🥟|yag sut_az
+Mikrodalga yemek|🍱|katki yag_hafif
+Mısır (köz)|🌽|lif kabuk
+# Dünya mutfağı
+Taco|🌮|aci yag cig
+Burrito|🌯|baklagil aci yag
+Nachos|🧀|yag sut aci
+Quesadilla|🧀|sut yag_hafif
+Fajita|🌮|aci_hafif lif
+Enchilada|🌯|aci baklagil sut_az
+Chili con carne|🌶️|baklagil aci yag
+Köri (sebzeli)|🍛|aci baklagil
+Tavuk tikka masala|🍛|aci sut yag
+Butter chicken|🍛|sut yag aci_hafif
+Palak paneer|🍛|sut lif aci_hafif
+Chana masala|🍛|baklagil aci
+Dal (Hint mercimeği)|🍛|pure baklagil_az aci_hafif
+Biryani|🍛|aci yag_hafif
+Samosa|🥟|yag baklagil aci_hafif
+Naan|🫓|hafif sut_az
+Thai yeşil köri|🍛|aci yag sut_az
+Massaman köri|🍛|aci_hafif yag kuruyemis
+Pad thai|🍜|kuruyemis aci yag_hafif
+Tavuk satay|🍢|kuruyemis aci_hafif
+Yaz rulosu (pirinç kağıdı)|🥗|cig
+Spring roll|🥟|yag lahana
+Banh mi|🥖|cig islenmis aci_hafif
+Teriyaki tavuk|🍗|seker
+Kung pao tavuk|🥡|aci kuruyemis yag
+Tatlı ekşi tavuk|🥡|yag seker asit
+Pekin ördeği|🦆|yag seker
+Chow mein|🍜|yag lahana
+Dim sum|🥟|yag_hafif
+Gyoza|🥟|yag_hafif lahana
+Poke bowl|🥗|cig cig_hayvansal
+Onigiri|🍙|hafif
+Yakitori|🍢|seker yag_hafif
+Tonkatsu|🍖|yag
+Katsu curry|🍛|yag aci_hafif
+Bibimbap|🍚|aci cig
+Bulgogi|🥩|seker yag_hafif
+Kore kızarmış tavuk|🍗|yag aci_hafif seker
+Bruschetta|🍅|cig asit lahana
+Focaccia|🫓|yag_hafif
+Shakshuka (domatesli yumurta)|🍳|asit aci_hafif yag_hafif
+Musakka (Yunan)|🍆|yag sut kabuk
+Karaage (Japon kızarmış tavuk)|🍗|yag
+Okonomiyaki|🥞|yag lahana
+Takoyaki|🐙|yag
+Salatalıklı maki|🍣|asit
+Somonlu maki (çiğ)|🍣|cig_hayvansal asit
+Pişmiş somonlu sushi|🍣|asit
+Unagi don|🍱|seker yag_hafif
+Oyakodon|🍱|yag_hafif
+Gyudon|🍱|yag seker
+Chirashi|🍱|cig_hayvansal asit
+Tamago (Japon omleti)|🍳|seker
+Mochi|🍡|seker
+Mapo tofu|🌶️|aci yag
+Ekşi acı çorba (hot and sour)|🍲|aci asit
+Dan dan noodle|🍜|aci yag kuruyemis
+Char siu|🍖|seker yag
+Bao (buharda çörek)|🥟|yag_hafif seker
+Japchae|🍜|yag_hafif seker
+Tteokbokki|🍢|aci seker
+Kimbap|🍙|asit cig
+Kimchi jjigae|🍲|aci fermente lahana
+Samgyeopsal|🥓|yag
+Som tam (papaya salatası)|🥗|cig aci asit
+Pad see ew|🍜|yag seker
+Khao pad (Tay usulü pilav)|🍛|yag
+Mango sticky rice|🥭|seker yag_hafif
+Bun cha|🍜|yag seker
+Rogan josh|🍛|aci yag
+Vindaloo|🍛|aci yag asit
+Korma|🍛|yag sut kuruyemis
+Aloo gobi|🍛|lahana aci_hafif
+Dosa|🫓|fermente yag_hafif
+İdli|🍚|fermente hafif
+Raita|🥣|fermente cig
+Pakora|🧆|yag aci_hafif
+Paratha|🫓|yag
+Gulab jamun|🍯|seker yag sut
+Lassi|🥛|fermente seker
+Mango lassi|🥭|fermente seker
+Masala chai|🫖|kafein_hafif sut seker
+Mansaf|🍖|yag fermente
+Kabsa|🍛|yag aci_hafif
+Mandi|🍛|yag
+Fattoush|🥗|cig lif asit
+Manakish (zahterli)|🫓|yag_hafif
+Ful medames|🫘|baklagil yag_hafif
+Koshari|🍝|baklagil lahana asit
+Mujaddara|🍚|baklagil lahana
+Maqluba|🍛|yag kabuk
+Patatas bravas|🥔|yag aci
+Tortilla española|🍳|yag
+Croque monsieur|🥪|yag sut islenmis
+Quiche lorraine|🥧|yag sut islenmis
+Coq au vin|🍗|yag alkol
+Beef bourguignon|🍲|yag alkol
+Stroganoff|🍲|yag sut
+Bratwurst|🌭|islenmis yag
+Currywurst|🌭|islenmis yag aci_hafif seker
+Pierogi|🥟|yag_hafif sut_az
+Pelmeni|🥟|yag
+Blini|🥞|yag sut_az
+Shepherd's pie|🥧|yag sut_az
+İngiliz kahvaltısı|🍳|yag islenmis baklagil
+Osso buco|🍖|yag asit
+Saltimbocca|🍖|yag islenmis
+Carpaccio|🥩|cig_hayvansal yag_hafif
+Arancini|🍙|yag sut_az
+Spanakopita|🥧|yag lif
+Souvlaki|🍢|yag_hafif
+Tzatziki|🥒|fermente cig lahana
+BBQ kaburga|🍖|yag seker
+Corn dog|🌭|islenmis yag
+Ceviche|🐟|cig_hayvansal asit aci
+Empanada|🥟|yag
+Arepa|🫓|yag_hafif
+Feijoada|🍲|baklagil yag islenmis
+Tamales|🫔|yag aci_hafif
+Pozole|🍲|aci yag_hafif kabuk
+Tavuklu tajin|🍲|yag_hafif aci_hafif
+Jollof pilavı|🍛|aci asit yag_hafif
+Hawaii pizza|🍕|yag sut islenmis asit seker
+Poutine|🍟|yag sut
 # Meyve
 Olgun muz|🍌|hafif
 Ham muz|🍌|lif
@@ -1111,7 +1275,10 @@ Vişne kompostosu|🍒|seker
 Elma kompostosu|🍎|seker
 Ayva kompostosu|🍐|seker
 Hoşaf|🍇|seker lif
-# Kuruyemiş & atıştırmalık
+Kurutulmuş elma|🍎|lif
+Kurutulmuş muz|🍌|seker
+Kurutulmuş çilek|🍓|cekirdek seker
+# Kuruyemiş & çerez
 Karışık kuruyemiş|🥜|kuruyemis yag_hafif
 Badem|🥜|kuruyemis
 Ceviz|🌰|kuruyemis
@@ -1129,43 +1296,17 @@ Badem ezmesi|🌰|kuruyemis
 Kuru dut + ceviz|🫐|kuruyemis lif
 Haşlanmış kestane|🌰|lif
 Kestane kebap|🌰|lif
-Mısır (köz)|🌽|lif kabuk
-Patlamış mısır|🍿|lif kabuk
-Cips|🥔|yag aci katki
-Mısır cipsi|🌽|yag islenmis
-Sebze cipsi|🥕|yag
-Muz cipsi|🍌|yag seker
-Elma cipsi|🍎|seker
-Kraker (sade)|🍘|hafif
-Kraker (tam tahıllı)|🍘|lif
-Çubuk kraker|🥨|hafif
-Simit kraker|🥨|hafif
-Peynirli kraker|🧀|sut_az yag_hafif
-Pirinç patlağı|🍘|hafif
-Galeta unu kurabiyesi|🍪|yag_hafif seker
-Bisküvi (sade)|🍪|seker yag_hafif
-Kek (sade)|🍰|seker yag_hafif
-Paketli kek|🧁|seker yag katki
-Gofret|🍫|seker yag katki
-Çikolata (sütlü)|🍫|seker sut yag_hafif kafein_hafif
-Bitter çikolata|🍫|kafein_hafif yag_hafif
-Çikolatalı bar|🍫|seker yag kuruyemis katki
-Protein bar|🍫|tatlandirici kuruyemis katki
-Granola bar|🍫|kuruyemis seker lif
-Kuru meyve bar|🍫|lif seker
-Enerji topu (hurmalı)|🟤|lif kuruyemis seker
-Pestil|🍑|seker lif
-Lokum|🍬|seker
-Fındıklı lokum|🍬|seker kuruyemis
-Jelibon|🍬|seker katki
-Şekersiz sakız|🍬|tatlandirici
-Şekersiz şeker|🍬|tatlandirici
 Tuzlu badem|🌰|kuruyemis
 Wasabi fıstık|🥜|kuruyemis aci
 Kokteyl çerez|🥜|kuruyemis yag islenmis
-Kavrulmuş mısır çerezi|🌽|yag islenmis
 Siyah çekirdek|🌻|cekirdek kuruyemis
 Çerez tabağı|🥜|kuruyemis yag
+Tuzlu yer fıstığı (paketli)|🥜|kuruyemis yag
+Kavrulmuş leblebi|🫘|baklagil_az
+Beyaz leblebi|🫘|baklagil_az seker
+Fıstıklı leblebi|🫘|baklagil_az kuruyemis
+Ballı kavrulmuş badem|🌰|kuruyemis seker
+Tuzlu kaju|🥜|kuruyemis yag
 # Tatlı
 Sütlaç|🍮|sut seker
 Fırın sütlaç|🍮|sut seker
@@ -1319,168 +1460,139 @@ Algida Maraş Usulü|🍦|sut seker
 Carte d'Or Vanilya|🍨|sut seker katki
 Su bazlı dondurma (buzlu)|🍧|seker katki
 Pepeçura|🍇|seker
-# Fast food & sokak lezzetleri
-Hamburger|🍔|yag islenmis
-Cheeseburger|🍔|yag islenmis sut
-Double burger|🍔|yag islenmis
-Tavuk burger|🍔|yag
-Islak hamburger|🍔|yag lahana asit
-Hot dog|🌭|islenmis yag
-Tavuk wrap|🌯|yag_hafif cig
-Tavuk dürüm (sade)|🌯|hafif yag_hafif
-Tavuk döner dürüm|🌯|yag
-Dürüm döner|🌯|yag lahana
-Kebab dürüm|🌯|yag aci
-Çiğ köfte dürüm|🌯|aci cig lif
-Falafel dürüm|🌯|baklagil yag cig
-Kokoreç dürüm|🌯|yag aci
-Shawarma|🥙|yag lahana
-Köfte ekmek|🥖|yag_hafif
-Sucuk ekmek|🥖|islenmis yag aci
-Kumru|🥪|islenmis yag sut_az
-Ayvalık tostu|🥪|islenmis yag sut_az
-Patso|🍟|islenmis yag
-Kumpir|🥔|yag sut_az islenmis kabuk
-Pilav üstü tavuk|🍚|yag_hafif
-Pilav üstü nohut|🍚|baklagil
-Club sandviç|🥪|islenmis yag_hafif cig
-Tavuklu sandviç|🥪|yag_hafif
-Ton balıklı sandviç|🥪|yag_hafif
-Soğan halkası|🧅|yag lahana
-Mozzarella stick|🧀|yag sut_az
-Pizza (margherita)|🍕|yag sut_az asit
-Pizza (peynirli)|🍕|sut_az yag
-Pizza (karışık)|🍕|yag sut islenmis asit
-Pizza (sucuklu)|🍕|yag islenmis aci asit
-Pizza (tavuklu)|🍕|asit sut_az yag_hafif
-Pizza (vejetaryen)|🍕|asit sut_az lif
-Calzone|🥟|yag sut_az
-Mikrodalga yemek|🍱|katki yag_hafif
-# Dünya mutfağı
-Taco|🌮|aci yag cig
-Burrito|🌯|baklagil aci yag
-Nachos|🧀|yag sut aci
-Quesadilla|🧀|sut yag_hafif
-Fajita|🌮|aci_hafif lif
-Enchilada|🌯|aci baklagil sut_az
-Chili con carne|🌶️|baklagil aci yag
-Köri (sebzeli)|🍛|aci baklagil
-Tavuk tikka masala|🍛|aci sut yag
-Butter chicken|🍛|sut yag aci_hafif
-Palak paneer|🍛|sut lif aci_hafif
-Chana masala|🍛|baklagil aci
-Dal (Hint mercimeği)|🍛|pure baklagil_az aci_hafif
-Biryani|🍛|aci yag_hafif
-Samosa|🥟|yag baklagil aci_hafif
-Naan|🫓|hafif sut_az
-Thai yeşil köri|🍛|aci yag sut_az
-Massaman köri|🍛|aci_hafif yag kuruyemis
-Pad thai|🍜|kuruyemis aci yag_hafif
-Tavuk satay|🍢|kuruyemis aci_hafif
-Yaz rulosu (pirinç kağıdı)|🥗|cig
-Spring roll|🥟|yag lahana
-Banh mi|🥖|cig islenmis aci_hafif
-Teriyaki tavuk|🍗|seker
-Kung pao tavuk|🥡|aci kuruyemis yag
-Tatlı ekşi tavuk|🥡|yag seker asit
-Pekin ördeği|🦆|yag seker
-Chow mein|🍜|yag lahana
-Dim sum|🥟|yag_hafif
-Gyoza|🥟|yag_hafif lahana
-Poke bowl|🥗|cig cig_hayvansal
-Onigiri|🍙|hafif
-Yakitori|🍢|seker yag_hafif
-Tonkatsu|🍖|yag
-Katsu curry|🍛|yag aci_hafif
-Bibimbap|🍚|aci cig
-Bulgogi|🥩|seker yag_hafif
-Kore kızarmış tavuk|🍗|yag aci_hafif seker
-Bruschetta|🍅|cig asit lahana
-Focaccia|🫓|yag_hafif
-Shakshuka (domatesli yumurta)|🍳|asit aci_hafif yag_hafif
-Musakka (Yunan)|🍆|yag sut kabuk
-Karaage (Japon kızarmış tavuk)|🍗|yag
-Okonomiyaki|🥞|yag lahana
-Takoyaki|🐙|yag
-Salatalıklı maki|🍣|asit
-Somonlu maki (çiğ)|🍣|cig_hayvansal asit
-Pişmiş somonlu sushi|🍣|asit
-Unagi don|🍱|seker yag_hafif
-Oyakodon|🍱|yag_hafif
-Gyudon|🍱|yag seker
-Chirashi|🍱|cig_hayvansal asit
-Tamago (Japon omleti)|🍳|seker
-Mochi|🍡|seker
-Mapo tofu|🌶️|aci yag
-Ekşi acı çorba (hot and sour)|🍲|aci asit
-Dan dan noodle|🍜|aci yag kuruyemis
-Char siu|🍖|seker yag
-Bao (buharda çörek)|🥟|yag_hafif seker
-Japchae|🍜|yag_hafif seker
-Tteokbokki|🍢|aci seker
-Kimbap|🍙|asit cig
-Kimchi jjigae|🍲|aci fermente lahana
-Samgyeopsal|🥓|yag
-Som tam (papaya salatası)|🥗|cig aci asit
-Pad see ew|🍜|yag seker
-Khao pad (Tay usulü pilav)|🍛|yag
-Mango sticky rice|🥭|seker yag_hafif
-Bun cha|🍜|yag seker
-Rogan josh|🍛|aci yag
-Vindaloo|🍛|aci yag asit
-Korma|🍛|yag sut kuruyemis
-Aloo gobi|🍛|lahana aci_hafif
-Dosa|🫓|fermente yag_hafif
-İdli|🍚|fermente hafif
-Raita|🥣|fermente cig
-Pakora|🧆|yag aci_hafif
-Paratha|🫓|yag
-Gulab jamun|🍯|seker yag sut
-Lassi|🥛|fermente seker
-Mango lassi|🥭|fermente seker
-Masala chai|🫖|kafein_hafif sut seker
-Mansaf|🍖|yag fermente
-Kabsa|🍛|yag aci_hafif
-Mandi|🍛|yag
-Fattoush|🥗|cig lif asit
-Manakish (zahterli)|🫓|yag_hafif
-Ful medames|🫘|baklagil yag_hafif
-Koshari|🍝|baklagil lahana asit
-Mujaddara|🍚|baklagil lahana
-Maqluba|🍛|yag kabuk
-Patatas bravas|🥔|yag aci
-Tortilla española|🍳|yag
-Croque monsieur|🥪|yag sut islenmis
-Quiche lorraine|🥧|yag sut islenmis
-Coq au vin|🍗|yag alkol
-Beef bourguignon|🍲|yag alkol
-Stroganoff|🍲|yag sut
-Bratwurst|🌭|islenmis yag
-Currywurst|🌭|islenmis yag aci_hafif seker
-Pierogi|🥟|yag_hafif sut_az
-Pelmeni|🥟|yag
-Blini|🥞|yag sut_az
-Shepherd's pie|🥧|yag sut_az
-İngiliz kahvaltısı|🍳|yag islenmis baklagil
-Osso buco|🍖|yag asit
-Saltimbocca|🍖|yag islenmis
-Carpaccio|🥩|cig_hayvansal yag_hafif
-Arancini|🍙|yag sut_az
-Spanakopita|🥧|yag lif
-Souvlaki|🍢|yag_hafif
-Tzatziki|🥒|fermente cig lahana
-BBQ kaburga|🍖|yag seker
-Corn dog|🌭|islenmis yag
-Ceviche|🐟|cig_hayvansal asit aci
-Empanada|🥟|yag
-Arepa|🫓|yag_hafif
-Feijoada|🍲|baklagil yag islenmis
-Tamales|🫔|yag aci_hafif
-Pozole|🍲|aci yag_hafif kabuk
-Tavuklu tajin|🍲|yag_hafif aci_hafif
-Jollof pilavı|🍛|aci asit yag_hafif
-Hawaii pizza|🍕|yag sut islenmis asit seker
-Poutine|🍟|yag sut
+Kek (sade)|🍰|seker yag_hafif
+Pestil|🍑|seker lif
+Lokum|🍬|seker
+Fındıklı lokum|🍬|seker kuruyemis
+# Atıştırmalık & çikolata
+Ülker Çikolatalı Gofret|🍫|seker yag katki sut_az
+Ülker Albeni|🍫|seker yag katki sut_az
+Ülker Halley|🍪|seker yag katki
+Ülker Çokoprens|🍪|seker yag katki sut_az
+Ülker Dido|🍫|seker yag katki sut_az
+Ülker Biskrem|🍪|seker yag katki
+Ülker Hanımeller|🍪|seker yag
+Ülker Pötibör|🍪|seker yag_hafif
+Ülker Kat Kat Tat|🍫|seker yag katki
+Ülker Napoliten|🍫|seker sut_az yag_hafif
+Ülker Çizi|🧀|yag islenmis
+Ülker Krispi|🍘|yag_hafif islenmis
+Ülker Laviva|🍫|seker yag katki
+Ülker Rondo|🍪|seker yag katki
+Ülker Bonibon|🍬|seker katki sut_az
+Ülker Çokonat|🍫|seker yag kuruyemis katki
+Ülker Probis|🍪|seker yag_hafif
+Ülker O'Lala|🧁|seker yag katki
+Ülker Dankek|🧁|seker yag katki
+Eti Burçak|🍪|lif seker yag_hafif
+Eti Karam|🍫|seker yag sut_az kafein_hafif
+Eti Cin|🍪|seker yag katki
+Eti Browni Intense|🍫|seker yag katki kafein_hafif
+Eti Puf|🍪|seker yag katki
+Eti Tutku|🍪|seker yag katki
+Eti Popkek|🧁|seker yag katki
+Eti Crax|🍘|yag islenmis
+Eti Benimo|🍪|seker yag katki
+Eti Form|🍪|lif seker
+Eti Petito|🍪|seker yag_hafif
+Eti Canga|🍫|seker yag kuruyemis katki
+Eti Wanted|🍫|seker yag kuruyemis katki
+Eti Negro|🍪|seker yag katki
+Eti Topkek|🧁|seker yag katki
+Eti Lifalif|🍪|lif seker kuruyemis
+Eti Hoşbeş|🍫|seker yag katki
+Eti Sütlü Kremalı Gofret|🍫|seker yag sut_az katki
+Şölen Ozmo|🍫|seker yag katki
+Şölen Biscolata|🍪|seker yag katki
+Şölen Luppo|🍰|seker yag katki
+Nestlé Damak|🍫|seker yag kuruyemis sut_az
+Nestlé Damak Kare Antep Fıstıklı|🍫|seker yag kuruyemis sut_az
+KitKat|🍫|seker yag sut_az katki
+Snickers|🍫|seker yag kuruyemis sut_az
+Mars|🍫|seker yag sut_az katki
+Twix|🍫|seker yag sut_az katki
+Bounty|🥥|seker yag lif
+M&M's|🍬|seker sut_az katki
+M&M's Fıstıklı|🥜|seker kuruyemis sut_az katki
+Milka Sütlü Çikolata|🍫|seker sut yag_hafif kafein_hafif
+Milka Oreo|🍫|seker sut yag katki
+Milka Fındıklı|🍫|seker sut kuruyemis yag_hafif
+Toblerone|🍫|seker sut_az kuruyemis
+Kinder Bueno|🍫|seker sut yag kuruyemis
+Kinder Chocolate|🍫|seker sut yag_hafif
+Kinder Joy|🥚|seker sut yag
+Kinder Delice|🧁|seker sut yag katki
+Kinder Country|🍫|seker sut lif
+Ferrero Rocher|🍫|seker yag kuruyemis
+Raffaello|🥥|seker yag kuruyemis sut_az
+Lion|🍫|seker yag katki sut_az
+Lindt Excellence %70|🍫|kafein_hafif yag_hafif
+Lindt Excellence %85|🍫|kafein yag_hafif
+Ritter Sport|🍫|seker sut yag
+Oreo|🍪|seker yag katki
+Oreo (kakaolu dolgulu)|🍪|seker yag katki kafein_hafif
+Çokokrem|🍫|seker yag kuruyemis
+Sarelle|🍫|seker yag kuruyemis
+Torku Banada|🍫|seker yag kuruyemis
+Tadelle|🍫|seker yag kuruyemis sut_az
+Haribo|🍬|seker katki
+Haribo Ekşi|🍬|seker katki asit
+Mentos|🍬|seker katki
+Tic Tac|🍬|seker
+Halls|🍬|seker katki
+Falım sakız|🍬|tatlandirici
+First sakız|🍬|tatlandirici
+Vivident sakız|🍬|tatlandirici
+Lay's Klasik|🥔|yag katki
+Lay's Fırından|🥔|yag_hafif katki
+Lay's Yoğurt Mevsim Yeşillikleri|🥔|yag katki sut_az
+Ruffles Originals|🥔|yag katki
+Ruffles Peynir Soğan|🥔|yag katki lahana
+Doritos Nacho Peynirli|🌽|yag katki aci_hafif
+Doritos Acı|🌽|yag katki aci
+Cheetos|🧀|yag katki islenmis
+Pringles Original|🥔|yag katki
+Pringles Ekşi Krema Soğan|🥔|yag katki sut_az lahana
+Çerezza|🥨|yag katki
+Patos|🌽|yag katki
+Tortilla cipsi|🌽|yag islenmis
+Pretzel|🥨|islenmis
+Çikolata kaplı badem|🍫|kuruyemis seker sut_az
+Çikolata kaplı fındık|🍫|kuruyemis seker sut_az
+Hurmalı bar|🍫|lif seker
+Yulaflı bisküvi|🍪|lif seker yag_hafif
+Tam buğday bisküvi|🍪|lif seker yag_hafif
+Kepekli kraker|🍘|lif
+Glutensiz bisküvi|🍪|seker yag_hafif
+Pirinç patlağı (çikolatalı)|🍘|seker kafein_hafif
+Meyan şekeri|🍬|seker katki
+Patlamış mısır|🍿|lif kabuk
+Cips|🥔|yag aci katki
+Mısır cipsi|🌽|yag islenmis
+Sebze cipsi|🥕|yag
+Muz cipsi|🍌|yag seker
+Elma cipsi|🍎|seker
+Kraker (sade)|🍘|hafif
+Kraker (tam tahıllı)|🍘|lif
+Çubuk kraker|🥨|hafif
+Simit kraker|🥨|hafif
+Peynirli kraker|🧀|sut_az yag_hafif
+Pirinç patlağı|🍘|hafif
+Galeta unu kurabiyesi|🍪|yag_hafif seker
+Bisküvi (sade)|🍪|seker yag_hafif
+Paketli kek|🧁|seker yag katki
+Gofret|🍫|seker yag katki
+Çikolata (sütlü)|🍫|seker sut yag_hafif kafein_hafif
+Bitter çikolata|🍫|kafein_hafif yag_hafif
+Çikolatalı bar|🍫|seker yag kuruyemis katki
+Protein bar|🍫|tatlandirici kuruyemis katki
+Granola bar|🍫|kuruyemis seker lif
+Kuru meyve bar|🍫|lif seker
+Enerji topu (hurmalı)|🟤|lif kuruyemis seker
+Jelibon|🍬|seker katki
+Şekersiz sakız|🍬|tatlandirici
+Şekersiz şeker|🍬|tatlandirici
+Kavrulmuş mısır çerezi|🌽|yag islenmis
 # Soslar & baharat
 Ketçap|🍅|asit seker
 Mayonez|🥚|yag
@@ -1536,7 +1648,7 @@ Acılı mayonez|🌶️|yag aci
 Trüf mayonez|🍄|yag
 Gravy sos|🥣|yag katki
 Algerienne sos|🥣|yag aci_hafif
-# İçecek
+# İçecekler
 Su|💧|hafif
 Limonlu su|🍋|asit
 Maden suyu|🫧|gazli
@@ -1672,10 +1784,92 @@ Alkolsüz şarap|🍷|seker asit
 Hardaliye|🍇|seker fermente
 Turşu suyu|🥤|fermente asit aci_hafif
 Alkolsüz kokteyl (mocktail)|🍹|seker
-Efes Alkolsüz|🍺|gazli
-Alkolsüz Radler|🍺|gazli seker
 Meyan kökü şerbeti|🥤|seker
 Greyfurt suyu|🧃|asit
+# Paketli içecekler
+Coca-Cola|🥤|gazli seker kafein_hafif
+Coca-Cola Zero|🥤|gazli tatlandirici kafein_hafif
+Coca-Cola Light|🥤|gazli tatlandirici kafein_hafif
+Pepsi|🥤|gazli seker kafein_hafif
+Pepsi Max|🥤|gazli tatlandirici kafein_hafif
+Fanta Portakal|🥤|gazli seker katki
+Fanta Zero|🥤|gazli tatlandirici katki
+Sprite|🥤|gazli seker
+Sprite Zero|🥤|gazli tatlandirici
+7Up|🥤|gazli seker
+Schweppes Tonik|🥤|gazli seker
+Schweppes Mandalina|🥤|gazli seker
+Schweppes Bitter Lemon|🥤|gazli seker asit
+Uludağ Gazoz|🥤|gazli seker
+Uludağ Frutti|🥤|gazli seker
+Yedigün|🥤|gazli seker katki
+Çamlıca Gazoz|🥤|gazli seker
+Beypazarı maden suyu|🫧|gazli
+Kızılay maden suyu|🫧|gazli
+Sırma C|🫧|gazli seker
+Meyveli soda|🫧|gazli seker
+Limonlu maden suyu|🫧|gazli asit
+Lipton Ice Tea Şeftali|🧃|seker kafein_hafif
+Lipton Ice Tea Limon|🧃|seker kafein_hafif asit
+Lipton Ice Tea Mango|🧃|seker kafein_hafif
+Lipton Ice Tea Şekersiz|🧃|tatlandirici kafein_hafif
+Fuse Tea Şeftali|🧃|seker kafein_hafif
+Fuse Tea Limon|🧃|seker kafein_hafif asit
+Cappy Vişne|🧃|seker
+Cappy Karışık Meyve|🧃|seker
+Cappy Şeftali|🧃|seker
+Dimes Portakal|🧃|seker asit
+Dimes Vişne|🧃|seker
+Meysu|🧃|seker
+Elma suyu (şekersiz)|🧃|hafif
+Portakal suyu (hazır)|🧃|seker asit
+Ananas suyu|🧃|seker asit
+Mango nektarı|🧃|seker
+Kayısı nektarı|🧃|seker
+Karadut suyu|🧃|seker
+Üzüm suyu|🧃|seker
+Pancar suyu|🧃|hafif
+Aloe vera içeceği|🧃|seker
+Red Bull|⚡|kafein seker gazli katki
+Red Bull Sugarfree|⚡|kafein tatlandirici gazli katki
+Monster Energy|⚡|kafein seker gazli katki
+Monster Ultra|⚡|kafein tatlandirici gazli katki
+Burn|⚡|kafein seker gazli katki
+Powerade|🧃|seker katki
+Gatorade|🧃|seker katki
+Nescafé Xpress|☕|kafein sut seker katki
+Nescafé Gold|☕|kafein
+Nescafé 2'si 1 arada|☕|kafein seker sut_az katki
+Hazır soğuk kahve (kutu)|☕|kafein sut seker katki
+Hazır latte (şişe)|☕|kafein sut seker
+Sütlü kakao (hazır)|🥛|sut seker kafein_hafif
+Çilekli süt|🥛|sut seker katki
+Muzlu süt|🥛|sut seker katki
+Kakaolu süt|🥛|sut seker kafein_hafif
+Laktozsuz kakaolu süt|🥛|seker kafein_hafif
+Hazır kefir (sade)|🥛|fermente
+Hazır ayran (kutu)|🥛|fermente
+Protein içeceği (hazır)|🥛|sut tatlandirici katki
+Hindistan cevizi sütü (içecek)|🥥|yag_hafif
+Fındık sütü|🥛|kuruyemis
+Kaju sütü|🥛|kuruyemis
+Elektrolitli su|💧|hafif
+Vitaminli su|💧|seker katki
+Tonik (sade)|🥤|gazli seker
+Zencefilli gazoz (ginger ale)|🥤|gazli seker
+Fruko|🥤|gazli seker
+Cappy Elma|🧃|seker
+Cappy Kayısı|🧃|seker
+Cappy Portakal|🧃|seker asit
+Cappy Atom|🧃|seker
+Tropicana Karışık|🧃|seker
+Tropicana Şeftali|🧃|seker
+Tropicana Vişne|🧃|seker
+Capri-Sun|🧃|seker
+Fuse Tea Mango|🧃|seker kafein_hafif
+Lipton Ice Tea Karpuz|🧃|seker kafein_hafif
+Efes Alkolsüz|🍺|gazli
+Alkolsüz Radler|🍺|gazli seker
 # Alkollü içecekler
 Bira|🍺|alkol gazli
 Şarap|🍷|alkol
@@ -1846,416 +2040,7 @@ Cosmopolitan|🍸|alkol asit seker
 Old fashioned|🥃|alkol seker
 Caipirinha|🍹|alkol asit seker
 Sex on the beach|🍹|alkol seker
-# Paketli atıştırmalık & çikolata
-Ülker Çikolatalı Gofret|🍫|seker yag katki sut_az
-Ülker Albeni|🍫|seker yag katki sut_az
-Ülker Halley|🍪|seker yag katki
-Ülker Çokoprens|🍪|seker yag katki sut_az
-Ülker Dido|🍫|seker yag katki sut_az
-Ülker Biskrem|🍪|seker yag katki
-Ülker Hanımeller|🍪|seker yag
-Ülker Pötibör|🍪|seker yag_hafif
-Ülker Kat Kat Tat|🍫|seker yag katki
-Ülker Napoliten|🍫|seker sut_az yag_hafif
-Ülker Çizi|🧀|yag islenmis
-Ülker Krispi|🍘|yag_hafif islenmis
-Ülker Laviva|🍫|seker yag katki
-Ülker Rondo|🍪|seker yag katki
-Ülker Bonibon|🍬|seker katki sut_az
-Ülker Çokonat|🍫|seker yag kuruyemis katki
-Ülker Probis|🍪|seker yag_hafif
-Ülker O'Lala|🧁|seker yag katki
-Ülker Dankek|🧁|seker yag katki
-Eti Burçak|🍪|lif seker yag_hafif
-Eti Karam|🍫|seker yag sut_az kafein_hafif
-Eti Cin|🍪|seker yag katki
-Eti Browni Intense|🍫|seker yag katki kafein_hafif
-Eti Puf|🍪|seker yag katki
-Eti Tutku|🍪|seker yag katki
-Eti Popkek|🧁|seker yag katki
-Eti Crax|🍘|yag islenmis
-Eti Benimo|🍪|seker yag katki
-Eti Form|🍪|lif seker
-Eti Petito|🍪|seker yag_hafif
-Eti Canga|🍫|seker yag kuruyemis katki
-Eti Wanted|🍫|seker yag kuruyemis katki
-Eti Negro|🍪|seker yag katki
-Eti Topkek|🧁|seker yag katki
-Eti Lifalif|🍪|lif seker kuruyemis
-Eti Hoşbeş|🍫|seker yag katki
-Eti Sütlü Kremalı Gofret|🍫|seker yag sut_az katki
-Şölen Ozmo|🍫|seker yag katki
-Şölen Biscolata|🍪|seker yag katki
-Şölen Luppo|🍰|seker yag katki
-Nestlé Damak|🍫|seker yag kuruyemis sut_az
-Nestlé Damak Kare Antep Fıstıklı|🍫|seker yag kuruyemis sut_az
-KitKat|🍫|seker yag sut_az katki
-Snickers|🍫|seker yag kuruyemis sut_az
-Mars|🍫|seker yag sut_az katki
-Twix|🍫|seker yag sut_az katki
-Bounty|🥥|seker yag lif
-M&M's|🍬|seker sut_az katki
-M&M's Fıstıklı|🥜|seker kuruyemis sut_az katki
-Milka Sütlü Çikolata|🍫|seker sut yag_hafif kafein_hafif
-Milka Oreo|🍫|seker sut yag katki
-Milka Fındıklı|🍫|seker sut kuruyemis yag_hafif
-Toblerone|🍫|seker sut_az kuruyemis
-Kinder Bueno|🍫|seker sut yag kuruyemis
-Kinder Chocolate|🍫|seker sut yag_hafif
-Kinder Joy|🥚|seker sut yag
-Kinder Delice|🧁|seker sut yag katki
-Kinder Country|🍫|seker sut lif
-Ferrero Rocher|🍫|seker yag kuruyemis
-Raffaello|🥥|seker yag kuruyemis sut_az
-Lion|🍫|seker yag katki sut_az
-Lindt Excellence %70|🍫|kafein_hafif yag_hafif
-Lindt Excellence %85|🍫|kafein yag_hafif
-Ritter Sport|🍫|seker sut yag
-Oreo|🍪|seker yag katki
-Oreo (kakaolu dolgulu)|🍪|seker yag katki kafein_hafif
-Çokokrem|🍫|seker yag kuruyemis
-Sarelle|🍫|seker yag kuruyemis
-Torku Banada|🍫|seker yag kuruyemis
-Tadelle|🍫|seker yag kuruyemis sut_az
-Haribo|🍬|seker katki
-Haribo Ekşi|🍬|seker katki asit
-Mentos|🍬|seker katki
-Tic Tac|🍬|seker
-Halls|🍬|seker katki
-Falım sakız|🍬|tatlandirici
-First sakız|🍬|tatlandirici
-Vivident sakız|🍬|tatlandirici
-Lay's Klasik|🥔|yag katki
-Lay's Fırından|🥔|yag_hafif katki
-Lay's Yoğurt Mevsim Yeşillikleri|🥔|yag katki sut_az
-Ruffles Originals|🥔|yag katki
-Ruffles Peynir Soğan|🥔|yag katki lahana
-Doritos Nacho Peynirli|🌽|yag katki aci_hafif
-Doritos Acı|🌽|yag katki aci
-Cheetos|🧀|yag katki islenmis
-Pringles Original|🥔|yag katki
-Pringles Ekşi Krema Soğan|🥔|yag katki sut_az lahana
-Çerezza|🥨|yag katki
-Patos|🌽|yag katki
-Tortilla cipsi|🌽|yag islenmis
-Pretzel|🥨|islenmis
-Tuzlu yer fıstığı (paketli)|🥜|kuruyemis yag
-Kavrulmuş leblebi|🫘|baklagil_az
-Beyaz leblebi|🫘|baklagil_az seker
-Fıstıklı leblebi|🫘|baklagil_az kuruyemis
-Ballı kavrulmuş badem|🌰|kuruyemis seker
-Tuzlu kaju|🥜|kuruyemis yag
-Çikolata kaplı badem|🍫|kuruyemis seker sut_az
-Çikolata kaplı fındık|🍫|kuruyemis seker sut_az
-Hurmalı bar|🍫|lif seker
-Yulaflı bisküvi|🍪|lif seker yag_hafif
-Tam buğday bisküvi|🍪|lif seker yag_hafif
-Kepekli kraker|🍘|lif
-Glutensiz bisküvi|🍪|seker yag_hafif
-Pirinç patlağı (çikolatalı)|🍘|seker kafein_hafif
-Kurutulmuş elma|🍎|lif
-Kurutulmuş muz|🍌|seker
-Kurutulmuş çilek|🍓|cekirdek seker
-Meyan şekeri|🍬|seker katki
-# Hazır içecekler
-Coca-Cola|🥤|gazli seker kafein_hafif
-Coca-Cola Zero|🥤|gazli tatlandirici kafein_hafif
-Coca-Cola Light|🥤|gazli tatlandirici kafein_hafif
-Pepsi|🥤|gazli seker kafein_hafif
-Pepsi Max|🥤|gazli tatlandirici kafein_hafif
-Fanta Portakal|🥤|gazli seker katki
-Fanta Zero|🥤|gazli tatlandirici katki
-Sprite|🥤|gazli seker
-Sprite Zero|🥤|gazli tatlandirici
-7Up|🥤|gazli seker
-Schweppes Tonik|🥤|gazli seker
-Schweppes Mandalina|🥤|gazli seker
-Schweppes Bitter Lemon|🥤|gazli seker asit
-Uludağ Gazoz|🥤|gazli seker
-Uludağ Frutti|🥤|gazli seker
-Yedigün|🥤|gazli seker katki
-Çamlıca Gazoz|🥤|gazli seker
-Beypazarı maden suyu|🫧|gazli
-Kızılay maden suyu|🫧|gazli
-Sırma C|🫧|gazli seker
-Meyveli soda|🫧|gazli seker
-Limonlu maden suyu|🫧|gazli asit
-Lipton Ice Tea Şeftali|🧃|seker kafein_hafif
-Lipton Ice Tea Limon|🧃|seker kafein_hafif asit
-Lipton Ice Tea Mango|🧃|seker kafein_hafif
-Lipton Ice Tea Şekersiz|🧃|tatlandirici kafein_hafif
-Fuse Tea Şeftali|🧃|seker kafein_hafif
-Fuse Tea Limon|🧃|seker kafein_hafif asit
-Cappy Vişne|🧃|seker
-Cappy Karışık Meyve|🧃|seker
-Cappy Şeftali|🧃|seker
-Dimes Portakal|🧃|seker asit
-Dimes Vişne|🧃|seker
-Meysu|🧃|seker
-Elma suyu (şekersiz)|🧃|hafif
-Portakal suyu (hazır)|🧃|seker asit
-Ananas suyu|🧃|seker asit
-Mango nektarı|🧃|seker
-Kayısı nektarı|🧃|seker
-Karadut suyu|🧃|seker
-Üzüm suyu|🧃|seker
-Pancar suyu|🧃|hafif
-Aloe vera içeceği|🧃|seker
-Red Bull|⚡|kafein seker gazli katki
-Red Bull Sugarfree|⚡|kafein tatlandirici gazli katki
-Monster Energy|⚡|kafein seker gazli katki
-Monster Ultra|⚡|kafein tatlandirici gazli katki
-Burn|⚡|kafein seker gazli katki
-Powerade|🧃|seker katki
-Gatorade|🧃|seker katki
-Nescafé Xpress|☕|kafein sut seker katki
-Nescafé Gold|☕|kafein
-Nescafé 2'si 1 arada|☕|kafein seker sut_az katki
-Hazır soğuk kahve (kutu)|☕|kafein sut seker katki
-Hazır latte (şişe)|☕|kafein sut seker
-Sütlü kakao (hazır)|🥛|sut seker kafein_hafif
-Çilekli süt|🥛|sut seker katki
-Muzlu süt|🥛|sut seker katki
-Kakaolu süt|🥛|sut seker kafein_hafif
-Laktozsuz kakaolu süt|🥛|seker kafein_hafif
-Hazır kefir (sade)|🥛|fermente
-Hazır ayran (kutu)|🥛|fermente
-Protein içeceği (hazır)|🥛|sut tatlandirici katki
-Hindistan cevizi sütü (içecek)|🥥|yag_hafif
-Fındık sütü|🥛|kuruyemis
-Kaju sütü|🥛|kuruyemis
-Elektrolitli su|💧|hafif
-Vitaminli su|💧|seker katki
-Tonik (sade)|🥤|gazli seker
-Zencefilli gazoz (ginger ale)|🥤|gazli seker
-Fruko|🥤|gazli seker
-Cappy Elma|🧃|seker
-Cappy Kayısı|🧃|seker
-Cappy Portakal|🧃|seker asit
-Cappy Atom|🧃|seker
-Tropicana Karışık|🧃|seker
-Tropicana Şeftali|🧃|seker
-Tropicana Vişne|🧃|seker
-Capri-Sun|🧃|seker
-Fuse Tea Mango|🧃|seker kafein_hafif
-Lipton Ice Tea Karpuz|🧃|seker kafein_hafif
-# Kafe zincirleri
-Starbucks Caffè Americano|☕|kafein
-Starbucks Iced Caffè Americano|🧋|kafein
-Starbucks Caffè Latte|☕|kafein sut
-Starbucks Iced Caffè Latte|🧋|kafein sut
-Starbucks Cappuccino|☕|kafein sut
-Starbucks Flat White|☕|kafein sut
-Starbucks Cortado|☕|kafein sut_az
-Starbucks Ristretto Bianco|☕|kafein sut
-Starbucks Espresso|☕|kafein
-Starbucks Latte Macchiato|☕|kafein sut
-Starbucks Caramel Macchiato|☕|kafein sut seker
-Starbucks Iced Caramel Macchiato|🧋|kafein sut seker
-Starbucks Caffè Mocha|☕|kafein sut seker
-Starbucks White Chocolate Mocha|☕|kafein sut seker katki
-Starbucks Iced White Chocolate Mocha|🧋|kafein sut seker katki
-Starbucks Filtre Kahve|☕|kafein
-Starbucks Cold Brew|🧋|kafein
-Starbucks Iced Brown Sugar Oat Shaken Espresso|🧋|kafein seker
-Starbucks Doubleshot Iced Shaken Espresso|🧋|kafein seker
-Starbucks Türk Kahvesi|☕|kafein
-Starbucks Chai Tea Latte|🍵|kafein_hafif sut seker aci_hafif
-Starbucks Iced Chai Tea Latte|🧋|kafein_hafif sut seker aci_hafif
-Starbucks Hot Chocolate|🍫|sut seker kafein_hafif
-Starbucks Caramel Frappuccino|🥤|kafein sut seker katki yag_hafif
-Starbucks Mocha Frappuccino|🥤|kafein sut seker katki
-Starbucks Java Chip Frappuccino|🥤|kafein sut seker katki yag_hafif
-Starbucks Espresso Frappuccino|🥤|kafein sut seker katki
-Starbucks Strawberries & Cream Frappuccino|🥤|sut seker katki
-Starbucks Cool Lime|🍈|kafein_hafif seker asit
-Starbucks Very Berry Hibiscus|🌺|kafein_hafif seker
-Starbucks Orange Mango|🥭|kafein_hafif seker asit
-Starbucks Mango Dragonfruit|🐉|kafein_hafif seker
-Starbucks Matcha Latte|🍵|kafein_hafif sut seker
-Starbucks Matcha Pistachio Latte|🍵|kafein_hafif sut seker
-Starbucks Spanish Cream Matcha Latte|🍵|kafein_hafif sut seker
-Starbucks Iced Strawberry Cream Matcha Latte|🧋|kafein_hafif sut seker katki
-Starbucks Iced Apple Crumble Matcha Latte|🧋|kafein_hafif sut seker katki
-Starbucks Pumpkin Spice Latte|🎃|kafein sut seker aci_hafif
-Starbucks Iced Pumpkin Spice Latte|🧋|kafein sut seker aci_hafif
-Starbucks Pumpkin Spice Frappuccino|🥤|kafein sut seker katki aci_hafif
-Starbucks Pecan Maple Latte|☕|kafein sut seker
-Starbucks Toffee Nut Latte|☕|kafein sut seker
-Starbucks Earl Grey|🫖|kafein_hafif
-Starbucks Mint Blend|🫖|hafif
-Starbucks Kruvasan|🥐|yag sut_az
-Starbucks Cheesecake|🍰|sut seker yag
-Starbucks Brownie|🍫|seker yag sut_az
-Starbucks Muffin|🧁|seker yag_hafif katki
-Starbucks Cookie|🍪|seker yag
-Kahve Dünyası Türk Kahvesi|☕|kafein
-Kahve Dünyası Damla Sakızlı Türk Kahvesi|☕|kafein
-Kahve Dünyası Dibek Kahvesi|☕|kafein
-Kahve Dünyası Latte|☕|kafein sut
-Kahve Dünyası Mocha|☕|kafein sut seker
-Kahve Dünyası Sıcak Çikolata|☕|sut seker kafein_hafif
-Kahve Dünyası Frappe|🥤|kafein sut seker katki
-Kahve Dünyası Madlen Çikolata|🍫|seker sut yag
-Kahve Dünyası Fıstıklı Çikolata|🍫|seker sut kuruyemis
-Kahve Dünyası Kruvasan|🥐|yag sut_az
-Espressolab Latte|☕|kafein sut
-Espressolab Flat White|☕|kafein sut
-Espressolab Iced Latte|🧋|kafein sut
-Espressolab Cold Brew|🧋|kafein
-Espressolab Mocha|☕|kafein sut seker
-Espressolab Caramel Latte|☕|kafein sut seker
-Caribou Caramel High Rise|🧋|kafein sut seker katki
-Caribou Mocha|☕|kafein sut seker
-Caribou Latte|☕|kafein sut
-Gloria Jean's Mocha|☕|kafein sut seker
-Gloria Jean's Chillers|🥤|kafein sut seker katki
-Costa Flat White|☕|kafein sut
-Costa Latte|☕|kafein sut
-Tim Hortons Double Double|☕|kafein sut seker
-Tim Hortons Iced Capp|🧋|kafein sut seker katki
-Tim Hortons Timbits|🍩|seker yag katki
-Dunkin' Donut|🍩|seker yag katki
-Dunkin' Iced Latte|🧋|kafein sut
-Dunkin' Boston Kreması Donut|🍩|seker yag sut katki
-Simit Sarayı Simit|🥯|kuruyemis
-Simit Sarayı Peynirli Poğaça|🥐|yag_hafif sut_az
-Simit Sarayı Açma|🥐|yag_hafif
-Simit Sarayı Kaşarlı Tost|🥪|sut_az yag_hafif
-Simit Sarayı Çay|🍵|kafein_hafif
-Mado Maraş Dondurması|🍨|sut seker
-Mado Kaymaklı Dondurma|🍨|sut seker
-Mado Sütlaç|🍮|sut seker
-Mado Baklava|🍯|seker yag kuruyemis
-Mado Künefe|🧀|seker yag sut
-Mado Kahvaltı Tabağı|🍳|yag sut_az
-Big Chefs Serpme Kahvaltı|🍳|yag sut_az
-Big Chefs Tavuk Salata|🥗|cig yag_hafif
-Pelit Pasta|🍰|seker sut yag
-Saray Muhallebicisi Tavuk Göğsü|🍮|sut seker
-Saray Muhallebicisi Kazandibi|🍮|sut seker
-Hafız Mustafa Baklava|🍯|seker yag kuruyemis
-Hafız Mustafa Lokum|🍬|seker
-Koska Helva|🍯|seker yag kuruyemis
-Simit Sarayı Dopdolu Simit|🥯|yag islenmis sut_az cekirdek
-Simit Sarayı Simit Arası Kaşar|🥯|yag_hafif sut_az cekirdek
-Simit Sarayı Simit Pizza|🍕|yag sut_az asit islenmis cekirdek
-Simit Sarayı Menemen|🍳|yag asit
-Simit Sarayı Pratik Kahvaltı|🍳|yag sut_az
-Simit Sarayı Su Böreği|🥧|yag sut
-Simit Sarayı Gül Böreği|🥧|yag sut_az
-Simit Sarayı Kalem Börek|🥧|yag
-Simit Sarayı Saray Börek|🥧|yag sut_az
-Simit Sarayı Zeytinli Poğaça|🥐|yag
-Simit Sarayı Kaşarlı Poğaça|🥐|yag sut_az
-Simit Sarayı Ay Çöreği|🥐|seker yag kuruyemis
-Simit Sarayı Çıtır Hot Dog|🌭|yag islenmis katki
-Simit Sarayı Ciabatta Sandviç|🥪|yag sut_az
-Simit Sarayı Saray Dürüm|🌯|yag
-Simit Sarayı Bask Cheesecake|🍰|sut seker yag
-Simit Sarayı Tiramisu|🍰|sut seker yag kafein_hafif
-Simit Sarayı Muffin|🧁|seker yag
-Simit Sarayı Pasta (dilim)|🍰|seker yag sut
-Simit Sarayı Kurabiye|🍪|seker yag
-Simit Sarayı Milkshake|🥤|sut seker
-Simit Sarayı Tahinli Çıtır Sarma|🥐|seker yag
-Kahve Dünyası Filtre Kahve|☕|kafein
-Kahve Dünyası Americano|☕|kafein
-Kahve Dünyası Cappuccino|☕|kafein sut
-Kahve Dünyası Flat White|☕|kafein sut
-Kahve Dünyası Beyaz Çikolatalı Mocha|☕|kafein sut seker
-Kahve Dünyası Gofrik Latte|☕|kafein sut seker
-Kahve Dünyası Salepli Kahve|☕|kafein sut seker
-Kahve Dünyası Cold Brew|🧋|kafein
-Kahve Dünyası Buzlu Latte|🧋|kafein sut
-Kahve Dünyası Espresso Freddo|🧋|kafein
-Kahve Dünyası Soğuk Türk Kahvesi|🧋|kafein
-Kahve Dünyası Salep|🥛|sut seker
-Kahve Dünyası Milkshake|🥤|sut seker
-Kahve Dünyası Limonata|🍋|seker asit
-Kahve Dünyası Sandviç|🥪|yag_hafif sut_az
-Kahve Dünyası Kruvasan Sandviç|🥐|yag sut_az
-Kahve Dünyası Börekitas|🥟|yag
-Kahve Dünyası Bagel|🥯|yag_hafif sut_az
-Kahve Dünyası Dilim Kek|🍰|seker yag
-Kahve Dünyası Pasta (dilim)|🍰|seker yag sut kafein_hafif
-Kahve Dünyası Cheesecake|🍰|sut seker yag
-Kahve Dünyası Cookie|🍪|seker yag
-Kahve Dünyası Profiterol|🍮|seker sut yag kafein_hafif
-Kahve Dünyası Dondurma|🍨|sut seker
-Kahve Dünyası Fit Brownie|🍫|yag kafein_hafif
-Kahve Dünyası Müsli|🥣|lif sut_az
-Espressolab Espresso|☕|kafein
-Espressolab White Chocolate Mocha|☕|kafein sut seker
-Espressolab Spanish Latte|☕|kafein sut seker
-Espressolab Lotus Latte|☕|kafein sut seker
-Espressolab Salted Caramel Latte|☕|kafein sut seker
-Espressolab Tahinli Latte|☕|kafein sut seker
-Espressolab Türk Kahvesi|☕|kafein
-Espressolab V60|☕|kafein
-Espressolab Chai Tea Latte|🍵|kafein_hafif sut seker
-Espressolab Matcha Latte|🍵|kafein_hafif sut
-Espressolab Hot Chocolate|☕|sut seker kafein_hafif
-Espressolab Milkshake|🥤|sut seker
-Espressolab Kombucha|🧃|fermente asit
-Espressolab Mojito Hibiscus|🧃|seker asit
-Espressolab Kruvasan|🥐|yag sut_az
-Espressolab Poğaça|🥐|yag
-Espressolab Sandviç|🥪|yag_hafif sut_az
-Espressolab Levain Kuki|🍪|seker yag
-Espressolab Mermer Kek|🍰|seker yag
-Espressolab San Sebastian Cheesecake|🍰|sut seker yag
-Espressolab Tiramisu|🍰|sut seker yag kafein_hafif
-Espressolab Brownie|🍫|seker yag kafein_hafif
-Espressolab Donut|🍩|seker yag
-Espressolab İzmir Bombası|🍫|seker yag kafein_hafif
-Mado Menemen|🍳|yag asit
-Mado Omlet|🍳|yag
-Mado Tost|🥪|yag sut_az
-Mado Gözleme|🫓|yag sut_az
-Mado Su Böreği|🥧|yag sut
-Mado Mantı|🥟|yag sut lahana
-Mado İçli Köfte|🧆|yag
-Mado Kasap Köfte|🍖|yag
-Mado Beğendili Kebap|🍖|yag sut
-Mado Izgara Tavuk|🍗|yag_hafif
-Mado Burger|🍔|yag katki
-Mado Pizza|🍕|yag sut asit katki
-Mado Pide|🫓|yag sut_az
-Mado Salata|🥗|cig yag_hafif
-Mado Makarna|🍝|yag sut_az asit
-Mado Dürüm|🌯|yag
-Mado Fıstıklı Dondurma|🍨|sut seker kuruyemis
-Mado Çikolatalı Dondurma|🍨|sut seker kafein_hafif
-Mado Şeker İlavesiz Dondurma|🍨|sut tatlandirici
-Mado Vegan Dondurma|🍨|seker
-Mado Kesme Dondurma|🍨|sut seker
-Mado Sütlü Soğuk Baklava|🍮|seker sut yag kuruyemis
-Mado Kadayıf|🍮|seker yag kuruyemis
-Mado Şöbiyet|🍮|seker yag kuruyemis sut_az
-Mado Havuç Dilimi|🍮|seker yag kuruyemis
-Mado Şekerpare|🍪|seker yag
-Mado Ekmek Kadayıfı|🍮|seker sut
-Mado Revani|🍰|seker yag
-Mado Pasta (dilim)|🍰|seker yag sut
-Mado Cheesecake|🍰|sut seker yag
-Mado Waffle|🧇|seker yag sut_az
-Mado Salep|🥛|sut seker
-Mado Kağıt Helva|🍦|seker
-# Beslenme destekleri
-Modulen IBD|🥛|hafif
-Ensure|🥛|seker
-Ensure Plus|🥛|seker yag_hafif
-Fortimel|🥛|seker sut_az
-Nutridrink|🥛|seker sut_az
-Peptamen|🥛|hafif
-PediaSure|🥛|seker
-Whey protein tozu|🥛|sut_az katki
-İzolat protein tozu|🥛|katki
-Bitkisel protein tozu|🥛|baklagil_az katki
-Kolajen tozu|🥄|hafif
-Kemik suyu tozu|🦴|hafif
-# Fast food zincirleri
+# Restoran zincirleri
 McDonald's Big Mac|🍔|yag katki sut_az
 McDonald's Double Big Mac|🍔|yag katki sut_az
 McDonald's Quarter Pounder|🍔|yag katki sut_az
@@ -2417,7 +2202,6 @@ HD İskender|🍖|yag sut asit fermente
 Kasap Döner Et Dürüm|🌯|yag lahana
 Bereket Döner Tavuk Dürüm|🌯|yag
 Çiğköftem Dürüm|🌯|aci cig lif
-Simit Sarayı Sandviç|🥪|yag_hafif sut_az
 Midyeci Ahmet Midye Dolma|🦪|yag_hafif aci_hafif
 Wendy's Dave's Single|🍔|yag katki
 Five Guys Burger|🍔|yag
@@ -2695,6 +2479,223 @@ Baydöner Acılı Atom İskender|🍖|yag sut asit fermente aci
 Baydöner Ayran Aşı Çorbası|🍲|fermente baklagil_az
 Baydöner Mercimek Çorbası|🍲|baklagil_az yag_hafif
 Baydöner Sufle|🍫|seker yag sut_az
+Big Chefs Serpme Kahvaltı|🍳|yag sut_az
+Big Chefs Tavuk Salata|🥗|cig yag_hafif
+# Kafe & pastane zincirleri
+Starbucks Caffè Americano|☕|kafein
+Starbucks Iced Caffè Americano|🧋|kafein
+Starbucks Caffè Latte|☕|kafein sut
+Starbucks Iced Caffè Latte|🧋|kafein sut
+Starbucks Cappuccino|☕|kafein sut
+Starbucks Flat White|☕|kafein sut
+Starbucks Cortado|☕|kafein sut_az
+Starbucks Ristretto Bianco|☕|kafein sut
+Starbucks Espresso|☕|kafein
+Starbucks Latte Macchiato|☕|kafein sut
+Starbucks Caramel Macchiato|☕|kafein sut seker
+Starbucks Iced Caramel Macchiato|🧋|kafein sut seker
+Starbucks Caffè Mocha|☕|kafein sut seker
+Starbucks White Chocolate Mocha|☕|kafein sut seker katki
+Starbucks Iced White Chocolate Mocha|🧋|kafein sut seker katki
+Starbucks Filtre Kahve|☕|kafein
+Starbucks Cold Brew|🧋|kafein
+Starbucks Iced Brown Sugar Oat Shaken Espresso|🧋|kafein seker
+Starbucks Doubleshot Iced Shaken Espresso|🧋|kafein seker
+Starbucks Türk Kahvesi|☕|kafein
+Starbucks Chai Tea Latte|🍵|kafein_hafif sut seker aci_hafif
+Starbucks Iced Chai Tea Latte|🧋|kafein_hafif sut seker aci_hafif
+Starbucks Hot Chocolate|🍫|sut seker kafein_hafif
+Starbucks Caramel Frappuccino|🥤|kafein sut seker katki yag_hafif
+Starbucks Mocha Frappuccino|🥤|kafein sut seker katki
+Starbucks Java Chip Frappuccino|🥤|kafein sut seker katki yag_hafif
+Starbucks Espresso Frappuccino|🥤|kafein sut seker katki
+Starbucks Strawberries & Cream Frappuccino|🥤|sut seker katki
+Starbucks Cool Lime|🍈|kafein_hafif seker asit
+Starbucks Very Berry Hibiscus|🌺|kafein_hafif seker
+Starbucks Orange Mango|🥭|kafein_hafif seker asit
+Starbucks Mango Dragonfruit|🐉|kafein_hafif seker
+Starbucks Matcha Latte|🍵|kafein_hafif sut seker
+Starbucks Matcha Pistachio Latte|🍵|kafein_hafif sut seker
+Starbucks Spanish Cream Matcha Latte|🍵|kafein_hafif sut seker
+Starbucks Iced Strawberry Cream Matcha Latte|🧋|kafein_hafif sut seker katki
+Starbucks Iced Apple Crumble Matcha Latte|🧋|kafein_hafif sut seker katki
+Starbucks Pumpkin Spice Latte|🎃|kafein sut seker aci_hafif
+Starbucks Iced Pumpkin Spice Latte|🧋|kafein sut seker aci_hafif
+Starbucks Pumpkin Spice Frappuccino|🥤|kafein sut seker katki aci_hafif
+Starbucks Pecan Maple Latte|☕|kafein sut seker
+Starbucks Toffee Nut Latte|☕|kafein sut seker
+Starbucks Earl Grey|🫖|kafein_hafif
+Starbucks Mint Blend|🫖|hafif
+Starbucks Kruvasan|🥐|yag sut_az
+Starbucks Cheesecake|🍰|sut seker yag
+Starbucks Brownie|🍫|seker yag sut_az
+Starbucks Muffin|🧁|seker yag_hafif katki
+Starbucks Cookie|🍪|seker yag
+Kahve Dünyası Türk Kahvesi|☕|kafein
+Kahve Dünyası Damla Sakızlı Türk Kahvesi|☕|kafein
+Kahve Dünyası Dibek Kahvesi|☕|kafein
+Kahve Dünyası Latte|☕|kafein sut
+Kahve Dünyası Mocha|☕|kafein sut seker
+Kahve Dünyası Sıcak Çikolata|☕|sut seker kafein_hafif
+Kahve Dünyası Frappe|🥤|kafein sut seker katki
+Kahve Dünyası Madlen Çikolata|🍫|seker sut yag
+Kahve Dünyası Fıstıklı Çikolata|🍫|seker sut kuruyemis
+Kahve Dünyası Kruvasan|🥐|yag sut_az
+Espressolab Latte|☕|kafein sut
+Espressolab Flat White|☕|kafein sut
+Espressolab Iced Latte|🧋|kafein sut
+Espressolab Cold Brew|🧋|kafein
+Espressolab Mocha|☕|kafein sut seker
+Espressolab Caramel Latte|☕|kafein sut seker
+Caribou Caramel High Rise|🧋|kafein sut seker katki
+Caribou Mocha|☕|kafein sut seker
+Caribou Latte|☕|kafein sut
+Gloria Jean's Mocha|☕|kafein sut seker
+Gloria Jean's Chillers|🥤|kafein sut seker katki
+Costa Flat White|☕|kafein sut
+Costa Latte|☕|kafein sut
+Tim Hortons Double Double|☕|kafein sut seker
+Tim Hortons Iced Capp|🧋|kafein sut seker katki
+Tim Hortons Timbits|🍩|seker yag katki
+Dunkin' Donut|🍩|seker yag katki
+Dunkin' Iced Latte|🧋|kafein sut
+Dunkin' Boston Kreması Donut|🍩|seker yag sut katki
+Simit Sarayı Simit|🥯|kuruyemis
+Simit Sarayı Peynirli Poğaça|🥐|yag_hafif sut_az
+Simit Sarayı Açma|🥐|yag_hafif
+Simit Sarayı Kaşarlı Tost|🥪|sut_az yag_hafif
+Simit Sarayı Çay|🍵|kafein_hafif
+Mado Maraş Dondurması|🍨|sut seker
+Mado Kaymaklı Dondurma|🍨|sut seker
+Mado Sütlaç|🍮|sut seker
+Mado Baklava|🍯|seker yag kuruyemis
+Mado Künefe|🧀|seker yag sut
+Mado Kahvaltı Tabağı|🍳|yag sut_az
+Pelit Pasta|🍰|seker sut yag
+Saray Muhallebicisi Tavuk Göğsü|🍮|sut seker
+Saray Muhallebicisi Kazandibi|🍮|sut seker
+Hafız Mustafa Baklava|🍯|seker yag kuruyemis
+Hafız Mustafa Lokum|🍬|seker
+Koska Helva|🍯|seker yag kuruyemis
+Simit Sarayı Dopdolu Simit|🥯|yag islenmis sut_az cekirdek
+Simit Sarayı Simit Arası Kaşar|🥯|yag_hafif sut_az cekirdek
+Simit Sarayı Simit Pizza|🍕|yag sut_az asit islenmis cekirdek
+Simit Sarayı Menemen|🍳|yag asit
+Simit Sarayı Pratik Kahvaltı|🍳|yag sut_az
+Simit Sarayı Su Böreği|🥧|yag sut
+Simit Sarayı Gül Böreği|🥧|yag sut_az
+Simit Sarayı Kalem Börek|🥧|yag
+Simit Sarayı Saray Börek|🥧|yag sut_az
+Simit Sarayı Zeytinli Poğaça|🥐|yag
+Simit Sarayı Kaşarlı Poğaça|🥐|yag sut_az
+Simit Sarayı Ay Çöreği|🥐|seker yag kuruyemis
+Simit Sarayı Çıtır Hot Dog|🌭|yag islenmis katki
+Simit Sarayı Ciabatta Sandviç|🥪|yag sut_az
+Simit Sarayı Saray Dürüm|🌯|yag
+Simit Sarayı Bask Cheesecake|🍰|sut seker yag
+Simit Sarayı Tiramisu|🍰|sut seker yag kafein_hafif
+Simit Sarayı Muffin|🧁|seker yag
+Simit Sarayı Pasta (dilim)|🍰|seker yag sut
+Simit Sarayı Kurabiye|🍪|seker yag
+Simit Sarayı Milkshake|🥤|sut seker
+Simit Sarayı Tahinli Çıtır Sarma|🥐|seker yag
+Kahve Dünyası Filtre Kahve|☕|kafein
+Kahve Dünyası Americano|☕|kafein
+Kahve Dünyası Cappuccino|☕|kafein sut
+Kahve Dünyası Flat White|☕|kafein sut
+Kahve Dünyası Beyaz Çikolatalı Mocha|☕|kafein sut seker
+Kahve Dünyası Gofrik Latte|☕|kafein sut seker
+Kahve Dünyası Salepli Kahve|☕|kafein sut seker
+Kahve Dünyası Cold Brew|🧋|kafein
+Kahve Dünyası Buzlu Latte|🧋|kafein sut
+Kahve Dünyası Espresso Freddo|🧋|kafein
+Kahve Dünyası Soğuk Türk Kahvesi|🧋|kafein
+Kahve Dünyası Salep|🥛|sut seker
+Kahve Dünyası Milkshake|🥤|sut seker
+Kahve Dünyası Limonata|🍋|seker asit
+Kahve Dünyası Sandviç|🥪|yag_hafif sut_az
+Kahve Dünyası Kruvasan Sandviç|🥐|yag sut_az
+Kahve Dünyası Börekitas|🥟|yag
+Kahve Dünyası Bagel|🥯|yag_hafif sut_az
+Kahve Dünyası Dilim Kek|🍰|seker yag
+Kahve Dünyası Pasta (dilim)|🍰|seker yag sut kafein_hafif
+Kahve Dünyası Cheesecake|🍰|sut seker yag
+Kahve Dünyası Cookie|🍪|seker yag
+Kahve Dünyası Profiterol|🍮|seker sut yag kafein_hafif
+Kahve Dünyası Dondurma|🍨|sut seker
+Kahve Dünyası Fit Brownie|🍫|yag kafein_hafif
+Kahve Dünyası Müsli|🥣|lif sut_az
+Espressolab Espresso|☕|kafein
+Espressolab White Chocolate Mocha|☕|kafein sut seker
+Espressolab Spanish Latte|☕|kafein sut seker
+Espressolab Lotus Latte|☕|kafein sut seker
+Espressolab Salted Caramel Latte|☕|kafein sut seker
+Espressolab Tahinli Latte|☕|kafein sut seker
+Espressolab Türk Kahvesi|☕|kafein
+Espressolab V60|☕|kafein
+Espressolab Chai Tea Latte|🍵|kafein_hafif sut seker
+Espressolab Matcha Latte|🍵|kafein_hafif sut
+Espressolab Hot Chocolate|☕|sut seker kafein_hafif
+Espressolab Milkshake|🥤|sut seker
+Espressolab Kombucha|🧃|fermente asit
+Espressolab Mojito Hibiscus|🧃|seker asit
+Espressolab Kruvasan|🥐|yag sut_az
+Espressolab Poğaça|🥐|yag
+Espressolab Sandviç|🥪|yag_hafif sut_az
+Espressolab Levain Kuki|🍪|seker yag
+Espressolab Mermer Kek|🍰|seker yag
+Espressolab San Sebastian Cheesecake|🍰|sut seker yag
+Espressolab Tiramisu|🍰|sut seker yag kafein_hafif
+Espressolab Brownie|🍫|seker yag kafein_hafif
+Espressolab Donut|🍩|seker yag
+Espressolab İzmir Bombası|🍫|seker yag kafein_hafif
+Mado Menemen|🍳|yag asit
+Mado Omlet|🍳|yag
+Mado Tost|🥪|yag sut_az
+Mado Gözleme|🫓|yag sut_az
+Mado Su Böreği|🥧|yag sut
+Mado Mantı|🥟|yag sut lahana
+Mado İçli Köfte|🧆|yag
+Mado Kasap Köfte|🍖|yag
+Mado Beğendili Kebap|🍖|yag sut
+Mado Izgara Tavuk|🍗|yag_hafif
+Mado Burger|🍔|yag katki
+Mado Pizza|🍕|yag sut asit katki
+Mado Pide|🫓|yag sut_az
+Mado Salata|🥗|cig yag_hafif
+Mado Makarna|🍝|yag sut_az asit
+Mado Dürüm|🌯|yag
+Mado Fıstıklı Dondurma|🍨|sut seker kuruyemis
+Mado Çikolatalı Dondurma|🍨|sut seker kafein_hafif
+Mado Şeker İlavesiz Dondurma|🍨|sut tatlandirici
+Mado Vegan Dondurma|🍨|seker
+Mado Kesme Dondurma|🍨|sut seker
+Mado Sütlü Soğuk Baklava|🍮|seker sut yag kuruyemis
+Mado Kadayıf|🍮|seker yag kuruyemis
+Mado Şöbiyet|🍮|seker yag kuruyemis sut_az
+Mado Havuç Dilimi|🍮|seker yag kuruyemis
+Mado Şekerpare|🍪|seker yag
+Mado Ekmek Kadayıfı|🍮|seker sut
+Mado Revani|🍰|seker yag
+Mado Pasta (dilim)|🍰|seker yag sut
+Mado Cheesecake|🍰|sut seker yag
+Mado Waffle|🧇|seker yag sut_az
+Mado Salep|🥛|sut seker
+Mado Kağıt Helva|🍦|seker
+Simit Sarayı Sandviç|🥪|yag_hafif sut_az
+# Beslenme destekleri
+Modulen IBD|🥛|hafif
+Ensure|🥛|seker
+Ensure Plus|🥛|seker yag_hafif
+Fortimel|🥛|seker sut_az
+Nutridrink|🥛|seker sut_az
+Peptamen|🥛|hafif
+PediaSure|🥛|seker
+Whey protein tozu|🥛|sut_az katki
+İzolat protein tozu|🥛|katki
+Bitkisel protein tozu|🥛|baklagil_az katki
+Kolajen tozu|🥄|hafif
+Kemik suyu tozu|🦴|hafif
 # Sigara & tütün
 Sigara|🚬|sigara
 Elektronik sigara (vape)|💨|sigara
