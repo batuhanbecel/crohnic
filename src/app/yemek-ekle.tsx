@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { Alert, Image, View } from 'react-native';
 import { FoodEmoji } from '../components/FoodEmoji';
 import { FoodPicker } from '../components/FoodPicker';
+import { MedNotes, medNotesFor } from '../components/MedNotes';
 import { ReactionPicker } from '../components/ReactionPicker';
 import { WhenField } from '../components/WhenField';
 import { Button, Card, Icon, Row, Screen, T, Tap } from '../components/ui';
@@ -56,6 +57,8 @@ export default function AddMeal() {
 
   // Whatever is still in the box counts as an item too, so nothing typed gets lost.
   const all = useMemo(() => (text.trim() ? [...items, { key: 'typing', name: text.trim(), food: findFoodByName(text) ?? null }] : items), [items, text]);
+  // what the user's medicines say about this plate (cortisone: sugar, salt…)
+  const medNotes = useMemo(() => medNotesFor(all.map((it) => ({ name: it.food?.name ?? it.name, tags: it.food?.tags ?? [] }))), [all, app.medsKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // a half-written meal isn't lost to an accidental swipe down
   const leave = useConfirmDiscard(all.length > 0 || !!photo);
 
@@ -140,6 +143,8 @@ export default function AddMeal() {
           autoFocus={!foods}
         />
       </Card>
+
+      <MedNotes notes={medNotes} showItems />
 
       <Card style={{ gap: 14 }}>
         <WhenField value={at} onChange={setAt} />

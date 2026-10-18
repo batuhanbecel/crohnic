@@ -1,4 +1,5 @@
 import type { Meal } from './db';
+import { medHits, medLine, type MedHit } from './med-food';
 import { FOOD_BY_ID, LACTOSE_WEIGHTS, STRICTURE_TAGS, TAGS, isTag, normalizeName, type Food, type Phase, type Tag, type Verdict } from './foods';
 
 export const VERDICT_RANK: Record<Verdict, number> = { iyi: 0, dikkat: 1, riskli: 2 };
@@ -142,7 +143,25 @@ export type FoodAssessment = {
   stat?: PersonalStat;
   reasons: string[];
   confidence: 'genel' | 'karışık' | 'kişisel';
+  /** what the user's medicines say about this food (shown apart from the reasons) */
+  meds?: MedHit[];
 };
+
+/**
+ * Medicines come last and only ever make a verdict more careful: on cortisone a sweet that
+ * always "went fine" still raises blood sugar. Timing notes ('bilgi') don't touch the verdict.
+ */
+function withMeds(a: FoodAssessment, food: Food): FoodAssessment {
+  const hits = medHits(food);
+  if (!hits.length) return a;
+  let verdict = a.verdict;
+  for (const h of hits) {
+    const floor: Verdict | null = h.level === 'kacin' ? 'riskli' : h.level === 'dikkat' ? 'dikkat' : null;
+    if (floor && VERDICT_RANK[floor] > VERDICT_RANK[verdict]) verdict = floor;
+  }
+  const lines = hits.filter((h) => h.level !== 'bilgi').map(medLine);
+  return { ...a, verdict, reasons: [...lines, ...a.reasons], meds: hits };
+}
 
 /** Combine general knowledge with the user's own history. Personal data wins once there's enough of it. */
 export function assessFood(food: Food, phase: Phase, meals: Meal[], stats?: ReturnType<typeof statsByName>): FoodAssessment {
@@ -154,7 +173,7 @@ export function assessFood(food: Food, phase: Phase, meals: Meal[], stats?: Retu
   let verdict = g.verdict;
   let confidence: FoodAssessment['confidence'] = 'genel';
   // tobacco harms over months, not hours: how one cigarette felt never makes it "iyi"
-  if (food.tags.includes('sigara')) return { verdict, general: g.verdict, personal: p, stat, reasons: g.reasons, confidence };
+  if (food.tags.includes('sigara')) return withMeds({ verdict, general: g.verdict, personal: p, stat, reasons: g.reasons, confidence }, food);
   if (p && stat) {
     if (stat.n >= 2) {
       verdict = p;
@@ -167,7 +186,7 @@ export function assessFood(food: Food, phase: Phase, meals: Meal[], stats?: Retu
     // a flare makes everything a notch more sensitive
     if (phase === 'atak' && verdict === 'iyi' && g.verdict !== 'iyi') verdict = 'dikkat';
   }
-  return { verdict, general: g.verdict, personal: p, stat, reasons: g.reasons, confidence };
+  return withMeds({ verdict, general: g.verdict, personal: p, stat, reasons: g.reasons, confidence }, food);
 }
 
 export type TriggerInsight = { tag: Tag; stat: PersonalStat; rate: number };

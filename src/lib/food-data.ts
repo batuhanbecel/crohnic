@@ -109,6 +109,7 @@ Yüksük çorbası|🍲|fermente baklagil
 Malhıta çorbası|🍲|baklagil
 Kuskus çorbası|🍲|hafif
 Şehriyeli domates çorbası|🍅|asit
+Tavuk çorbası|🍲|hafif
 # Et & tavuk
 Izgara tavuk göğsü|🍗|hafif
 Haşlanmış tavuk|🍗|hafif
@@ -268,6 +269,14 @@ Fırında tavuk göğsü|🍗|hafif
 Dana kıyma (yağsız, pişmiş)|🥩|yag_hafif
 Sebzeli köfte (fırında)|🧆|yag_hafif
 Ciğer sote|🍖|yag_hafif
+Fırında köfte|🧆|yag_hafif
+Fırında tavuk patates|🍗|yag_hafif
+Sebzeli tavuk|🍗|yag_hafif lif
+Dana şiş|🍢|yag_hafif
+Tavuk kıyma (pişmiş)|🍗|yag_hafif
+Tepsi kebabı|🍖|yag aci_hafif
+Ev yapımı hamburger|🍔|yag_hafif
+Tavuk sote (sebzeli)|🍗|yag_hafif lif
 # Balık & deniz ürünleri
 Izgara somon|🐟|hafif
 Fırın somon|🐟|hafif
@@ -354,6 +363,11 @@ Somon köftesi|🐟|yag_hafif
 Ton balıklı köfte|🐟|yag_hafif
 Sardalya buğulama|🐟|yag_hafif
 Ahtapot carpaccio|🐙|cig_hayvansal asit
+Çupra ızgara|🐟|hafif
+Fırında çupra|🐟|hafif
+Çupra buğulama|🐟|hafif
+Fırında balık|🐟|hafif
+Izgara balık|🐟|hafif
 # Sebze yemekleri
 Zeytinyağlı taze fasulye|🫛|lif
 Etli taze fasulye|🫛|lif yag_hafif
@@ -488,6 +502,12 @@ Sütlü kabak|🥒|sut seker
 Haşlanmış tatlı patates|🍠|hafif pure
 Karnabahar püresi|🥦|pure lahana
 Baharatlı patates (fırın)|🥔|yag aci_hafif
+Fırında mantar|🍄|lif yag_hafif
+Fırında patlıcan|🍆|kabuk yag_hafif
+Izgara sebze|🫑|kabuk yag_hafif
+Buharda sebze|🥦|hafif lif
+Haşlanmış sebze|🥕|hafif
+Haşlanmış brokoli|🥦|lahana
 # Sebze & yeşillik
 Haşlanmış patates|🥔|hafif
 Haşlanmış havuç|🥕|hafif
@@ -689,6 +709,7 @@ Noodle (sebzeli)|🍜|yag_hafif lahana
 Hazır noodle|🍜|katki yag aci_hafif
 Tatar böreği|🥟|fermente yag
 Sinop mantısı|🥟|fermente yag
+Yoğurtlu makarna|🍝|fermente yag_hafif
 # Hamur işi & börek
 Börek (peynirli)|🥐|yag sut_az
 Börek (kıymalı)|🥐|yag
@@ -1642,6 +1663,8 @@ Turşu suyu|🥤|fermente asit aci_hafif
 Alkolsüz kokteyl (mocktail)|🍹|seker
 Efes Alkolsüz|🍺|gazli
 Alkolsüz Radler|🍺|gazli seker
+Meyan kökü şerbeti|🥤|seker
+Greyfurt suyu|🧃|asit
 # Alkollü içecekler
 Bira|🍺|alkol gazli
 Şarap|🍷|alkol
@@ -1922,6 +1945,7 @@ Pirinç patlağı (çikolatalı)|🍘|seker kafein_hafif
 Kurutulmuş elma|🍎|lif
 Kurutulmuş muz|🍌|seker
 Kurutulmuş çilek|🍓|cekirdek seker
+Meyan şekeri|🍬|seker katki
 # Hazır içecekler
 Coca-Cola|🥤|gazli seker kafein_hafif
 Coca-Cola Zero|🥤|gazli tatlandirici kafein_hafif
@@ -2358,6 +2382,53 @@ Soda|Maden suyu
 Sade soda|Maden suyu
 Ev yapımı limonata (az şekerli)|Limonata
 # yaygın kısa adlar ve eş anlamlılar
+Fırında patates|Fırın patates
+Fırında somon|Fırın somon
+Fırında levrek|Fırın levrek
+Fırında tavuk|Fırın tavuk
+Fırında makarna|Fırın makarna
+Fırında yumurta|Fırın yumurta
+Fırında hindi|Fırında hindi göğsü
+Izgara tavuk|Izgara tavuk göğsü
+Tavuk ızgara|Izgara tavuk göğsü
+Köfte ızgara|Izgara köfte
+Balık ızgara|Izgara balık
+Levrek ızgara|Izgara levrek
+Buharda somon|Somon buğulama
+Tavuklu sebze|Sebzeli tavuk
+Domatesli makarna|Domates soslu makarna
+Omlet|Sade omlet
+Zeytinyağlı fasulye|Zeytinyağlı taze fasulye
+Et haşlama|Haşlama et
+Tavuk haşlama|Haşlanmış tavuk
+Bonfile|Dana bonfile
+Pirzola|Kuzu pirzola
+Tavuk but|Tavuk but (derisiz)
+Balık|Izgara balık
+Meyve suyu|Hazır meyve suyu
+Portakal suyu|Taze portakal suyu
+Çikolata|Çikolata (sütlü)
+Bisküvi|Bisküvi (sade)
+Kek|Kek (sade)
+Dondurma|Dondurma (sütlü)
+Zeytin|Siyah zeytin
+Yulaf|Yulaf lapası
+Patates|Haşlanmış patates
+Tavuk dürüm|Tavuk dürüm (sade)
+Ciğer|Ciğer tava
+Midye|Midye dolma
+Ezogelin|Ezogelin çorbası
+Sebze çorbası|Sebze çorbası (parçalı)
+Smoothie|Smoothie (muzlu)
+Sebze yemeği|Türlü
+Tavuk baget|Fırında tavuk baget
+Et şiş|Dana şiş
+Kıyma|Dana kıyma (yağsız, pişmiş)
+Lor|Lor peyniri
+Haşlanmış mısır|Mısır (haşlama)
+Kraker|Kraker (sade)
+Meyan|Meyan kökü şerbeti
+Meyan kökü|Meyan kökü şerbeti
 Efes|Efes Pilsen
 Tuborg|Tuborg Gold
 Bomonti|Bomonti Filtresiz

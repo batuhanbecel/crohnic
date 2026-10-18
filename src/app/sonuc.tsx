@@ -3,6 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Image, View } from 'react-native';
 import { Mascot, type Mood } from '../components/Mascot';
+import { MedNotes, medNotesFor } from '../components/MedNotes';
 import { Button, Card, Icon, Row, Screen, T, Tap, VERDICT_UI, VerdictBadge } from '../components/ui';
 import type { MealAnalysis, MenuAnalysis } from '../lib/ai';
 import { useApp } from '../lib/app-state';
@@ -11,6 +12,7 @@ import { afterMealSaved } from '../lib/reminders';
 import { TAGS, findFoodByName, normalizeName, type Tag, type Verdict } from '../lib/foods';
 import { savePhoto } from '../lib/photos';
 import { palette, radius, surface, type } from '../lib/theme';
+import { medHits, medLine } from '../lib/med-food';
 import { statsByName, type PersonalStat } from '../lib/tolerance';
 
 const MOOD: Record<Verdict, Mood> = { iyi: 'catalla', dikkat: 'dusunuyor', riskli: 'agri' };
@@ -141,6 +143,8 @@ function MealResult({ a, photo, foodId }: { a: MealAnalysis; photo: string | nul
           </View>
         ) : null}
       </Card>
+
+      <MedNotes notes={medNotesFor([{ name: [a.dish, ...a.ingredients].join(' '), tags: a.tags }])} />
 
       <PersonalNote stat={personal(a.dish, foodId)} />
 
@@ -293,6 +297,13 @@ function MenuResult({ a }: { a: MenuAnalysis }) {
                       {d.reason}
                     </T>
                   ) : null}
+                  {medHits({ name: d.name, tags: d.tags })
+                    .filter((h) => h.level !== 'bilgi')
+                    .map((h) => (
+                      <T key={h.id} v="caption" color={h.level === 'kacin' ? palette.bad : palette.warn} style={{ fontWeight: '700' }}>
+                        {medLine(h)}
+                      </T>
+                    ))}
                   {stt?.n ? (
                     <T v="caption" color={palette.lettuceDeep}>
                       {stt.n} kez yemişsin, {stt.bad + stt.mild ? `${stt.bad + stt.mild} kez dokunmuş` : 'hep iyi gelmiş'}
