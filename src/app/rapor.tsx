@@ -87,7 +87,7 @@ export default function Report() {
             <Stat label="İlaç uyumu" value={s.adherence != null ? `%${Math.round(s.adherence * 100)}` : '–'} />
           </Row>
           <T v="small" color={palette.inkSoft} style={{ paddingHorizontal: 4 }}>
-            {s.loggedDays} günde kayıt var. Raporda günlük seyir grafiği, Bristol dağılımı, semptomlar, tahliller ve kilo, ilaçlar, olası tetikleyiciler, notların ve gün gün ne yediğin ile nasıl geldiği yer alır.
+            {s.loggedDays} günde kayıt var. Raporda günlük seyir grafiği, haftalık aktivite skoru, Bristol dağılımı, semptomlar ve ağrının yeri, tahliller ve kilo, ilaçlar, olası tetikleyiciler, notların ve gün gün ne yediğin ile nasıl geçtiği yer alır.
           </T>
         </View>
       ) : null}

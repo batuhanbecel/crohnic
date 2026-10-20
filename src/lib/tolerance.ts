@@ -99,13 +99,17 @@ function reasonFor(t: Tag) {
 }
 
 /** General verdict from tags and phase, adjusted by personal factors and per-tag history. */
-export function generalVerdict(tags: Tag[], phase: Phase): { verdict: Verdict; reasons: string[] } {
+export function generalVerdict(tags: Tag[], phase: Phase): { verdict: Verdict; reasons: string[]; summary: string } {
   // rounded so 0.3 + 0.6 lands on the 0.9 boundary instead of 0.8999…
   const score = Math.round(tags.reduce((s, t) => s + weight(t, phase), 0) * 100) / 100;
   const verdict: Verdict = score < 0.9 ? 'iyi' : score < 2 ? 'dikkat' : 'riskli';
-  const reasons = [...tags].sort((a, b) => weight(b, phase) - weight(a, phase)).map(reasonFor);
+  const sorted = [...tags].sort((a, b) => weight(b, phase) - weight(a, phase));
+  const reasons = sorted.map(reasonFor);
   if (!reasons.length) reasons.push('Bilinen bir tetikleyici içermiyor');
-  return { verdict, reasons };
+  // one line under "Uygun" shouldn't read like a warning: a small risk becomes "in moderation"
+  const small = verdict === 'iyi' && sorted.length > 0 && weight(sorted[0], phase) >= 0.3;
+  const summary = small ? `Ölçülü tüket: ${reasons[0].charAt(0).toLocaleLowerCase('tr-TR')}${reasons[0].slice(1)}` : reasons[0];
+  return { verdict, reasons, summary };
 }
 
 type Counts = { n: number; good: number; mild: number; bad: number };
@@ -303,7 +307,7 @@ export function assessFood(food: Food, phase: Phase, meals?: Meal[], stats?: Ret
   const g = generalVerdict(food.tags, phase);
   const map = stats ?? (meals ? statsByName(meals) : nameHistory);
   const stat = map.get(food.id) ?? map.get(normalizeName(food.name));
-  const base: FoodAssessment = { verdict: g.verdict, general: g.verdict, personal: null, stat, reasons: g.reasons, confidence: 'genel', driver: 'genel', why: g.reasons[0] };
+  const base: FoodAssessment = { verdict: g.verdict, general: g.verdict, personal: null, stat, reasons: g.reasons, confidence: 'genel', driver: 'genel', why: g.summary };
   // tobacco harms over months, not hours: how one cigarette felt never makes it "iyi"
   if (food.tags.includes('sigara') || !stat?.n) return withMeds(base, food);
   const p = personalFor(stat, phase, g.verdict);

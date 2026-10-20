@@ -36,7 +36,8 @@ export function slotAt(ms: number): MealSlot {
   if (m >= 4 * 60 && m < 11 * 60) return 'kahvalti';
   if (m >= 11 * 60 && m < 15 * 60) return 'ogle';
   if (m >= 15 * 60 && m < 17 * 60) return 'ara';
-  if (m >= 17 * 60 && m < 22 * 60) return 'aksam';
+  // dinner at 22:30 is still dinner in Turkey; after 23:00 it's a late-night bite
+  if (m >= 17 * 60 && m < 23 * 60) return 'aksam';
   return 'gece';
 }
 

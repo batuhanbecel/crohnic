@@ -17,7 +17,6 @@ function Torso() {
         stroke={palette.hairline}
         strokeWidth={2}
       />
-      <Path d="M136 125 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0" fill={palette.inkFaint} />
     </Svg>
   );
 }

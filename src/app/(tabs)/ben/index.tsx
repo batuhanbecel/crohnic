@@ -332,7 +332,7 @@ export default function Insights() {
               </T>
               <Tap onPress={() => router.push('/hafta')} hitSlop={8}>
                 <T v="small" color={palette.lettuceDeep} style={{ fontWeight: '700' }}>
-                  Bu hafta
+                  Bu hafta ›
                 </T>
               </Tap>
             </Row>
@@ -342,7 +342,7 @@ export default function Insights() {
                   <T v="caption" color={palette.inkSoft}>
                     {w.n}
                   </T>
-                  <View style={{ width: '100%', height: Math.max(4, Math.min(1, w.n / PLANT_GOAL) * 50), borderRadius: 6, backgroundColor: w.n >= PLANT_GOAL ? palette.good : palette.lettuce }} />
+                  <View style={{ width: '100%', height: w.n ? Math.max(8, Math.min(1, w.n / PLANT_GOAL) * 56) : 4, borderRadius: 6, backgroundColor: !w.n ? surface.well : w.n >= PLANT_GOAL ? palette.good : palette.lettuce }} />
                   <T v="caption" color={palette.inkFaint} style={{ fontSize: 10 }}>
                     {i === 3 ? 'bu hafta' : `${3 - i} hf önce`}
                   </T>

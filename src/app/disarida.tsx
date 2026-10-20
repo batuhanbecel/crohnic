@@ -155,9 +155,11 @@ export default function EatingOut() {
       >
         <Card style={{ padding: 12, gap: 4, alignItems: 'center' }}>
           <Text style={{ fontSize: 26 }}>{b.emoji}</Text>
-          <T v="callout" style={{ fontWeight: '700', textAlign: 'center' }} numberOfLines={1} adjustsFontSizeToFit>
-            {b.name}
-          </T>
+          <View style={{ minHeight: 44, justifyContent: 'center' }}>
+            <T v="callout" style={{ fontWeight: '700', textAlign: 'center' }} numberOfLines={2}>
+              {b.name}
+            </T>
+          </View>
           <T v="caption" color={good ? palette.good : palette.inkSoft} style={{ fontWeight: '700' }}>
             {good ? `${good} uygun` : `${rows.length} ürün`}
           </T>
@@ -174,7 +176,7 @@ export default function EatingOut() {
           {`Zinciri seç, menüsünü ${ctx.phase === 'Atak' ? 'atak' : 'remisyon'} dönemine${ctx.extras.length ? `, ${ctx.extras.join(', ').toLocaleLowerCase('tr')}` : ''} ve kayıtlarına göre sıralayayım.`}
         </T>
       </Row>
-      <TextInput value={q} onChangeText={setQ} placeholder="Zincir ara: ör. Burger King" placeholderTextColor={palette.inkFaint} style={st.input} autoCorrect={false} />
+      <TextInput value={q} onChangeText={setQ} placeholder="Zincir ara: ör. Burger King" placeholderTextColor={palette.inkFaint} style={[st.input, { backgroundColor: surface.card }]} autoCorrect={false} spellCheck={false} />
       {(['restoran', 'kafe'] as const).map((k) => {
         const items = list.filter((b) => b.kind === k);
         if (!items.length) return null;

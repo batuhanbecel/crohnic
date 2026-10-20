@@ -1,4 +1,4 @@
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { SLOT_SHORT, SLOTS, type MealSlot } from '../lib/meal-slot';
 import { palette } from '../lib/theme';
 import { Chip, Row, Segmented, T, Tap } from './ui';
@@ -43,11 +43,11 @@ export function MealDetails({
             </Tap>
           )}
         </Row>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {SLOTS.map((s) => (
             <Chip key={s} label={SLOT_SHORT[s]} active={slot === s} onPress={() => onSlot(s)} />
           ))}
-        </ScrollView>
+        </View>
       </View>
       <View style={{ gap: 8 }}>
         <T v="h3">Porsiyon</T>

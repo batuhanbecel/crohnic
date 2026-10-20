@@ -341,7 +341,7 @@ export const BRANDS: Brand[] = [
   { name: 'Koska', emoji: '🍯', kind: 'kafe' },
 ];
 
-const BRAND_FOODS = new Map(BRANDS.map((b) => [b.name, FOODS.filter((f) => f.name.startsWith(`${b.name} `))]));
+const BRAND_FOODS = new Map(BRANDS.map((b) => [b.name, FOODS.filter((f) => f.name === b.name || f.name.startsWith(`${b.name} `))]));
 
 /** The chain's items in the food list. */
 export function brandFoods(brand: string) {
