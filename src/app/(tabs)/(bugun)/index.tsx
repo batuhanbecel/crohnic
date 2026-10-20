@@ -219,7 +219,7 @@ export default function Home() {
   const dismissFactors = async (open: boolean) => {
     await db.setSetting(sql, 'factors_seen', '1');
     setFactorsSeen(true);
-    if (open) router.push('/ayarlar');
+    if (open) router.push('/durumlar');
   };
 
   const addWater = async (delta: 1 | -1) => {

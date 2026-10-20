@@ -677,3 +677,85 @@ export const st = StyleSheet.create({
     color: palette.ink,
   },
 });
+
+/**
+ * iOS-style grouped list: an optional small heading, rows in one card separated by hairlines,
+ * and an optional footnote. Keeps settings-like screens short and scannable.
+ */
+export function ListGroup({ title, footer, children }: { title?: string; footer?: string; children: React.ReactNode }) {
+  const rows = React.Children.toArray(children).filter(Boolean);
+  return (
+    <View style={{ gap: 6 }}>
+      {title ? (
+        <T v="caption" color={palette.inkSoft} style={{ paddingHorizontal: 6, letterSpacing: 0.4, fontWeight: '700' }}>
+          {title.toLocaleUpperCase('tr-TR')}
+        </T>
+      ) : null}
+      <Card style={{ paddingVertical: 2, paddingHorizontal: 14, gap: 0 }}>
+        {rows.map((r, i) => (
+          <View key={i}>
+            {i > 0 ? <View style={{ height: 1, backgroundColor: palette.hairline, marginLeft: 44 }} /> : null}
+            {r}
+          </View>
+        ))}
+      </Card>
+      {footer ? (
+        <T v="caption" color={palette.inkFaint} style={{ paddingHorizontal: 6, fontWeight: '400' }}>
+          {footer}
+        </T>
+      ) : null}
+    </View>
+  );
+}
+
+/** One row of a ListGroup: icon, title (and a line under it), a value on the right, a chevron. */
+export function ListRow({
+  icon,
+  color = palette.lettuceDeep,
+  title,
+  sub,
+  value,
+  onPress,
+  destructive,
+  external,
+  right,
+}: {
+  icon: SymbolName;
+  color?: string;
+  title: string;
+  sub?: string;
+  value?: string;
+  onPress?: () => void;
+  destructive?: boolean;
+  external?: boolean;
+  /** a control instead of the chevron (a switch) */
+  right?: React.ReactNode;
+}) {
+  const body = (
+    <Row gap={12} style={{ minHeight: 52, paddingVertical: 8 }}>
+      <IconBubble name={icon} color={destructive ? palette.bad : color} dim={32} />
+      <View style={{ flex: 1, gap: 1 }}>
+        <T v="callout" color={destructive ? palette.bad : palette.ink} numberOfLines={1}>
+          {title}
+        </T>
+        {sub ? (
+          <T v="small" color={palette.inkSoft} numberOfLines={2}>
+            {sub}
+          </T>
+        ) : null}
+      </View>
+      {value ? (
+        <T v="small" color={palette.inkSoft} numberOfLines={1} style={{ maxWidth: '45%', textAlign: 'right' }}>
+          {value}
+        </T>
+      ) : null}
+      {right ?? (onPress ? <Icon name={external ? 'arrow.up.right' : 'chevron.right'} size={13} color={palette.inkFaint} fallback={external ? '↗' : '›'} /> : null)}
+    </Row>
+  );
+  if (!onPress) return body;
+  return (
+    <Tap onPress={onPress} accessibilityRole={external ? 'link' : 'button'} accessibilityLabel={[title, value].filter(Boolean).join(', ')}>
+      {body}
+    </Tap>
+  );
+}
