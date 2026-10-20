@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import type { SQLiteDatabase } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -7,6 +8,8 @@ import { analyze, prepareImage, type Mode } from './ai';
 import { useApp } from './app-state';
 import * as db from './db';
 import { medContextForAI } from './med-food';
+import { hbiBand } from './hbi';
+import { areasText } from './pain-map';
 import { hasLactose, hasStoma, hasStricture, historyForAI } from './tolerance';
 
 export function useAnalyze() {
@@ -24,22 +27,8 @@ export function useAnalyze() {
   }, [app.ai]);
 
   const context = useCallback(async () => {
-    const [rated, symptoms, bowel] = await Promise.all([db.allRatedMeals(sql), db.listSymptoms(sql, 3), db.listBowel(sql, 3)]);
-    const dayAgo = Date.now() - 86400000;
-    const s = symptoms.find((x) => x.at >= dayAgo);
-    const b = bowel.find((x) => x.at >= dayAgo);
-    const recent = [
-      s ? `Son 24 saatte ağrı ${s.pain}/5, şişkinlik ${s.bloating}/5, gaz ${s.gas}/5` : null,
-      b ? `Son tuvalet Bristol tip ${b.bristol}${b.blood ? ', kan var' : ''}` : null,
-      hasStricture() ? 'Bağırsakta bilinen darlık (striktür) var: posalı ve lifli yiyeceklerde temkinli ol' : null,
-      hasStoma() ? 'İleostomisi var: tıkanma riskine karşı lifli, kabuklu ve posalı yiyeceklerde temkinli ol' : null,
-      hasLactose() ? 'Laktoz intoleransı var: süt, krema ve sütlü tatlıları riskli say; yoğurt, kefir ve eski peynir genelde tolere edilir' : null,
-      // only the medicines switched on in Sana özel durumlar
-      medContextForAI(),
-    ]
-      .filter(Boolean)
-      .join('. ');
-    return { history: historyForAI(rated), recent: recent || undefined };
+    const rated = await db.allRatedMeals(sql);
+    return { history: historyForAI(rated), recent: (await buildRecent(sql)) || undefined };
   }, [sql]);
 
   const run = useCallback(
@@ -99,4 +88,28 @@ export function useAnalyze() {
   );
 
   return { busy, fromPhoto, byName, hasAi: !!app.ai };
+}
+
+/**
+ * The "Son durum" line sent with every AI request: the last day's symptoms (and where it hurt),
+ * the latest weekly score, personal factors and the medicines switched on.
+ */
+export async function buildRecent(sql: SQLiteDatabase) {
+  const [symptoms, bowel, hbi] = await Promise.all([db.listSymptoms(sql, 3), db.listBowel(sql, 3), db.listHbi(sql, 1)]);
+  const dayAgo = Date.now() - 86400000;
+  const s = symptoms.find((x) => x.at >= dayAgo);
+  const b = bowel.find((x) => x.at >= dayAgo);
+  const h = hbi[0] && Date.now() - hbi[0].at < 14 * 86400000 ? hbi[0] : null;
+  return [
+    s ? `Son 24 saatte ağrı ${s.pain}/5${areasText(s.areas) ? ` (${areasText(s.areas)})` : ''}, şişkinlik ${s.bloating}/5, gaz ${s.gas}/5` : null,
+    b ? `Son tuvalet Bristol tip ${b.bristol}${b.blood ? ', kan var' : ''}` : null,
+    h ? `Haftalık aktivite skoru (Harvey-Bradshaw) ${h.score}: ${hbiBand(h.score).label.toLocaleLowerCase('tr')}` : null,
+    hasStricture() ? 'Bağırsakta bilinen darlık (striktür) var: posalı ve lifli yiyeceklerde temkinli ol' : null,
+    hasStoma() ? 'İleostomisi var: tıkanma riskine karşı lifli, kabuklu ve posalı yiyeceklerde temkinli ol' : null,
+    hasLactose() ? 'Laktoz intoleransı var: süt, krema ve sütlü tatlıları riskli say; yoğurt, kefir ve eski peynir genelde tolere edilir' : null,
+    // only the medicines switched on in Sana özel durumlar
+    medContextForAI(),
+  ]
+    .filter(Boolean)
+    .join('. ');
 }

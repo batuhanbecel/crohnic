@@ -82,6 +82,18 @@ export default function FoodList() {
           <Icon name="info.circle" size={13} color={palette.inkFaint} fallback="ⓘ" />
         </Row>
       </Tap>
+      <Tap onPress={() => router.push('/disarida')} accessibilityRole="button">
+        <Row gap={10} style={{ backgroundColor: palette.apricotSoft, borderRadius: radius.md, paddingVertical: 10, paddingHorizontal: 12 }}>
+          <Text style={{ fontSize: 18 }}>🍔</Text>
+          <T v="callout" style={{ flex: 1, fontWeight: '700' }}>
+            Dışarıda ne yesem?
+          </T>
+          <T v="small" color={palette.inkSoft}>
+            Zincir menüleri
+          </T>
+          <Icon name="chevron.right" size={12} color={palette.inkFaint} fallback="›" />
+        </Row>
+      </Tap>
       <View style={{ gap: 8 }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -18 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 18 }}>
           {filters.map((x) => (

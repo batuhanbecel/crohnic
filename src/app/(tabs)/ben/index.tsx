@@ -3,13 +3,18 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useMemo, useState } from 'react';
 import { ActionSheetIOS, Alert, Platform, View } from 'react-native';
 import { bristolTone } from '../../../components/bristol';
+import { HbiTrend } from '../../../components/HbiTrend';
 import { Mascot } from '../../../components/Mascot';
+import { PainMap } from '../../../components/PainMap';
 import { Card, Empty, Icon, Row, Screen, SectionTitle, T, Tap } from '../../../components/ui';
 import { useApp } from '../../../lib/app-state';
 import { dayKey, now, timeLabel } from '../../../lib/dates';
 import * as db from '../../../lib/db';
 import { TAGS } from '../../../lib/foods';
-import { flareDaysBetween, lifestyleEffects, phasePeriods, suspectFoods, type PhasePeriod } from '../../../lib/insights';
+import { clockLabel, flareDaysBetween, lifestyleEffects, mealTiming, phasePeriods, suspectFoods, type PhasePeriod } from '../../../lib/insights';
+import { hbiDue, weekStart } from '../../../lib/hbi';
+import { areaCounts } from '../../../lib/pain-map';
+import { PLANT_GOAL, plantsOf } from '../../../lib/plants';
 import { onTint, palette, radius, surface, type } from '../../../lib/theme';
 import { foodPatterns, triggerInsights, type FoodPattern } from '../../../lib/tolerance';
 
@@ -30,10 +35,12 @@ export default function Insights() {
   const [daily, setDaily] = useState<db.Daily[]>([]);
   const [phaseLog, setPhaseLog] = useState<{ phase: 'remisyon' | 'atak'; started_at: number }[]>([]);
   const [loadedAt, setLoadedAt] = useState(0);
+  const [hbiRows, setHbiRows] = useState<db.HbiRow[]>([]);
 
   const load = useCallback(() => {
-    Promise.all([db.allRatedMeals(sql), db.listMeals(sql, 600), db.listBowel(sql, 600), db.listSymptoms(sql, 600), db.listDaily(sql, 120), db.listPhases(sql)]).then(([r, m, b, s, d, ph]) => {
+    Promise.all([db.allRatedMeals(sql), db.listMeals(sql, 600), db.listBowel(sql, 600), db.listSymptoms(sql, 600), db.listDaily(sql, 120), db.listPhases(sql), db.listHbi(sql, 26)]).then(([r, m, b, s, d, ph, h]) => {
       setPhaseLog(ph);
+      setHbiRows(h);
       setRated(r);
       setAllMeals(m);
       setBowel(b);
@@ -61,6 +68,17 @@ export default function Insights() {
   const periods = useMemo(() => phasePeriods(phaseLog, loadedAt || 0), [phaseLog, loadedAt]);
   const lifestyle = useMemo(() => lifestyleEffects(daily, symptoms, bowel, allMeals), [daily, symptoms, bowel, allMeals]);
   const foods = useMemo(() => foodPatterns(rated), [rated]);
+  const timing = useMemo(() => mealTiming(allMeals, bowel, (loadedAt || 0) - 60 * 86400000), [allMeals, bowel, loadedAt]);
+  const painAreas = useMemo(() => areaCounts(symptoms.filter((s) => s.at >= (loadedAt || 0) - 30 * 86400000)), [symptoms, loadedAt]);
+  // distinct plants in each of the last four weeks, oldest first
+  const plantWeeks = useMemo(() => {
+    if (!loadedAt) return [];
+    const ws = weekStart(loadedAt);
+    return [3, 2, 1, 0].map((i) => {
+      const from = ws - i * 7 * 86400000;
+      return { from, n: plantsOf(allMeals.filter((m) => m.eaten_at >= from && m.eaten_at < from + 7 * 86400000 && !db.isTobacco(m)).map((m) => m.name)).length };
+    });
+  }, [allMeals, loadedAt]);
 
   const last14 = useMemo(() => {
     const days: { key: string; label: string; count: number; bristol: number | null; pain: number | null }[] = [];
@@ -103,6 +121,7 @@ export default function Insights() {
       <Stack.Screen
         options={{
           unstable_headerRightItems: () => [
+            { type: 'button', label: 'Haftalık özet', icon: { type: 'sfSymbol', name: 'calendar' }, onPress: () => router.push('/hafta') },
             { type: 'button', label: 'Doktor raporu', icon: { type: 'sfSymbol', name: 'doc.text' }, onPress: () => router.push('/rapor') },
           ],
         }}
@@ -124,6 +143,8 @@ export default function Insights() {
       </Card>
 
       {periods.length ? <PhaseHistory periods={periods} at={loadedAt} onDelete={deletePeriod} /> : null}
+
+      <HbiTrend rows={hbiRows} due={!!loadedAt && hbiDue(loadedAt, hbiRows) || (!!loadedAt && !hbiRows.length)} />
 
       {!enough ? (
         <Empty art={<Mascot mood="arastirma" size={100} />} title="Biraz daha kayıt lazım" text={`4 öğünün nasıl geçtiğini yazınca tetikleyicilerini göstermeye başlarım. Şu an ${rated.length} tane var.`} />
@@ -190,6 +211,77 @@ export default function Insights() {
         </>
       ) : null}
 
+      {painAreas.size ? (
+        <>
+          <SectionTitle title="Ağrı haritası, son 30 gün" />
+          <Card style={{ gap: 10 }}>
+            <PainMap counts={painAreas} />
+            {painAreas.get('sag_alt') && [...painAreas.entries()].sort((a, b) => b[1] - a[1])[0][0] === 'sag_alt' ? (
+              <T v="small" color={palette.inkSoft}>
+                Ağrın en çok sağ altta. Crohn’un en sık yerleştiği ince bağırsak sonu orada; kontrolde doktoruna bu haritayı göster.
+              </T>
+            ) : null}
+          </Card>
+        </>
+      ) : null}
+
+      {timing.first != null && timing.days >= 5 ? (
+        <>
+          <SectionTitle title="Öğün saatleri" />
+          <Card style={{ gap: 12 }}>
+            <Row gap={18}>
+              <View>
+                <T v="title">{clockLabel(timing.first)}</T>
+                <T v="caption" color={palette.inkSoft}>
+                  ilk öğün, ortalama
+                </T>
+              </View>
+              <View>
+                <T v="title">{clockLabel(timing.last!)}</T>
+                <T v="caption" color={palette.inkSoft}>
+                  son öğün, ortalama
+                </T>
+              </View>
+            </Row>
+            {timing.late && timing.early ? (
+              <View style={{ gap: 8 }}>
+                <Row gap={10}>
+                  <T v="small" style={{ width: 150 }} numberOfLines={1}>
+                    21:00 sonrası yediğinde
+                  </T>
+                  <View style={{ flex: 1 }}>
+                    <Bar pct={timing.late.rate} color={palette.bad} />
+                  </View>
+                  <T v="small" color={palette.inkSoft} style={{ width: 40, textAlign: 'right' }}>
+                    %{Math.round(timing.late.rate * 100)}
+                  </T>
+                </Row>
+                <Row gap={10}>
+                  <T v="small" style={{ width: 150 }} numberOfLines={1}>
+                    Daha erken yediğinde
+                  </T>
+                  <View style={{ flex: 1 }}>
+                    <Bar pct={timing.early.rate} color={palette.good} />
+                  </View>
+                  <T v="small" color={palette.inkSoft} style={{ width: 40, textAlign: 'right' }}>
+                    %{Math.round(timing.early.rate * 100)}
+                  </T>
+                </Row>
+                <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
+                  {timing.late.rate >= timing.early.rate + 0.2
+                    ? 'Geç yediğin gecelerde tuvalete daha sık kalkıyorsun. Son öğünü biraz öne çekmeyi dene.'
+                    : 'Gece 23:00–07:00 arası tuvalete kalktığın gecelerin oranı. Belirgin bir fark yok.'}
+                </T>
+              </View>
+            ) : (
+              <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
+                Geç ve erken yediğin en az 4’er gece birikince gece tuvaletine etkisini de gösteririm.
+              </T>
+            )}
+          </Card>
+        </>
+      ) : null}
+
       {lifestyle.length ? (
         <>
           <SectionTitle title="Stres ve uyku" />
@@ -229,6 +321,37 @@ export default function Insights() {
       ) : daily.length ? null : (
         <Empty art={<Mascot mood="uyku" size={100} />} title="Stres ve uyku" text="Akşamları “Bugün nasıldı” kaydını doldurursan, stres ve uykunun şikayetlerinle ilişkisini burada gösteririm." />
       )}
+
+      {plantWeeks.some((w) => w.n) ? (
+        <>
+          <SectionTitle title="Bitki çeşitliliği" />
+          <Card style={{ gap: 10 }}>
+            <Row style={{ justifyContent: 'space-between' }}>
+              <T v="small" color={palette.inkSoft} style={{ flex: 1 }}>
+                {app.phase === 'atak' ? 'Haftada kaç farklı bitki yedin. Atakta hedef yok.' : `Haftada kaç farklı bitki yedin. ${PLANT_GOAL} iyi bir hafta.`}
+              </T>
+              <Tap onPress={() => router.push('/hafta')} hitSlop={8}>
+                <T v="small" color={palette.lettuceDeep} style={{ fontWeight: '700' }}>
+                  Bu hafta ›
+                </T>
+              </Tap>
+            </Row>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 80, gap: 8 }} accessible accessibilityLabel={`Son dört hafta: ${plantWeeks.map((w) => w.n).join(', ')} farklı bitki`}>
+              {plantWeeks.map((w, i) => (
+                <View key={w.from} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
+                  <T v="caption" color={palette.inkSoft}>
+                    {w.n}
+                  </T>
+                  <View style={{ width: '100%', height: w.n ? Math.max(8, Math.min(1, w.n / PLANT_GOAL) * 56) : 4, borderRadius: 6, backgroundColor: !w.n ? surface.well : w.n >= PLANT_GOAL ? palette.good : palette.lettuce }} />
+                  <T v="caption" color={palette.inkFaint} style={{ fontSize: 10 }}>
+                    {i === 3 ? 'bu hafta' : `${3 - i} hf önce`}
+                  </T>
+                </View>
+              ))}
+            </View>
+          </Card>
+        </>
+      ) : null}
 
       {foods.dokunan.length || foods.bazen.length || foods.dokunmayan.length ? (
         <>

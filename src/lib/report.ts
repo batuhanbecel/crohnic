@@ -1,10 +1,13 @@
-import type { Daily, Lab, Med, MedLog, Meal, BowelLog, SymptomLog } from './db';
+import type { Daily, Lab, Med, MedLog, Meal, BowelLog, SymptomLog, HbiRow } from './db';
 import { LAB_KINDS, fmtLab } from './labs';
-import { dateLabel, isoDay, startOfDay } from './dates';
+import { dateLabel, fromIsoDay, isoDay, startOfDay } from './dates';
 import { TAGS, type Phase } from './foods';
 import { lifestyleEffects, suspectFoods } from './insights';
 import { adherence, scheduleLabel } from './meds';
 import { foodPatterns, triggerInsights } from './tolerance';
+import { SLOT_SHORT, slotsFor } from './meal-slot';
+import { COMPLICATIONS, PAIN, WELLBEING, hbiBand, parseComplications, weekLabel } from './hbi';
+import { areaCounts, areaLabel } from './pain-map';
 
 export type ReportInput = {
   name: string;
@@ -19,6 +22,8 @@ export type ReportInput = {
   daily: Daily[];
   /** all lab results (the report shows the window plus the value before it, for context) */
   labs?: Lab[];
+  /** weekly activity scores (all; the report shows the window) */
+  hbi?: HbiRow[];
 };
 
 const DAY = 86400000;
@@ -116,8 +121,9 @@ function diaryHtml(r: ReportInput) {
         const k = m.group_id ?? `m${m.id}`;
         sittings.set(k, [...(sittings.get(k) ?? []), m]);
       }
-      const lines = [...sittings.values()]
-        .map((items) => {
+      const names = slotsFor([...sittings.entries()].map(([key, items]) => ({ key, eaten_at: items[0].eaten_at, slot: items[0].slot })));
+      const lines = [...sittings.entries()]
+        .map(([key, items]) => {
           const food = items.filter((m) => !isTobacco(m));
           const smoke = items.length - food.length;
           const reaction = food.find((m) => m.reaction != null)?.reaction;
@@ -128,7 +134,8 @@ function diaryHtml(r: ReportInput) {
             : reaction != null
               ? `<span class="rx" style="color:${REACTION[reaction].color}"><i style="background:${REACTION[reaction].color}"></i>${REACTION[reaction].label}</span>`
               : '<span class="rx faint"><i class="o"></i>işaretlenmedi</span>';
-          return `<div class="meal"><span class="t">${hhmm(items[0].eaten_at)}</span><span class="w">${what}${note ? ` <span class="soft">“${esc(note)}”</span>` : ''}</span>${mark}</div>`;
+          const slot = food.length ? names.get(key) : undefined;
+          return `<div class="meal"><span class="t">${hhmm(items[0].eaten_at)}</span><span class="w">${slot ? `<span class="soft">${SLOT_SHORT[slot]}:</span> ` : ''}${what}${note ? ` <span class="soft">“${esc(note)}”</span>` : ''}</span>${mark}</div>`;
         })
         .join('');
       const n = d.bowel.length;
@@ -174,6 +181,33 @@ function labsHtml(r: ReportInput) {
   return `<div class="avoid"><h2>Tahliller, kilo ve genel durum</h2>
   ${rows ? `<table><tr><th>Ölçüm</th><th class="num">Son değer</th><th>Değişim</th><th>Dönem içindeki değerler</th></tr>${rows}</table>` : ''}
   ${extra.length ? `<p class="soft" style="margin-top:6px">${extra.join('. ')}.</p>` : ''}</div>`;
+}
+
+/** "Ağrı yerleri: sağ alt 6, göbek 2" for the window; nothing when no place was marked. */
+function painAreasLine(r: ReportInput) {
+  const counts = areaCounts(r.symptoms.filter((x) => x.at >= r.from && x.at < r.to));
+  if (!counts.size) return '';
+  const parts = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${esc(areaLabel(k).toLocaleLowerCase('tr'))} ${n}`);
+  return `<p style="margin:6px 0 0"><b>Ağrı yerleri</b> <span class="soft">(hastanın kendi bakışıyla)</span>: ${parts.join(', ')}</p>`;
+}
+
+/** The weekly scores in the window, newest first. */
+function hbiHtml(r: ReportInput) {
+  const rows = (r.hbi ?? []).filter((h) => fromIsoDay(h.week) + 7 * DAY > r.from && fromIsoDay(h.week) < r.to).sort((a, b) => b.week.localeCompare(a.week));
+  if (!rows.length) return '';
+  const label = (keys: string[]) => keys.map((k) => COMPLICATIONS.find((c) => c.key === k)?.label.toLocaleLowerCase('tr') ?? k).join(', ');
+  return `<div class="avoid"><h2>Haftalık aktivite skoru</h2>
+  <table>
+    <tr><th>Hafta</th><th class="num">Skor</th><th>Düzey</th><th>Genel durum</th><th>Ağrı</th><th class="num">Sulu/yumuşak dışkı, gün</th><th>Bağırsak dışı</th></tr>
+    ${rows
+      .map((h) => {
+        const b = hbiBand(h.score);
+        return `<tr><td>${weekLabel(fromIsoDay(h.week))}</td><td class="num"><b>${fmt1(h.score)}</b></td><td style="color:${b.key === 'remisyon' ? C.good : b.key === 'hafif' ? C.warn : C.bad}">${b.label}</td><td>${WELLBEING[h.wellbeing] ?? ''}</td><td>${PAIN[h.pain] ?? ''}</td><td class="num">${fmt1(h.liquid)}</td><td>${esc(label(parseComplications(h))) || '<span class="soft">yok</span>'}</td></tr>`;
+      })
+      .join('')}
+  </table>
+  <p class="soft" style="margin:6px 0 0">Harvey-Bradshaw İndeksi'ne göre hastanın son 7 günü için doldurduğu skor; karın kitlesi maddesi sayılmamıştır. &lt;5 remisyon, 5–7 hafif, 8–16 orta, &gt;16 ağır.</p>
+  </div>`;
 }
 
 export function reportHtml(r: ReportInput) {
@@ -382,9 +416,12 @@ export function reportHtml(r: ReportInput) {
         <tr><td>Gaz</td><td class="num">${avg('gas')}</td><td class="num">${maxOf('gas')}</td></tr>
         <tr><td>Yorgunluk</td><td class="num">${avg('fatigue')}</td><td class="num">${maxOf('fatigue')}</td></tr>
       </table>
+      ${painAreasLine(r)}
       <p class="soft" style="margin:6px 0 0">${r.symptoms.length} semptom kaydı.${stressVals.length ? ` Ortalama stres: ${STRESS[Math.round(stressVals.reduce((a, b) => a + b, 0) / stressVals.length)]}.` : ''}${sleepH.length ? ` Ortalama uyku: ${fmt1(sleepH.reduce((a, b) => a + b, 0) / sleepH.length)} saat.` : ''}</p>
     </div>
   </div>
+
+  ${hbiHtml(r)}
 
   ${labsHtml(r)}
 

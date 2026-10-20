@@ -11,6 +11,7 @@ import { useApp } from '../lib/app-state';
 import { now } from '../lib/dates';
 import * as db from '../lib/db';
 import { palette, radius, soft, surface } from '../lib/theme';
+import { syncReminders } from '../lib/reminders';
 
 export default function Bowel() {
   const sql = useSQLiteContext();
@@ -64,6 +65,8 @@ export default function Bowel() {
     }
     await db.addBowel(sql, { at, bristol: kind, blood: blood ? 1 : 0, urgency: urgency ? 1 : 0, note: note.trim() || null });
     app.bump();
+    // a second watery stool today schedules the "drink water" nudge
+    if (kind >= 6) syncReminders(sql);
     setSaving(false);
     if ((kind >= 6 || blood) && (await db.mealsBefore(sql, at)).length) setAsking(true);
     else router.back();

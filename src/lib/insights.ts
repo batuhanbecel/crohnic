@@ -141,3 +141,68 @@ export function dayStatuses(meals: Meal[], symptoms: SymptomLog[], bowel: BowelL
   for (const d of daily) if (d.feel != null) bump(d.day, d.feel === 0 ? 'bad' : d.feel <= 2 ? 'mid' : 'good');
   return out;
 }
+
+// ---------- meal times ----------
+export type MealTiming = {
+  /** average time of the first and last meal of the day, minutes after midnight */
+  first: number | null;
+  last: number | null;
+  days: number;
+  /** nights after a late dinner (last meal 21:00 or later) vs earlier ones: share with a toilet trip 23:00–07:00 */
+  late: { n: number; rate: number } | null;
+  early: { n: number; rate: number } | null;
+};
+
+const LATE_FROM = 21 * 60;
+
+/** A day runs 04:00 → 04:00, so a 01:00 snack belongs to the evening before. */
+const dayOf = (t: number) => isoDay(t - 4 * H);
+const minutesOf = (t: number) => {
+  const d = new Date(t);
+  const m = d.getHours() * 60 + d.getMinutes();
+  return m < 4 * 60 ? m + 24 * 60 : m;
+};
+
+/**
+ * When the user eats, and whether late dinners go with getting up at night. A night only
+ * counts when there's a toilet log within the next day and a half (someone who doesn't log the
+ * toilet can't show "no night trips"). Needs 4 nights on each side to say anything.
+ */
+export function mealTiming(meals: Meal[], bowel: BowelLog[], since: number): MealTiming {
+  const byDay = new Map<string, { first: number; last: number; lastAt: number }>();
+  for (const m of meals) {
+    if (m.eaten_at < since || m.tags.split(',').includes('sigara')) continue;
+    const k = dayOf(m.eaten_at);
+    const min = minutesOf(m.eaten_at);
+    const cur = byDay.get(k);
+    if (!cur) byDay.set(k, { first: min, last: min, lastAt: m.eaten_at });
+    else {
+      cur.first = Math.min(cur.first, min);
+      if (min > cur.last) {
+        cur.last = min;
+        cur.lastAt = m.eaten_at;
+      }
+    }
+  }
+  const days = [...byDay.values()];
+  const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
+  const late: boolean[] = [];
+  const early: boolean[] = [];
+  for (const [day, d] of byDay) {
+    const [y, mo, dd] = day.split('-').map(Number);
+    const nightFrom = new Date(y, mo - 1, dd, 23, 0).getTime();
+    const nightTo = new Date(y, mo - 1, dd + 1, 7, 0).getTime();
+    const logged = bowel.some((b) => b.at >= d.lastAt && b.at < d.lastAt + 36 * H);
+    if (!logged || nightTo > Date.now()) continue;
+    const trip = bowel.some((b) => b.at >= Math.max(nightFrom, d.lastAt) && b.at < nightTo);
+    (d.last >= LATE_FROM ? late : early).push(trip);
+  }
+  const rate = (xs: boolean[]) => (xs.length >= 4 ? { n: xs.length, rate: xs.filter(Boolean).length / xs.length } : null);
+  return { first: avg(days.map((d) => d.first)), last: avg(days.map((d) => d.last)), days: days.length, late: rate(late), early: rate(early) };
+}
+
+/** 1290 → "21:30" (minutes after midnight; past 24:00 wraps). */
+export function clockLabel(min: number) {
+  const m = ((min % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+}

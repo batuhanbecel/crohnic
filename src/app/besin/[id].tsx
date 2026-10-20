@@ -16,6 +16,9 @@ import { alternativesFor, assessContext, assessFood, phaseSummary, setTagHistory
 import { MedNotes } from '../../components/MedNotes';
 import { useAnalyze } from '../../lib/use-analyze';
 
+/** Home-made dishes: no recipe for a Big Mac, a cola or a pack of crisps. */
+const COOKABLE = /^(Çorba|Et & tavuk|Balık & deniz ürünleri|Sebze yemekleri|Sade sebze & yeşillik|Bakliyat|Pilav & tahıl|Makarna & mantı|Hamur işi & börek|Kahvaltı|Sandviç & tost|Salata & mezeler|Burger, pizza & sokak lezzetleri|Dünya mutfağı|Tatlı)$/;
+
 export default function FoodDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const food = FOOD_BY_ID[id ?? ''];
@@ -98,7 +101,7 @@ export default function FoodDetail() {
             <Text style={{ fontSize: 44 }}>{food.emoji}</Text>
             <T v="title">{food.name}</T>
             <Row gap={8}>
-              <VerdictBadge verdict={a.verdict} />
+              <VerdictBadge verdict={a.verdict} inline />
               <T v="caption" color={palette.inkSoft}>
                 {food.cat}
               </T>
@@ -174,7 +177,7 @@ export default function FoodDetail() {
               {p === 'atak' ? 'Atakta' : 'Remisyonda'}
               {p === app.phase ? <T v="small" color={palette.inkSoft}>{'  şu an'}</T> : null}
             </T>
-            <VerdictBadge verdict={both[p].verdict} size="sm" />
+            <VerdictBadge verdict={both[p].verdict} size="sm" inline />
           </Row>
         ))}
         {ctx.extras.length || a.stat?.n ? (
@@ -202,7 +205,7 @@ export default function FoodDetail() {
                     </T>
                   ) : null}
                 </View>
-                <VerdictBadge verdict={fa.verdict} size="sm" />
+                <VerdictBadge verdict={fa.verdict} size="sm" inline />
               </Row>
             </Tap>
           ))}
@@ -211,6 +214,9 @@ export default function FoodDetail() {
 
       <View style={{ gap: 8 }}>
         <Button title="Yedim, kaydet" icon="checkmark" onPress={ate} />
+        {hasAi && COOKABLE.test(food.cat) ? (
+          <Button title="Nasıl yaparım?" kind="glass" icon="frying.pan" onPress={() => router.push({ pathname: '/tarif', params: { id: food.id } })} />
+        ) : null}
         {hasAi ? <Button title="Daha ayrıntılı sor" kind="glass" icon="sparkles" onPress={() => byName(food.name, food.id)} /> : null}
       </View>
     </Screen>
