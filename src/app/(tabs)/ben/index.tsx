@@ -6,7 +6,7 @@ import { bristolTone } from '../../../components/bristol';
 import { HbiTrend } from '../../../components/HbiTrend';
 import { Mascot } from '../../../components/Mascot';
 import { PainMap } from '../../../components/PainMap';
-import { Card, Empty, Icon, Row, Screen, SectionTitle, T, Tap } from '../../../components/ui';
+import { Card, Empty, Icon, Row, Screen, SectionTitle, Segmented, T, Tap } from '../../../components/ui';
 import { useApp } from '../../../lib/app-state';
 import { dayKey, now, timeLabel } from '../../../lib/dates';
 import * as db from '../../../lib/db';
@@ -36,6 +36,7 @@ export default function Insights() {
   const [phaseLog, setPhaseLog] = useState<{ phase: 'remisyon' | 'atak'; started_at: number }[]>([]);
   const [loadedAt, setLoadedAt] = useState(0);
   const [hbiRows, setHbiRows] = useState<db.HbiRow[]>([]);
+  const [tab, setTab] = useState<'yemek' | 'vucut' | 'yasam'>('yemek');
 
   const load = useCallback(() => {
     Promise.all([db.allRatedMeals(sql), db.listMeals(sql, 600), db.listBowel(sql, 600), db.listSymptoms(sql, 600), db.listDaily(sql, 120), db.listPhases(sql), db.listHbi(sql, 26)]).then(([r, m, b, s, d, ph, h]) => {
@@ -130,8 +131,8 @@ export default function Insights() {
         Örüntüler
       </T>
 
-      <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
-        <Mascot mood={enough ? 'arastirma' : 'dusunuyor'} size={88} />
+      <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 8, paddingVertical: 8 }}>
+        <Mascot mood={enough ? 'arastirma' : 'dusunuyor'} size={64} />
         <View style={{ flex: 1, gap: 4 }}>
           <T v="caption" color={palette.inkSoft}>
             Son 30 gün
@@ -142,379 +143,408 @@ export default function Insights() {
         </View>
       </Card>
 
-      {periods.length ? <PhaseHistory periods={periods} at={loadedAt} onDelete={deletePeriod} /> : null}
+      <Segmented
+        items={[
+          { key: 'yemek', label: 'Yemek', icon: 'fork.knife' },
+          { key: 'vucut', label: 'Vücut', icon: 'figure.stand' },
+          { key: 'yasam', label: 'Yaşam', icon: 'moon.stars.fill' },
+        ]}
+        value={tab}
+        onChange={setTab}
+      />
 
-      <HbiTrend rows={hbiRows} due={!!loadedAt && hbiDue(loadedAt, hbiRows) || (!!loadedAt && !hbiRows.length)} />
-
-      {!enough ? (
-        <Empty art={<Mascot mood="arastirma" size={100} />} title="Biraz daha kayıt lazım" text={`4 öğünün nasıl geçtiğini yazınca tetikleyicilerini göstermeye başlarım. Şu an ${rated.length} tane var.`} />
-      ) : null}
-
-      {triggers.length ? (
+      {tab === 'yemek' ? (
         <>
-          <SectionTitle title="Olası tetikleyiciler" />
-          <Card style={{ gap: 14 }}>
-            {triggers.slice(0, 6).map((t) => (
-              <View key={t.tag} style={{ gap: 6 }}>
-                <Row style={{ justifyContent: 'space-between' }}>
-                  <T v="h3">{TAGS[t.tag].label}</T>
-                  <T v="small" color={palette.inkSoft}>
-                    {t.stat.n} kayıtta {t.stat.mild + t.stat.bad} kez
-                  </T>
-                </Row>
-                <Bar pct={t.rate} color={t.rate >= 0.75 ? palette.bad : palette.warn} />
-              </View>
-            ))}
-            <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
-              Bu bir ilişki, kesin sonuç değil. Diyetinden bir şey çıkarmadan önce doktorun ya da diyetisyeninle konuş.
+        {!enough ? (
+          <Empty art={<Mascot mood="arastirma" size={100} />} title="Biraz daha kayıt lazım" text={`4 öğünün nasıl geçtiğini yazınca tetikleyicilerini göstermeye başlarım. Şu an ${rated.length} tane var.`} />
+        ) : null}
+
+        {foods.dokunan.length || foods.bazen.length || foods.dokunmayan.length ? (
+          <>
+            <SectionTitle title="Yemekler ve sen" />
+            <FoodGroup
+              title="Dokunanlar"
+              hint="Çoğu zaman ya da tek denemede dokunanlar"
+              items={foods.dokunan}
+              color={palette.bad}
+              right={(x) => `${x.hits}/${x.n}`}
+            />
+            <FoodGroup
+              title="Bazen dokunanlar"
+              hint="Her seferinde değil; porsiyona ve döneme bak"
+              items={foods.bazen}
+              color={palette.warn}
+              right={(x) => `${x.hits}/${x.n}`}
+            />
+            <FoodGroup
+              title="Dokunmayanlar"
+              hint="En az 2 kez yedin, sorun çıkmadı"
+              items={foods.dokunmayan}
+              color={palette.good}
+              right={(x) => `${x.n} kez`}
+            />
+            <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400', paddingHorizontal: 4 }}>
+              Noktalar son kayıtların, en sağdaki en yenisi. Sadece atakta dokunan bir yemek “bazen” sayılır; son iki kayıt da hesaba katılır. Bir kez sorunsuz geçen yemek ikinci kayıtta buraya girer.
             </T>
-          </Card>
-        </>
-      ) : null}
+          </>
+        ) : null}
 
-      {safe.length ? (
-        <>
-          <SectionTitle title="Sorun çıkarmayan içerikler" />
-          <Card style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {safe.slice(0, 8).map((t) => (
-              <View key={t.tag} style={{ backgroundColor: palette.goodSoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
-                <T v="small" color={palette.good} style={type.semibold}>
-                  {TAGS[t.tag].label} · {t.stat.n}
-                </T>
-              </View>
-            ))}
-          </Card>
-        </>
-      ) : null}
-
-      {suspects.foods.length ? (
-        <>
-          <SectionTitle title="Şikayetten önce sık yenenler" />
-          <Card style={{ gap: 14 }}>
-            {suspects.foods.map((f) => (
-              <View key={f.name} style={{ gap: 6 }}>
-                <Row style={{ justifyContent: 'space-between' }}>
-                  <T v="h3" numberOfLines={1} style={{ flex: 1 }}>
-                    {f.name}
-                  </T>
-                  <T v="small" color={palette.inkSoft}>
-                    {f.hit}/{f.n} kez
-                  </T>
-                </Row>
-                <Bar pct={f.rate} color={f.rate >= 0.75 ? palette.bad : palette.warn} />
-              </View>
-            ))}
-            <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
-              Yedikten 2–24 saat sonra ağrı, şişkinlik ya da sulu dışkı kaydettiğin öğünler. Genel ortalaman %{Math.round(suspects.baseline * 100)}.
-            </T>
-          </Card>
-        </>
-      ) : null}
-
-      {painAreas.size ? (
-        <>
-          <SectionTitle title="Ağrı haritası, son 30 gün" />
-          <Card style={{ gap: 10 }}>
-            <PainMap counts={painAreas} />
-            {painAreas.get('sag_alt') && [...painAreas.entries()].sort((a, b) => b[1] - a[1])[0][0] === 'sag_alt' ? (
-              <T v="small" color={palette.inkSoft}>
-                Ağrın en çok sağ altta. Crohn’un en sık yerleştiği ince bağırsak sonu orada; kontrolde doktoruna bu haritayı göster.
-              </T>
-            ) : null}
-          </Card>
-        </>
-      ) : null}
-
-      {timing.first != null && timing.days >= 5 ? (
-        <>
-          <SectionTitle title="Öğün saatleri" />
-          <Card style={{ gap: 12 }}>
-            <Row gap={18}>
-              <View>
-                <T v="title">{clockLabel(timing.first)}</T>
-                <T v="caption" color={palette.inkSoft}>
-                  ilk öğün, ortalama
-                </T>
-              </View>
-              <View>
-                <T v="title">{clockLabel(timing.last!)}</T>
-                <T v="caption" color={palette.inkSoft}>
-                  son öğün, ortalama
-                </T>
-              </View>
-            </Row>
-            {timing.late && timing.early ? (
-              <View style={{ gap: 8 }}>
-                <Row gap={10}>
-                  <T v="small" style={{ width: 150 }} numberOfLines={1}>
-                    21:00 sonrası yediğinde
-                  </T>
-                  <View style={{ flex: 1 }}>
-                    <Bar pct={timing.late.rate} color={palette.bad} />
-                  </View>
-                  <T v="small" color={palette.inkSoft} style={{ width: 40, textAlign: 'right' }}>
-                    %{Math.round(timing.late.rate * 100)}
-                  </T>
-                </Row>
-                <Row gap={10}>
-                  <T v="small" style={{ width: 150 }} numberOfLines={1}>
-                    Daha erken yediğinde
-                  </T>
-                  <View style={{ flex: 1 }}>
-                    <Bar pct={timing.early.rate} color={palette.good} />
-                  </View>
-                  <T v="small" color={palette.inkSoft} style={{ width: 40, textAlign: 'right' }}>
-                    %{Math.round(timing.early.rate * 100)}
-                  </T>
-                </Row>
-                <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
-                  {timing.late.rate >= timing.early.rate + 0.2
-                    ? 'Geç yediğin gecelerde tuvalete daha sık kalkıyorsun. Son öğünü biraz öne çekmeyi dene.'
-                    : 'Gece 23:00–07:00 arası tuvalete kalktığın gecelerin oranı. Belirgin bir fark yok.'}
-                </T>
-              </View>
-            ) : (
+        {triggers.length ? (
+          <>
+            <SectionTitle title="Olası tetikleyiciler" />
+            <Card style={{ gap: 14 }}>
+              {triggers.slice(0, 6).map((t) => (
+                <View key={t.tag} style={{ gap: 6 }}>
+                  <Row style={{ justifyContent: 'space-between' }}>
+                    <T v="h3">{TAGS[t.tag].label}</T>
+                    <T v="small" color={palette.inkSoft}>
+                      {t.stat.n} kayıtta {t.stat.mild + t.stat.bad} kez
+                    </T>
+                  </Row>
+                  <Bar pct={t.rate} color={t.rate >= 0.75 ? palette.bad : palette.warn} />
+                </View>
+              ))}
               <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
-                Geç ve erken yediğin en az 4’er gece birikince gece tuvaletine etkisini de gösteririm.
+                Bu bir ilişki, kesin sonuç değil. Diyetinden bir şey çıkarmadan önce doktorun ya da diyetisyeninle konuş.
               </T>
-            )}
-          </Card>
-        </>
-      ) : null}
+            </Card>
+          </>
+        ) : null}
 
-      {lifestyle.length ? (
-        <>
-          <SectionTitle title="Stres ve uyku" />
-          <Card style={{ gap: 16 }}>
-            {lifestyle.map((e) => (
-              <View key={e.key} style={{ gap: 8 }}>
-                <T v="h3">{e.label}</T>
-                <Row gap={10}>
-                  <T v="small" style={{ width: 150 }} numberOfLines={1}>
-                    {e.highLabel}
-                  </T>
-                  <View style={{ flex: 1 }}>
-                    <Bar pct={e.high} color={palette.bad} />
-                  </View>
-                  <T v="small" color={palette.inkSoft} style={{ width: 40, textAlign: 'right' }}>
-                    %{Math.round(e.high * 100)}
-                  </T>
-                </Row>
-                <Row gap={10}>
-                  <T v="small" style={{ width: 150 }} numberOfLines={1}>
-                    {e.lowLabel}
-                  </T>
-                  <View style={{ flex: 1 }}>
-                    <Bar pct={e.low} color={palette.good} />
-                  </View>
-                  <T v="small" color={palette.inkSoft} style={{ width: 40, textAlign: 'right' }}>
-                    %{Math.round(e.low * 100)}
-                  </T>
-                </Row>
-              </View>
-            ))}
-            <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
-              O gün ya da ertesi gün şikayet kaydettiğin günlerin oranı.
-            </T>
-          </Card>
-        </>
-      ) : daily.length ? null : (
-        <Empty art={<Mascot mood="uyku" size={100} />} title="Stres ve uyku" text="Akşamları “Bugün nasıldı” kaydını doldurursan, stres ve uykunun şikayetlerinle ilişkisini burada gösteririm." />
-      )}
-
-      {plantWeeks.some((w) => w.n) ? (
-        <>
-          <SectionTitle title="Bitki çeşitliliği" />
-          <Card style={{ gap: 10 }}>
-            <Row style={{ justifyContent: 'space-between' }}>
-              <T v="small" color={palette.inkSoft} style={{ flex: 1 }}>
-                {app.phase === 'atak' ? 'Haftada kaç farklı bitki yedin. Atakta hedef yok.' : `Haftada kaç farklı bitki yedin. ${PLANT_GOAL} iyi bir hafta.`}
-              </T>
-              <Tap onPress={() => router.push('/hafta')} hitSlop={8}>
-                <T v="small" color={palette.lettuceDeep} style={{ fontWeight: '700' }}>
-                  Bu hafta ›
-                </T>
-              </Tap>
-            </Row>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 80, gap: 8 }} accessible accessibilityLabel={`Son dört hafta: ${plantWeeks.map((w) => w.n).join(', ')} farklı bitki`}>
-              {plantWeeks.map((w, i) => (
-                <View key={w.from} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
-                  <T v="caption" color={palette.inkSoft}>
-                    {w.n}
-                  </T>
-                  <View style={{ width: '100%', height: w.n ? Math.max(8, Math.min(1, w.n / PLANT_GOAL) * 56) : 4, borderRadius: 6, backgroundColor: !w.n ? surface.well : w.n >= PLANT_GOAL ? palette.good : palette.lettuce }} />
-                  <T v="caption" color={palette.inkFaint} style={{ fontSize: 10 }}>
-                    {i === 3 ? 'bu hafta' : `${3 - i} hf önce`}
+        {safe.length ? (
+          <>
+            <SectionTitle title="Sorun çıkarmayan içerikler" />
+            <Card style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {safe.slice(0, 8).map((t) => (
+                <View key={t.tag} style={{ backgroundColor: palette.goodSoft, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
+                  <T v="small" color={palette.good} style={type.semibold}>
+                    {TAGS[t.tag].label} · {t.stat.n}
                   </T>
                 </View>
               ))}
-            </View>
-          </Card>
-        </>
-      ) : null}
+            </Card>
+          </>
+        ) : null}
 
-      {foods.dokunan.length || foods.bazen.length || foods.dokunmayan.length ? (
-        <>
-          <SectionTitle title="Yemekler ve sen" />
-          <FoodGroup
-            title="Dokunanlar"
-            hint="Çoğu zaman ya da tek denemede dokunanlar"
-            items={foods.dokunan}
-            color={palette.bad}
-            right={(x) => `${x.hits}/${x.n}`}
-          />
-          <FoodGroup
-            title="Bazen dokunanlar"
-            hint="Her seferinde değil; porsiyona ve döneme bak"
-            items={foods.bazen}
-            color={palette.warn}
-            right={(x) => `${x.hits}/${x.n}`}
-          />
-          <FoodGroup
-            title="Dokunmayanlar"
-            hint="En az 2 kez yedin, sorun çıkmadı"
-            items={foods.dokunmayan}
-            color={palette.good}
-            right={(x) => `${x.n} kez`}
-          />
-          <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400', paddingHorizontal: 4 }}>
-            Noktalar son kayıtların, en sağdaki en yenisi. Sadece atakta dokunan bir yemek “bazen” sayılır; son iki kayıt da hesaba katılır. Bir kez sorunsuz geçen yemek ikinci kayıtta buraya girer.
-          </T>
-        </>
-      ) : null}
+        {suspects.foods.length ? (
+          <>
+            <SectionTitle title="Şikayetten önce sık yenenler" />
+            <Card style={{ gap: 14 }}>
+              {suspects.foods.map((f) => (
+                <View key={f.name} style={{ gap: 6 }}>
+                  <Row style={{ justifyContent: 'space-between' }}>
+                    <T v="h3" numberOfLines={1} style={{ flex: 1 }}>
+                      {f.name}
+                    </T>
+                    <T v="small" color={palette.inkSoft}>
+                      {f.hit}/{f.n} kez
+                    </T>
+                  </Row>
+                  <Bar pct={f.rate} color={f.rate >= 0.75 ? palette.bad : palette.warn} />
+                </View>
+              ))}
+              <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
+                Yedikten 2–24 saat sonra ağrı, şişkinlik ya da sulu dışkı kaydettiğin öğünler. Genel ortalaman %{Math.round(suspects.baseline * 100)}.
+              </T>
+            </Card>
+          </>
+        ) : null}
 
-      <SectionTitle title="Tuvalet, son 14 gün" />
-      <Card style={{ gap: 12 }}>
-        <Row gap={18}>
-          <View>
-            <T v="title">{avgPerDay ? avgPerDay.toFixed(1) : '–'}</T>
-            <T v="caption" color={palette.inkSoft}>
-              günde ortalama
-            </T>
-          </View>
-          <View>
-            <T v="title">{monthBowel.filter((b) => b.bristol >= 6).length}</T>
-            <T v="caption" color={palette.inkSoft}>
-              sulu (30 gün)
-            </T>
-          </View>
-          <View>
-            <T v="title">{monthBowel.filter((b) => b.blood).length}</T>
-            <T v="caption" color={palette.inkSoft}>
-              kanlı (30 gün)
-            </T>
-          </View>
-        </Row>
-        <View
-          accessible
-          accessibilityRole="image"
-          accessibilityLabel={`Son 14 günün tuvalet grafiği. ${last14.filter((d) => d.count).length} günde kayıt var, en çok ${Math.max(0, ...last14.map((d) => d.count))} kez. ${last14.filter((d) => d.bristol != null && d.bristol >= 5.5).length} günde ortalama kıvam sulu.`}
-        >
-          <Row style={{ justifyContent: 'space-between' }}>
-            <T v="caption" color={palette.inkFaint}>
-              Günlük sayı (en çok {maxCount})
-            </T>
-            <T v="caption" color={palette.inkFaint}>
-              Renk: ortalama kıvam
-            </T>
-          </Row>
-          <View style={{ height: 1, backgroundColor: palette.hairline, marginTop: 6 }} />
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 110, gap: 4 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          {last14.map((d) => (
-            <View key={d.key} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
-              <T v="caption" color={palette.inkSoft} style={{ fontSize: 10 }}>
-                {d.count || ''}
-              </T>
-              <View
-                style={{
-                  width: '100%',
-                  height: d.count ? Math.max(8, (d.count / maxCount) * 80) : 4,
-                  backgroundColor: d.bristol ? bristolTone(Math.round(d.bristol)) : surface.well,
-                  borderRadius: 6,
-                }}
-              />
-              <T v="caption" color={palette.inkFaint} style={{ fontSize: 10 }}>
-                {d.label}
-              </T>
-            </View>
-          ))}
-        </View>
-        <Row gap={14} style={{ flexWrap: 'wrap' }}>
-          <Legend c={palette.good} l="Normal (3–4)" />
-          <Legend c={palette.apricot} l="Sert" />
-          <Legend c={palette.warn} l="Yumuşak" />
-          <Legend c={palette.bad} l="Sulu" />
-        </Row>
-      </Card>
-
-      {monthBowel.length ? (
-        <Card style={{ gap: 10 }} accessible accessibilityLabel={`Son 30 günde tuvalet saatleri: ${slots.map((s) => `${s.label} ${s.n}`).join(', ')}.`}>
-          <T v="h3">Günün hangi saatinde</T>
-          {slots.map((s) => (
-            <Row key={s.label} gap={10}>
-              <T v="small" style={{ width: 52 }}>
-                {s.label}
-              </T>
-              <View style={{ flex: 1 }}>
-                <Bar pct={s.n / slotMax} color={palette.sky} />
+        {plantWeeks.some((w) => w.n) ? (
+          <>
+            <SectionTitle title="Bitki çeşitliliği" />
+            <Card style={{ gap: 10 }}>
+              <Row style={{ justifyContent: 'space-between' }}>
+                <T v="small" color={palette.inkSoft} style={{ flex: 1 }}>
+                  {app.phase === 'atak' ? 'Haftada kaç farklı bitki yedin. Atakta hedef yok.' : `Haftada kaç farklı bitki yedin. ${PLANT_GOAL} iyi bir hafta.`}
+                </T>
+                <Tap onPress={() => router.push('/hafta')} hitSlop={8}>
+                  <T v="small" color={palette.lettuceDeep} style={{ fontWeight: '700' }}>
+                    Bu hafta ›
+                  </T>
+                </Tap>
+              </Row>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 80, gap: 8 }} accessible accessibilityLabel={`Son dört hafta: ${plantWeeks.map((w) => w.n).join(', ')} farklı bitki`}>
+                {plantWeeks.map((w, i) => (
+                  <View key={w.from} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
+                    <T v="caption" color={palette.inkSoft}>
+                      {w.n}
+                    </T>
+                    <View style={{ width: '100%', height: w.n ? Math.max(8, Math.min(1, w.n / PLANT_GOAL) * 56) : 4, borderRadius: 6, backgroundColor: !w.n ? surface.well : w.n >= PLANT_GOAL ? palette.good : palette.lettuce }} />
+                    <T v="caption" color={palette.inkFaint} style={{ fontSize: 10 }}>
+                      {i === 3 ? 'bu hafta' : `${3 - i} hf önce`}
+                    </T>
+                  </View>
+                ))}
               </View>
-              <T v="small" color={palette.inkSoft} style={{ width: 24, textAlign: 'right' }}>
-                {s.n}
+            </Card>
+          </>
+        ) : null}
+
+        {enough && !(foods.dokunan.length || foods.bazen.length || foods.dokunmayan.length) && !triggers.length && !suspects.foods.length ? (
+          <T v="small" color={palette.inkSoft} style={{ textAlign: 'center', paddingVertical: 8 }}>
+            Henüz belirgin bir örüntü yok. Öğünlerin nasıl geçtiğini yazmaya devam et.
+          </T>
+        ) : null}
+        </>
+      ) : tab === 'vucut' ? (
+        <>
+        <HbiTrend rows={hbiRows} due={!!loadedAt && hbiDue(loadedAt, hbiRows) || (!!loadedAt && !hbiRows.length)} />
+
+        <SectionTitle title="Tuvalet, son 14 gün" />
+        <Card style={{ gap: 12 }}>
+          <Row gap={18}>
+            <View>
+              <T v="title">{avgPerDay ? avgPerDay.toFixed(1) : '–'}</T>
+              <T v="caption" color={palette.inkSoft}>
+                günde ortalama
+              </T>
+            </View>
+            <View>
+              <T v="title">{monthBowel.filter((b) => b.bristol >= 6).length}</T>
+              <T v="caption" color={palette.inkSoft}>
+                sulu (30 gün)
+              </T>
+            </View>
+            <View>
+              <T v="title">{monthBowel.filter((b) => b.blood).length}</T>
+              <T v="caption" color={palette.inkSoft}>
+                kanlı (30 gün)
+              </T>
+            </View>
+          </Row>
+          <View
+            accessible
+            accessibilityRole="image"
+            accessibilityLabel={`Son 14 günün tuvalet grafiği. ${last14.filter((d) => d.count).length} günde kayıt var, en çok ${Math.max(0, ...last14.map((d) => d.count))} kez. ${last14.filter((d) => d.bristol != null && d.bristol >= 5.5).length} günde ortalama kıvam sulu.`}
+          >
+            <Row style={{ justifyContent: 'space-between' }}>
+              <T v="caption" color={palette.inkFaint}>
+                Günlük sayı (en çok {maxCount})
+              </T>
+              <T v="caption" color={palette.inkFaint}>
+                Renk: ortalama kıvam
               </T>
             </Row>
-          ))}
-        </Card>
-      ) : null}
-
-      {last14.some((d) => d.pain != null) ? (
-        <Card
-          style={{ gap: 8 }}
-          accessible
-          accessibilityLabel={`Son 14 günün en yüksek ağrısı, 0 ile 5 arası: ${last14
-            .filter((d) => d.pain != null)
-            .map((d) => `${d.label} ${d.pain}`)
-            .join(', ')}.`}
-        >
-          <T v="h3">En yüksek ağrı</T>
-          <View style={{ flexDirection: 'row', gap: 4 }}>
-            {last14.map((d) => (
-              <View
-                key={d.key}
-                style={{
-                  flex: 1,
-                  height: 24,
-                  borderRadius: 6,
-                  backgroundColor: d.pain == null ? surface.well : d.pain >= 4 ? palette.bad : d.pain >= 2 ? palette.warn : palette.goodSoft,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {d.pain != null ? (
-                  <T v="caption" color={d.pain >= 2 ? onTint(d.pain >= 4 ? palette.bad : palette.warn) : palette.good} style={{ fontSize: 10 }}>
-                    {d.pain}
-                  </T>
-                ) : null}
-              </View>
-            ))}
+            <View style={{ height: 1, backgroundColor: palette.hairline, marginTop: 6 }} />
           </View>
-          <View style={{ flexDirection: 'row', gap: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 110, gap: 4 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
             {last14.map((d) => (
-              <T key={d.key} v="caption" color={palette.inkFaint} style={{ flex: 1, textAlign: 'center', fontSize: 10 }}>
-                {d.label}
-              </T>
+              <View key={d.key} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
+                <T v="caption" color={palette.inkSoft} style={{ fontSize: 10 }}>
+                  {d.count || ''}
+                </T>
+                <View
+                  style={{
+                    width: '100%',
+                    height: d.count ? Math.max(8, (d.count / maxCount) * 80) : 4,
+                    backgroundColor: d.bristol ? bristolTone(Math.round(d.bristol)) : surface.well,
+                    borderRadius: 6,
+                  }}
+                />
+                <T v="caption" color={palette.inkFaint} style={{ fontSize: 10 }}>
+                  {d.label}
+                </T>
+              </View>
             ))}
           </View>
           <Row gap={14} style={{ flexWrap: 'wrap' }}>
-            <Legend c={palette.good} l="0–1" />
-            <Legend c={palette.warn} l="2–3" />
-            <Legend c={palette.bad} l="4–5" />
+            <Legend c={palette.good} l="Normal (3–4)" />
+            <Legend c={palette.apricot} l="Sert" />
+            <Legend c={palette.warn} l="Yumuşak" />
+            <Legend c={palette.bad} l="Sulu" />
           </Row>
         </Card>
-      ) : null}
 
-      <T v="caption" color={palette.inkFaint} style={{ textAlign: 'center', lineHeight: 17, fontWeight: '400' }}>
-        Kontrole giderken Doktor raporu’nu PDF olarak paylaşabilirsin.{'\n'}Yedeklerin Ayarlar’da.
+        {monthBowel.length ? (
+          <Card style={{ gap: 10 }} accessible accessibilityLabel={`Son 30 günde tuvalet saatleri: ${slots.map((s) => `${s.label} ${s.n}`).join(', ')}.`}>
+            <T v="h3">Günün hangi saatinde</T>
+            {slots.map((s) => (
+              <Row key={s.label} gap={10}>
+                <T v="small" style={{ width: 52 }}>
+                  {s.label}
+                </T>
+                <View style={{ flex: 1 }}>
+                  <Bar pct={s.n / slotMax} color={palette.sky} />
+                </View>
+                <T v="small" color={palette.inkSoft} style={{ width: 24, textAlign: 'right' }}>
+                  {s.n}
+                </T>
+              </Row>
+            ))}
+          </Card>
+        ) : null}
+
+        {last14.some((d) => d.pain != null) ? (
+          <Card
+            style={{ gap: 8 }}
+            accessible
+            accessibilityLabel={`Son 14 günün en yüksek ağrısı, 0 ile 5 arası: ${last14
+              .filter((d) => d.pain != null)
+              .map((d) => `${d.label} ${d.pain}`)
+              .join(', ')}.`}
+          >
+            <T v="h3">En yüksek ağrı</T>
+            <View style={{ flexDirection: 'row', gap: 4 }}>
+              {last14.map((d) => (
+                <View
+                  key={d.key}
+                  style={{
+                    flex: 1,
+                    height: 24,
+                    borderRadius: 6,
+                    backgroundColor: d.pain == null ? surface.well : d.pain >= 4 ? palette.bad : d.pain >= 2 ? palette.warn : palette.goodSoft,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {d.pain != null ? (
+                    <T v="caption" color={d.pain >= 2 ? onTint(d.pain >= 4 ? palette.bad : palette.warn) : palette.good} style={{ fontSize: 10 }}>
+                      {d.pain}
+                    </T>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+            <View style={{ flexDirection: 'row', gap: 4 }}>
+              {last14.map((d) => (
+                <T key={d.key} v="caption" color={palette.inkFaint} style={{ flex: 1, textAlign: 'center', fontSize: 10 }}>
+                  {d.label}
+                </T>
+              ))}
+            </View>
+            <Row gap={14} style={{ flexWrap: 'wrap' }}>
+              <Legend c={palette.good} l="0–1" />
+              <Legend c={palette.warn} l="2–3" />
+              <Legend c={palette.bad} l="4–5" />
+            </Row>
+          </Card>
+        ) : null}
+
+        {painAreas.size ? (
+          <>
+            <SectionTitle title="Ağrı haritası, son 30 gün" />
+            <Card style={{ gap: 10 }}>
+              <PainMap counts={painAreas} />
+              {painAreas.get('sag_alt') && [...painAreas.entries()].sort((a, b) => b[1] - a[1])[0][0] === 'sag_alt' ? (
+                <T v="small" color={palette.inkSoft}>
+                  Ağrın en çok sağ altta. Crohn’un en sık yerleştiği ince bağırsak sonu orada; kontrolde doktoruna bu haritayı göster.
+                </T>
+              ) : null}
+            </Card>
+          </>
+        ) : null}
+
+        {periods.length ? <PhaseHistory periods={periods} at={loadedAt} onDelete={deletePeriod} /> : null}
+
+        </>
+      ) : (
+        <>
+        {timing.first != null && timing.days >= 5 ? (
+          <>
+            <SectionTitle title="Öğün saatleri" />
+            <Card style={{ gap: 12 }}>
+              <Row gap={18}>
+                <View>
+                  <T v="title">{clockLabel(timing.first)}</T>
+                  <T v="caption" color={palette.inkSoft}>
+                    ilk öğün, ortalama
+                  </T>
+                </View>
+                <View>
+                  <T v="title">{clockLabel(timing.last!)}</T>
+                  <T v="caption" color={palette.inkSoft}>
+                    son öğün, ortalama
+                  </T>
+                </View>
+              </Row>
+              {timing.late && timing.early ? (
+                <View style={{ gap: 8 }}>
+                  <Row gap={10}>
+                    <T v="small" style={{ width: 150 }} numberOfLines={1}>
+                      21:00 sonrası yediğinde
+                    </T>
+                    <View style={{ flex: 1 }}>
+                      <Bar pct={timing.late.rate} color={palette.bad} />
+                    </View>
+                    <T v="small" color={palette.inkSoft} style={{ width: 40, textAlign: 'right' }}>
+                      %{Math.round(timing.late.rate * 100)}
+                    </T>
+                  </Row>
+                  <Row gap={10}>
+                    <T v="small" style={{ width: 150 }} numberOfLines={1}>
+                      Daha erken yediğinde
+                    </T>
+                    <View style={{ flex: 1 }}>
+                      <Bar pct={timing.early.rate} color={palette.good} />
+                    </View>
+                    <T v="small" color={palette.inkSoft} style={{ width: 40, textAlign: 'right' }}>
+                      %{Math.round(timing.early.rate * 100)}
+                    </T>
+                  </Row>
+                  <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
+                    {timing.late.rate >= timing.early.rate + 0.2
+                      ? 'Geç yediğin gecelerde tuvalete daha sık kalkıyorsun. Son öğünü biraz öne çekmeyi dene.'
+                      : 'Gece 23:00–07:00 arası tuvalete kalktığın gecelerin oranı. Belirgin bir fark yok.'}
+                  </T>
+                </View>
+              ) : (
+                <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
+                  Geç ve erken yediğin en az 4’er gece birikince gece tuvaletine etkisini de gösteririm.
+                </T>
+              )}
+            </Card>
+          </>
+        ) : null}
+
+        {lifestyle.length ? (
+          <>
+            <SectionTitle title="Stres ve uyku" />
+            <Card style={{ gap: 16 }}>
+              {lifestyle.map((e) => (
+                <View key={e.key} style={{ gap: 8 }}>
+                  <T v="h3">{e.label}</T>
+                  <Row gap={10}>
+                    <T v="small" style={{ width: 150 }} numberOfLines={1}>
+                      {e.highLabel}
+                    </T>
+                    <View style={{ flex: 1 }}>
+                      <Bar pct={e.high} color={palette.bad} />
+                    </View>
+                    <T v="small" color={palette.inkSoft} style={{ width: 40, textAlign: 'right' }}>
+                      %{Math.round(e.high * 100)}
+                    </T>
+                  </Row>
+                  <Row gap={10}>
+                    <T v="small" style={{ width: 150 }} numberOfLines={1}>
+                      {e.lowLabel}
+                    </T>
+                    <View style={{ flex: 1 }}>
+                      <Bar pct={e.low} color={palette.good} />
+                    </View>
+                    <T v="small" color={palette.inkSoft} style={{ width: 40, textAlign: 'right' }}>
+                      %{Math.round(e.low * 100)}
+                    </T>
+                  </Row>
+                </View>
+              ))}
+              <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
+                O gün ya da ertesi gün şikayet kaydettiğin günlerin oranı.
+              </T>
+            </Card>
+          </>
+        ) : daily.length ? null : (
+          <Empty art={<Mascot mood="uyku" size={100} />} title="Stres ve uyku" text="Akşam kontrolünde stres ve uykunu yazarsan, şikayetlerinle ilişkisini burada gösteririm." />
+        )}
+
+        {!(timing.first != null && timing.days >= 5) && !lifestyle.length && daily.length ? (
+          <Empty art={<Mascot mood="dusunuyor" size={100} />} title="Biraz daha kayıt lazım" text="Öğün saatlerin ve akşam kontrollerin birkaç gün birikince stres, uyku ve geç yemenin etkisini burada gösteririm." />
+        ) : null}
+        </>
+      )}
+
+      <T v="caption" color={palette.inkFaint} style={{ textAlign: 'center', lineHeight: 17, fontWeight: '400', marginTop: 8 }}>
+        Kontrole giderken Doktor raporu’nu PDF olarak paylaşabilirsin.
       </T>
     </Screen>
   );

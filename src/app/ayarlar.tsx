@@ -148,8 +148,8 @@ export default function Settings() {
           value={special.length ? special.join(', ') : 'Yok'}
           onPress={() => router.push('/durumlar')}
         />
-        <ListRow icon="calendar.badge.clock" color={palette.sky} title="Kontrol takvimi" value={nextCheckup ?? undefined} onPress={() => router.push('/kontroller')} />
-        <ListRow icon="testtube.2" color={palette.sky} title="Tahliller ve kilo" onPress={() => router.push('/tahliller')} />
+        <ListRow icon="calendar.badge.clock" color={palette.plum} title="Kontrol takvimi" value={nextCheckup ?? undefined} onPress={() => router.push('/kontroller')} />
+        <ListRow icon="testtube.2" color={palette.apricot} title="Tahliller ve kilo" onPress={() => router.push('/tahliller')} />
       </ListGroup>
 
       <ListGroup title="Raporlar">
@@ -161,7 +161,7 @@ export default function Settings() {
         <ListRow icon="bell.fill" color={palette.warn} title="Bildirimler" value={notif ?? undefined} onPress={() => router.push('/bildirimler')} />
         <ListRow
           icon="icloud.fill"
-          color={backup?.stale ? palette.warn : palette.sky}
+          color={backup?.stale ? palette.warn : palette.water}
           title="Yedekleme"
           value={backup?.text}
           onPress={() => router.push('/yedek')}
