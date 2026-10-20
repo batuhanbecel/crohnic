@@ -5,30 +5,30 @@
  * The lower right is where the end of the small intestine (terminal ileum) sits, the most
  * common place for Crohn's; doctors ask about it first.
  */
-export type Area = { key: string; label: string; short: string };
+export type Area = { key: string; label: string; short: string; /** what lies there, in plain words */ organ: string };
 
 /** Rows top to bottom; within a row, the user's left → right. */
 export const GRID: Area[][] = [
   [
-    { key: 'sol_ust', label: 'Sol üst', short: 'sol üst' },
-    { key: 'ust_orta', label: 'Mide üstü', short: 'mide üstü' },
-    { key: 'sag_ust', label: 'Sağ üst', short: 'sağ üst' },
+    { key: 'sol_ust', label: 'Sol üst', short: 'sol üst', organ: 'dalak kıvrımı, kalın bağırsak' },
+    { key: 'ust_orta', label: 'Mide üstü', short: 'mide üstü', organ: 'mide' },
+    { key: 'sag_ust', label: 'Sağ üst', short: 'sağ üst', organ: 'karaciğer kıvrımı, kalın bağırsak' },
   ],
   [
-    { key: 'sol_yan', label: 'Sol yan', short: 'sol yan' },
-    { key: 'gobek', label: 'Göbek çevresi', short: 'göbek' },
-    { key: 'sag_yan', label: 'Sağ yan', short: 'sağ yan' },
+    { key: 'sol_yan', label: 'Sol yan', short: 'sol yan', organ: 'inen kalın bağırsak' },
+    { key: 'gobek', label: 'Göbek çevresi', short: 'göbek', organ: 'ince bağırsak' },
+    { key: 'sag_yan', label: 'Sağ yan', short: 'sağ yan', organ: 'çıkan kalın bağırsak' },
   ],
   [
-    { key: 'sol_alt', label: 'Sol alt', short: 'sol alt' },
-    { key: 'alt_orta', label: 'Kasık üstü', short: 'kasık üstü' },
-    { key: 'sag_alt', label: 'Sağ alt', short: 'sağ alt' },
+    { key: 'sol_alt', label: 'Sol alt', short: 'sol alt', organ: 'sigmoid kolon' },
+    { key: 'alt_orta', label: 'Kasık üstü', short: 'kasık üstü', organ: 'rektum ve mesane üstü' },
+    { key: 'sag_alt', label: 'Sağ alt', short: 'sağ alt', organ: 'ince bağırsak sonu ve kör bağırsak' },
   ],
 ];
 
 export const EXTRA: Area[] = [
-  { key: 'makat', label: 'Makat çevresi', short: 'makat' },
-  { key: 'yaygin', label: 'Her yer, yaygın', short: 'yaygın' },
+  { key: 'makat', label: 'Makat çevresi', short: 'makat', organ: 'anüs ve çevresi' },
+  { key: 'yaygin', label: 'Her yer, yaygın', short: 'yaygın', organ: 'karnın geneli' },
 ];
 
 export const AREAS: Area[] = [...GRID.flat(), ...EXTRA];

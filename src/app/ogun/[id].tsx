@@ -11,13 +11,13 @@ import { ReactionPicker } from '../../components/ReactionPicker';
 import { WhenField } from '../../components/WhenField';
 import { Button, Card, Icon, Row, Screen, Segmented, T, Tap, VerdictBadge, st } from '../../components/ui';
 import { useApp } from '../../lib/app-state';
-import { dayKey } from '../../lib/dates';
+import { dayKey, timeLabel } from '../../lib/dates';
 import * as db from '../../lib/db';
 import { SLOT_LABEL, isSlot, slotForNew, type MealSlot } from '../../lib/meal-slot';
 import { cancelMealReminder } from '../../lib/reminders';
 import { FOOD_BY_ID, TAGS, type Food, type Phase } from '../../lib/foods';
 import { deletePhoto, photoUri } from '../../lib/photos';
-import { palette, radius, surface } from '../../lib/theme';
+import { palette, radius } from '../../lib/theme';
 import { assessFood, tagsOf } from '../../lib/tolerance';
 
 export default function MealDetail() {
@@ -32,6 +32,7 @@ export default function MealDetail() {
   const [portion, setPortion] = useState<Portion>(1);
   const [pickedSlot, setPickedSlot] = useState<MealSlot | null>(null);
   const [sameDay, setSameDay] = useState<{ key: string; eaten_at: number; slot: string | null }[]>([]);
+  const [bigPhoto, setBigPhoto] = useState(false);
 
   const load = useCallback(async () => {
     const list = await db.getMealGroup(sql, Number(id));
@@ -136,47 +137,73 @@ export default function MealDetail() {
       },
     ]);
 
-  return (
-    <Screen title={SLOT_LABEL[slotForNew(at || group.eaten_at, sameDay, pickedSlot)]}>
-      {uri ? (
-        <Image source={{ uri }} style={{ width: '100%', aspectRatio: 1.3, borderRadius: radius.xl }} />
-      ) : (
-        <Row>
-          <GroupThumb group={group} size={64} />
-        </Row>
-      )}
-      <View style={{ gap: 6, paddingHorizontal: 2 }}>
-        <T v="title">{items.length > 1 ? `${items.length} yemekli öğün` : items[0].name}</T>
-      </View>
+  const when = new Date(at || group.eaten_at);
+  const meta = [
+    `${when.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' })}, ${timeLabel(when.getTime())}`,
+    group.phase === 'atak' ? 'atakta' : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
-      <Card style={{ gap: 8 }}>
-        <T v="h3">Tabakta</T>
-        {items.map((m) => (
-          <Row key={m.id} gap={10} style={{ backgroundColor: surface.well, borderRadius: radius.md, paddingVertical: 8, paddingHorizontal: 12 }}>
-            <FoodEmoji name={m.name} foodId={m.food_id} />
-            <T v="callout" style={{ flex: 1 }} numberOfLines={1}>
-              {m.name}
+  return (
+    <Screen
+      title={SLOT_LABEL[slotForNew(at || group.eaten_at, sameDay, pickedSlot)]}
+      footer={<Button title="Kaydet" icon="checkmark" onPress={save} />}
+    >
+      <Card style={{ gap: 10 }}>
+        {/* one line for what and when; the photo opens full size on tap */}
+        <Row gap={12}>
+          <Tap onPress={uri ? () => setBigPhoto(!bigPhoto) : undefined} haptic={!!uri} accessibilityRole={uri ? 'button' : undefined} accessibilityLabel={uri ? 'Fotoğrafı büyüt' : undefined}>
+            <GroupThumb group={group} size={56} />
+          </Tap>
+          <View style={{ flex: 1, gap: 2 }}>
+            <T v="h3" numberOfLines={2}>
+              {items.length > 1 ? `${items.length} yemek` : items[0].name}
             </T>
-            {m.ai_verdict ? <VerdictBadge verdict={m.ai_verdict} size="sm" inline /> : null}
-            {items.length > 1 ? (
-              <Tap onPress={() => removeItem(m)} hitSlop={10} accessibilityLabel={`${m.name} çıkar`}>
-                <Icon name="xmark.circle.fill" size={20} color={palette.inkFaint} fallback="✕" />
-              </Tap>
-            ) : null}
-          </Row>
-        ))}
+            <T v="small" color={palette.inkSoft} numberOfLines={1}>
+              {meta}
+            </T>
+          </View>
+        </Row>
+        {uri && bigPhoto ? <Image source={{ uri }} style={{ width: '100%', aspectRatio: 1.3, borderRadius: radius.lg }} /> : null}
+        <View style={{ height: 1, backgroundColor: palette.hairline }} />
+        {/* the plate as one list: name, verdict, remove */}
+        <View>
+          {items.map((m, i) => (
+            <View key={m.id}>
+              {i > 0 ? <View style={{ height: 1, backgroundColor: palette.hairline, marginLeft: 36 }} /> : null}
+              <Row gap={10} style={{ paddingVertical: 9 }}>
+                <FoodEmoji name={m.name} foodId={m.food_id} />
+                <T v="callout" style={{ flex: 1 }} numberOfLines={1}>
+                  {m.name}
+                </T>
+                {m.ai_verdict ? <VerdictBadge verdict={m.ai_verdict} size="sm" inline /> : null}
+                {items.length > 1 ? (
+                  <Tap onPress={() => removeItem(m)} hitSlop={10} accessibilityLabel={`${m.name} çıkar`}>
+                    <Icon name="minus.circle.fill" size={20} color={palette.inkFaint} fallback="−" />
+                  </Tap>
+                ) : null}
+              </Row>
+            </View>
+          ))}
+        </View>
         <FoodPicker onAdd={addItem} exclude={items.map((m) => m.food_id)} placeholder="Tabağa yemek ekle" />
         {tags.length ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
-            {tags.map((t) => (
-              <View key={t} style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, backgroundColor: surface.well }}>
-                <T v="caption" color={palette.inkSoft}>
-                  {TAGS[t].label}
-                </T>
-              </View>
-            ))}
-          </View>
+          <T v="caption" color={palette.inkSoft} style={{ fontWeight: '400' }}>
+            {`İçinde: ${tags.map((t) => TAGS[t].label.toLocaleLowerCase('tr-TR')).join(', ')}`}
+          </T>
         ) : null}
+      </Card>
+
+      <Card style={{ gap: 12 }}>
+        <T v="h3">Nasıl geçti?</T>
+        {items.length > 1 ? (
+          <T v="small" color={palette.inkSoft} style={{ marginTop: -8 }}>
+            Cevabın tabaktaki her yemeğe işlenir. Hangisinin dokunduğunu zamanla örüntüler ayırır.
+          </T>
+        ) : null}
+        <ReactionPicker value={reaction} onChange={setReaction} />
+        <TextInput value={note} onChangeText={setNote} placeholder="Not (ör. 2 saat sonra şişkinlik)" placeholderTextColor={palette.inkFaint} style={st.input} />
       </Card>
 
       <Card style={{ gap: 14 }}>
@@ -195,18 +222,6 @@ export default function MealDetail() {
         </View>
       </Card>
 
-      <Card style={{ gap: 12 }}>
-        <T v="h3">Nasıl geçti?</T>
-        {items.length > 1 ? (
-          <T v="small" color={palette.inkSoft} style={{ marginTop: -8 }}>
-            Cevabın tabaktaki her yemeğe işlenir. Hangisinin dokunduğunu zamanla örüntüler ayırır.
-          </T>
-        ) : null}
-        <ReactionPicker value={reaction} onChange={setReaction} />
-        <TextInput value={note} onChangeText={setNote} placeholder="Not (ör. 2 saat sonra şişkinlik)" placeholderTextColor={palette.inkFaint} style={st.input} />
-      </Card>
-
-      <Button title="Kaydet" icon="checkmark" onPress={save} />
       <Button title={items.length > 1 ? 'Öğünü komple sil' : 'Öğünü sil'} kind="danger" icon="trash" onPress={removeAll} />
     </Screen>
   );
