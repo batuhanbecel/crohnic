@@ -1,19 +1,21 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, Image, View } from 'react-native';
 import { FoodEmoji } from '../components/FoodEmoji';
 import { FoodPicker } from '../components/FoodPicker';
+import { MealDetails, type Portion } from '../components/MealDetails';
 import { MedNotes, medNotesFor } from '../components/MedNotes';
 import { ReactionPicker } from '../components/ReactionPicker';
 import { WhenField } from '../components/WhenField';
 import { Button, Card, Icon, Row, Screen, T, Tap } from '../components/ui';
 import { useApp } from '../lib/app-state';
-import { now } from '../lib/dates';
+import { dayKey, now } from '../lib/dates';
 import * as db from '../lib/db';
 import { afterMealSaved } from '../lib/reminders';
 import { FOOD_BY_ID, findFoodByName, type Food, type Phase } from '../lib/foods';
+import { SLOT_LABEL, slotForNew, type MealSlot } from '../lib/meal-slot';
 import { savePhoto } from '../lib/photos';
 import { palette, radius, surface } from '../lib/theme';
 import { assessFood } from '../lib/tolerance';
@@ -41,6 +43,21 @@ export default function AddMeal() {
   const [at, setAt] = useState(() => now());
   const [reaction, setReaction] = useState<db.Reaction | null>(null);
   const [saving, setSaving] = useState(false);
+  const [portion, setPortion] = useState<Portion>(1);
+  // the meal's name follows the clock (and what's already logged that day) until picked by hand
+  const [pickedSlot, setPickedSlot] = useState<MealSlot | null>(null);
+  const [sameDay, setSameDay] = useState<{ key: string; eaten_at: number; slot: string | null }[]>([]);
+  const day = dayKey(at);
+  useEffect(() => {
+    db.listMeals(sql, 120).then((rows) =>
+      setSameDay(
+        db
+          .groupMeals(rows.filter((m) => dayKey(m.eaten_at) === day && !db.isTobacco(m)))
+          .map((g) => ({ key: g.key, eaten_at: g.eaten_at, slot: g.slot })),
+      ),
+    );
+  }, [sql, day]);
+  const slot = slotForNew(at, sameDay, pickedSlot);
 
   const add = (name: string, food: Food | null) =>
     setItems((prev) => [...prev, { key: `${Date.now()}-${prev.length}`, name: food?.name ?? name, food }]);
@@ -57,8 +74,9 @@ export default function AddMeal() {
 
   // Whatever is still in the box counts as an item too, so nothing typed gets lost.
   const all = useMemo(() => (text.trim() ? [...items, { key: 'typing', name: text.trim(), food: findFoodByName(text) ?? null }] : items), [items, text]);
-  // what the user's medicines say about this plate (cortisone: sugar, salt…)
-  const medNotes = useMemo(() => medNotesFor(all.map((it) => ({ name: it.food?.name ?? it.name, tags: it.food?.tags ?? [] }))), [all, app.medsKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // what the user's medicines say about this plate (cortisone: sugar, salt…); only for what's
+  // been added, so the card doesn't pop in and out with every letter typed
+  const medNotes = useMemo(() => medNotesFor(items.map((it) => ({ name: it.food?.name ?? it.name, tags: it.food?.tags ?? [] }))), [items, app.medsKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // a half-written meal isn't lost to an accidental swipe down
   const leave = useConfirmDiscard(all.length > 0 || !!photo);
 
@@ -83,7 +101,7 @@ export default function AddMeal() {
           photo: i === 0 ? file : null,
           ai_verdict: it.food ? assessFood(it.food, phase).verdict : null,
         })),
-        { eaten_at: at, phase, reaction },
+        { eaten_at: at, phase, reaction, portion, slot: pickedSlot },
       );
       await afterMealSaved(sql, saved.ids, reaction);
       app.bump();
@@ -97,7 +115,7 @@ export default function AddMeal() {
 
   return (
     <Screen
-      title="Öğün ekle"
+      title={SLOT_LABEL[slot]}
       footer={
         <Button
           title={all.length > 1 ? `${all.length} yemeği kaydet` : all.length ? 'Kaydet' : 'Önce yemeği yaz'}
@@ -139,7 +157,7 @@ export default function AddMeal() {
           onTextChange={setText}
           exclude={items.map((i) => i.food?.id)}
           placeholder={items.length ? 'Bir şey daha ekle' : 'ör. mercimek çorbası'}
-          hint="Her yemeği ayrı ekle. Hangisinin dokunduğunu zamanla ayırt etmek kolaylaşır."
+          hint={items.length ? undefined : 'Her yemeği ayrı ekle. Hangisinin dokunduğunu zamanla ayırt etmek kolaylaşır.'}
           autoFocus={!foods}
         />
       </Card>
@@ -148,6 +166,7 @@ export default function AddMeal() {
 
       <Card style={{ gap: 14 }}>
         <WhenField value={at} onChange={setAt} />
+        <MealDetails slot={slot} auto={!pickedSlot} onSlot={setPickedSlot} portion={portion} onPortion={setPortion} />
         <Tap
           onPress={() => setPhase(phase === 'atak' ? 'remisyon' : 'atak')}
           accessibilityRole="button"

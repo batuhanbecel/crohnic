@@ -17,6 +17,8 @@ import { useApp } from '../../../lib/app-state';
 import { dayKey, dayLabel, isoDay, now, timeLabel } from '../../../lib/dates';
 import * as db from '../../../lib/db';
 import { dayStatuses } from '../../../lib/insights';
+import { areasText } from '../../../lib/pain-map';
+import { SLOT_LABEL, slotsFor, type MealSlot } from '../../../lib/meal-slot';
 import { deletePhoto } from '../../../lib/photos';
 import { palette, radius, surface, type } from '../../../lib/theme';
 
@@ -30,14 +32,16 @@ type Mode = 'list' | 'calendar';
 
 const fold = (s: string) => s.toLocaleLowerCase('tr');
 
-function describe(e: Entry): { title: string; sub: string } {
+function describe(e: Entry, slots?: Map<string, MealSlot>): { title: string; sub: string } {
   if (e.kind === 'meal') {
     const r = e.item.reaction != null ? REACTIONS[e.item.reaction].phrase : 'Nasıl geçtiği bekleniyor';
-    return { title: e.item.name, sub: [r, e.item.phase === 'atak' ? 'atakta' : null].filter(Boolean).join(', ') };
+    const slot = slots?.get(e.item.key);
+    return { title: e.item.name, sub: [slot && !e.item.items.every(db.isTobacco) ? SLOT_LABEL[slot] : null, r, e.item.phase === 'atak' ? 'atakta' : null].filter(Boolean).join(' · ') };
   }
   if (e.kind === 'symptom') {
     const s = e.item;
-    const parts = [s.pain ? `ağrı ${s.pain}` : null, s.bloating ? `şişkinlik ${s.bloating}` : null, s.gas ? `gaz ${s.gas}` : null, s.fatigue ? `yorgunluk ${s.fatigue}` : null].filter(Boolean);
+    const where = areasText(s.areas);
+    const parts = [s.pain ? `ağrı ${s.pain}${where ? ` (${where})` : ''}` : null, s.bloating ? `şişkinlik ${s.bloating}` : null, s.gas ? `gaz ${s.gas}` : null, s.fatigue ? `yorgunluk ${s.fatigue}` : null].filter(Boolean);
     return { title: parts.length ? 'Semptom' : 'Şikayet yok', sub: [parts.join(', '), s.note].filter(Boolean).join(' · ') || 'Hepsi 0' };
   }
   const b = e.item;
@@ -145,16 +149,22 @@ export default function Journal() {
     else router.push({ pathname: '/tuvalet', params: { id: String(e.item.id) } });
   };
 
+  // Kahvaltı, Öğle yemeği… for every sitting, from the clock and the rest of that day
+  const slots = useMemo(
+    () => slotsFor(entries.flatMap((e) => (e.kind === 'meal' && !e.item.items.every(db.isTobacco) ? [{ key: e.item.key, eaten_at: e.item.eaten_at, slot: e.item.slot }] : []))),
+    [entries],
+  );
+
   const visible = useMemo(() => {
     const term = fold(q.trim());
     return entries.filter((e) => {
       if (hidden.has(e.key)) return false;
       if (filter !== 'hepsi' && e.kind !== filter) return false;
       if (!term) return true;
-      const d = describe(e);
+      const d = describe(e, slots);
       return fold(`${d.title} ${d.sub}`).includes(term);
     });
-  }, [entries, hidden, filter, q]);
+  }, [entries, hidden, filter, q, slots]);
 
   const statuses = useMemo(
     () =>
@@ -274,7 +284,7 @@ export default function Journal() {
               ) : null}
               <View style={{ borderRadius: radius.lg, overflow: 'hidden', backgroundColor: surface.card }}>
                 {list.map((e, i) => {
-                  const d = describe(e);
+                  const d = describe(e, slots);
                   return (
                     <Reanimated.View key={e.key} layout={LinearTransition.duration(220)} entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)}>
                       {i > 0 ? <View style={{ height: 1, backgroundColor: palette.hairline, marginLeft: 66 }} /> : null}

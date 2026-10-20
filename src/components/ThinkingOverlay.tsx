@@ -10,6 +10,7 @@ const LINES: Record<Mode, string[]> = {
   meal: ['Tabağa bakıyorum', 'İçindekileri çıkarıyorum', 'Geçmiş kayıtlarınla karşılaştırıyorum'],
   menu: ['Menüyü okuyorum', 'Yemekleri tek tek ayırıyorum', 'Sana uygun olanları seçiyorum'],
   food: ['Bakıyorum', 'Kayıtlarına göz atıyorum'],
+  recipe: ['Tarifi düşünüyorum', 'Dönemine ve ilaçlarına göre uyarlıyorum', 'Adımları sadeleştiriyorum'],
 };
 
 export function ThinkingOverlay({ mode }: { mode: Mode | null }) {

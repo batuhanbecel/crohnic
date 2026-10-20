@@ -601,10 +601,14 @@ export const VERDICT_UI: Record<Verdict, { label: string; short: string; icon: S
   riskli: { label: 'Bugün geç', short: 'Riskli', icon: 'xmark.circle.fill', dot: '🔴', fg: palette.bad, bg: palette.badSoft },
 };
 
-export function VerdictBadge({ verdict, size: sz = 'md' }: { verdict: Verdict; size?: 'sm' | 'md' }) {
+/**
+ * The verdict pill. On its own in a column it hugs the left edge; next to text in a row pass
+ * `inline` so it sits on the text's centre line instead of the row's top edge.
+ */
+export function VerdictBadge({ verdict, size: sz = 'md', inline }: { verdict: Verdict; size?: 'sm' | 'md'; inline?: boolean }) {
   const u = VERDICT_UI[verdict];
   return (
-    <View style={[st.badge, { backgroundColor: u.bg }, sz === 'sm' && { paddingHorizontal: 8, paddingVertical: 3 }]}>
+    <View style={[st.badge, { backgroundColor: u.bg }, sz === 'sm' && { paddingHorizontal: 8, paddingVertical: 3 }, inline && { alignSelf: 'center' }]}>
       <Icon name={u.icon} size={sz === 'sm' ? 12 : 14} color={u.fg} fallback={u.dot} />
       <Text numberOfLines={1} style={[type.semibold, { fontSize: 13, color: u.fg }]}>
         {sz === 'sm' ? u.short : u.label}

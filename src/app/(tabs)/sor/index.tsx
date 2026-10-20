@@ -1,13 +1,13 @@
 import { Stack, router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { TextInput } from '../../../components/text';
 import { SlotCard } from '../../../components/DayPlan';
 import { Mascot } from '../../../components/Mascot';
 import { ThinkingOverlay } from '../../../components/ThinkingOverlay';
 import { Button, Card, Chip, IconBubble, Row, Screen, SectionTitle, T, Tap, st, type SymbolName } from '../../../components/ui';
 import { useApp } from '../../../lib/app-state';
-import { findFoodByName, searchFoods } from '../../../lib/foods';
+import { BRANDS, findFoodByName, searchFoods } from '../../../lib/foods';
 import { palette } from '../../../lib/theme';
 import { useAnalyze } from '../../../lib/use-analyze';
 import { useDayPlan } from '../../../lib/use-day-plan';
@@ -57,6 +57,26 @@ export default function Ask() {
           <SlotCard slot={nextMeal} next compact onReroll={() => day.reroll(nextMeal.key)} />
         </View>
       ) : null}
+
+      <Card style={{ gap: 12 }}>
+        <Tap onPress={() => router.push('/disarida')} accessibilityRole="button">
+          <Row gap={14}>
+            <IconBubble name="takeoutbag.and.cup.and.straw.fill" color={palette.apricot} dim={44} fallback="🍔" />
+            <View style={{ flex: 1, gap: 2 }}>
+              <T v="h2">Dışarıda mısın?</T>
+              <T v="small" color={palette.inkSoft}>
+                Zinciri seç, menüsünde sana uygun olanları göstereyim.
+              </T>
+            </View>
+          </Row>
+        </Tap>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+          {BRANDS.slice(0, 8).map((b) => (
+            <Chip key={b.name} label={b.name} emoji={b.emoji} onPress={() => router.push({ pathname: '/disarida', params: { brand: b.name } })} />
+          ))}
+          <Chip label="Tümü" onPress={() => router.push('/disarida')} />
+        </ScrollView>
+      </Card>
 
       {!hasAi ? (
         <Tap onPress={() => router.push('/ayarlar')}>

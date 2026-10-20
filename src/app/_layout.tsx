@@ -101,6 +101,12 @@ export default function RootLayout() {
               <Stack.Screen name="oneriler" options={{ ...pushed, title: '' }} />
               <Stack.Screen name="ilac" options={{ ...sheet, title: '' }} />
               <Stack.Screen name="gun" options={{ ...sheet, title: '' }} />
+              <Stack.Screen name="skor" options={{ ...sheet, title: '' }} />
+              <Stack.Screen name="kontrol" options={{ ...sheet, title: '' }} />
+              <Stack.Screen name="kontroller" options={{ ...pushed, title: '' }} />
+              <Stack.Screen name="hafta" options={{ ...pushed, title: '' }} />
+              <Stack.Screen name="disarida" options={{ ...pushed, title: '' }} />
+              <Stack.Screen name="tarif" options={{ ...pushed, title: '' }} />
               <Stack.Screen name="hosgeldin" options={{ presentation: 'fullScreenModal', headerShown: false, gestureEnabled: false }} />
             </Stack>
           </AppProvider>
