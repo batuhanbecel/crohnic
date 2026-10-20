@@ -107,6 +107,11 @@ export default function RootLayout() {
               <Stack.Screen name="hafta" options={{ ...pushed, title: '' }} />
               <Stack.Screen name="disarida" options={{ ...pushed, title: '' }} />
               <Stack.Screen name="tarif" options={{ ...pushed, title: '' }} />
+              <Stack.Screen name="durumlar" options={{ ...pushed, title: '' }} />
+              <Stack.Screen name="bildirimler" options={{ ...pushed, title: '' }} />
+              <Stack.Screen name="yedek" options={{ ...pushed, title: '' }} />
+              <Stack.Screen name="baglanti" options={{ ...pushed, title: '' }} />
+              <Stack.Screen name="kisayollar" options={{ ...pushed, title: '' }} />
               <Stack.Screen name="hosgeldin" options={{ presentation: 'fullScreenModal', headerShown: false, gestureEnabled: false }} />
             </Stack>
           </AppProvider>
