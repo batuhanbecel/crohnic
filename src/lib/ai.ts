@@ -2,7 +2,7 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import type { Phase, Tag, Verdict } from './foods';
 import { isTag } from './foods';
 
-export type Mode = 'meal' | 'menu' | 'food';
+export type Mode = 'meal' | 'menu' | 'food' | 'recipe';
 
 export type MealAnalysis = {
   kind: 'meal';
@@ -25,6 +25,16 @@ export type MenuAnalysis = {
 };
 
 export type Analysis = MealAnalysis | MenuAnalysis;
+
+export type Recipe = {
+  title: string;
+  servings: string;
+  time: string;
+  ingredients: { item: string; amount: string }[];
+  steps: string[];
+  changes: string[];
+  note: string | null;
+};
 
 export type AnalyzeInput = {
   mode: Mode;
@@ -97,7 +107,7 @@ export function newInstallId() {
   });
 }
 
-export async function analyze(cfg: AiConfig, input: AnalyzeInput): Promise<Analysis> {
+async function post(cfg: AiConfig, input: AnalyzeInput): Promise<any> {
   const base = cfg.url.replace(/\/+$/, '');
   const endpoint = base.endsWith('/api/analyze') ? base : `${base}/api/analyze`;
   const controller = new AbortController();
@@ -114,7 +124,7 @@ export async function analyze(cfg: AiConfig, input: AnalyzeInput): Promise<Analy
       if (res.status === 401) throw new Error('Sunucu şifresi yanlış, Ayarlar\'dan kontrol et.');
       throw new Error(json?.error ?? `Sunucu hata verdi (${res.status}).`);
     }
-    return sanitize(json);
+    return json;
   } catch (e: any) {
     if (e?.name === 'AbortError') throw new Error('Cevap gecikti, tekrar dener misin?');
     if (e instanceof TypeError) throw new Error('Sunucuya ulaşılamadı. İnterneti ve sunucu adresini kontrol et.');
@@ -122,4 +132,26 @@ export async function analyze(cfg: AiConfig, input: AnalyzeInput): Promise<Analy
   } finally {
     clearTimeout(timer);
   }
+}
+
+export async function analyze(cfg: AiConfig, input: AnalyzeInput): Promise<Analysis> {
+  return sanitize(await post(cfg, input));
+}
+
+/** A recipe adapted to the phase, factors and medicines in `recent`. */
+export async function fetchRecipe(cfg: AiConfig, input: Omit<AnalyzeInput, 'mode'>): Promise<Recipe> {
+  const raw = await post(cfg, { ...input, mode: 'recipe' });
+  const recipe: Recipe = {
+    title: String(raw?.title ?? input.foodName ?? 'Tarif'),
+    servings: String(raw?.servings ?? ''),
+    time: String(raw?.time ?? ''),
+    ingredients: (Array.isArray(raw?.ingredients) ? raw.ingredients : [])
+      .map((x: any) => ({ item: String(x?.item ?? ''), amount: String(x?.amount ?? '') }))
+      .filter((x: { item: string }) => x.item),
+    steps: asStrings(raw?.steps),
+    changes: asStrings(raw?.changes),
+    note: raw?.note ? String(raw.note) : null,
+  };
+  if (!recipe.ingredients.length || !recipe.steps.length) throw new Error('Tarif eksik geldi, tekrar dener misin?');
+  return recipe;
 }

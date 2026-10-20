@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { TextInput } from '../components/text';
 import { Mascot } from '../components/Mascot';
+import { PainMap } from '../components/PainMap';
 import { Suspects } from '../components/Suspects';
 import { WhenField } from '../components/WhenField';
 import { Button, Card, Row, Screen, T, Tap, st } from '../components/ui';
 import { useApp } from '../lib/app-state';
 import { now } from '../lib/dates';
 import * as db from '../lib/db';
+import { parseAreas } from '../lib/pain-map';
 import { onTint, palette, soft, surface } from '../lib/theme';
 
 const FIELDS = [
@@ -29,6 +31,7 @@ export default function Symptom() {
   const [at, setAt] = useState(() => now());
   const [v, setV] = useState<Record<Key, number>>({ pain: 0, bloating: 0, gas: 0, fatigue: 0 });
   const [note, setNote] = useState('');
+  const [areas, setAreas] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [asking, setAsking] = useState(false);
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -41,6 +44,7 @@ export default function Symptom() {
       setAt(s.at);
       setV({ pain: s.pain, bloating: s.bloating, gas: s.gas, fatigue: s.fatigue });
       setNote(s.note ?? '');
+      setAreas(parseAreas(s.areas));
     });
   }, [sql, editing]);
 
@@ -65,13 +69,13 @@ export default function Symptom() {
   const save = async () => {
     setSaving(true);
     if (editing) {
-      await db.updateSymptom(sql, { id: editing, at, ...v, note: note.trim() || null });
+      await db.updateSymptom(sql, { id: editing, at, ...v, note: note.trim() || null, areas: v.pain && areas.length ? areas.join(',') : null });
       app.bump();
       setSaving(false);
       router.back();
       return;
     }
-    await db.addSymptom(sql, { at, ...v, note: note.trim() || null });
+    await db.addSymptom(sql, { at, ...v, note: note.trim() || null, areas: v.pain && areas.length ? areas.join(',') : null });
     app.bump();
     setSaving(false);
     // a rough day: ask which recent meal might be behind it
@@ -150,6 +154,17 @@ export default function Symptom() {
           </View>
         ))}
       </Card>
+      {v.pain > 0 ? (
+        <Card style={{ gap: 10 }}>
+          <View style={{ gap: 2 }}>
+            <T v="h3">Nerede ağrıyor?</T>
+            <T v="small" color={palette.inkSoft}>
+              Bir ya da birkaç yere dokun. Ağrının yeri doktorun için önemli.
+            </T>
+          </View>
+          <PainMap value={areas} onChange={setAreas} />
+        </Card>
+      ) : null}
       <Card style={{ gap: 10 }}>
         <TextInput
           value={note}

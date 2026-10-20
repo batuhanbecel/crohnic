@@ -32,6 +32,8 @@ export default function Settings() {
   const [perm, setPerm] = useState<PermissionState>('undetermined');
   const [remindMeals, setRemindMeals] = useState(true);
   const [remindDaily, setRemindDaily] = useState(true);
+  const [remindWeekly, setRemindWeekly] = useState(true);
+  const [remindWater, setRemindWater] = useState(true);
   const [backupAt, setBackupAt] = useState<number | null>(null);
   const [autoAt, setAutoAt] = useState<number | null>(null);
   const [backingUp, setBackingUp] = useState(false);
@@ -53,6 +55,8 @@ export default function Settings() {
         setPerm(await permission());
         setRemindMeals(await isOn(sql, SETTINGS.meals));
         setRemindDaily(await isOn(sql, SETTINGS.daily));
+        setRemindWeekly(await isOn(sql, SETTINGS.weekly));
+        setRemindWater(await isOn(sql, SETTINGS.water));
         setBackupAt(await lastBackup(sql));
         setAutoAt(await lastAutoBackup(sql));
         setMedNames((await db.listMeds(sql)).map((m) => m.name));
@@ -208,6 +212,10 @@ export default function Settings() {
         <LinkRow icon="doc.text.fill" title="Doktor raporu (PDF)" onPress={() => router.push('/rapor')} />
         <View style={{ height: 1, backgroundColor: palette.hairline }} />
         <LinkRow icon="testtube.2" title="Tahliller ve kilo" onPress={() => router.push('/tahliller')} />
+        <View style={{ height: 1, backgroundColor: palette.hairline }} />
+        <LinkRow icon="calendar.badge.clock" title="Kontrol takvimi" onPress={() => router.push('/kontroller')} />
+        <View style={{ height: 1, backgroundColor: palette.hairline }} />
+        <LinkRow icon="calendar" title="Haftalık özet" onPress={() => router.push('/hafta')} />
       </Card>
 
       <Card style={{ gap: 10 }}>
@@ -276,6 +284,24 @@ export default function Settings() {
             </T>
           </View>
           <Switch value={remindDaily && perm === 'granted'} onValueChange={(v) => toggle(SETTINGS.daily, v, setRemindDaily)} trackColor={{ true: palette.lettuce }} />
+        </Row>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <View style={{ flex: 1 }}>
+            <T v="callout">Pazar özeti</T>
+            <T v="small" color={palette.inkSoft}>
+              Pazar 20:00’de haftanın özeti ve aktivite skoru
+            </T>
+          </View>
+          <Switch value={remindWeekly && perm === 'granted'} onValueChange={(v) => toggle(SETTINGS.weekly, v, setRemindWeekly)} trackColor={{ true: palette.lettuce }} />
+        </Row>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <View style={{ flex: 1 }}>
+            <T v="callout">Su hatırlatması</T>
+            <T v="small" color={palette.inkSoft}>
+              Sulu dışkı sık olduğu günlerde su içmeyi hatırlatır
+            </T>
+          </View>
+          <Switch value={remindWater && perm === 'granted'} onValueChange={(v) => toggle(SETTINGS.water, v, setRemindWater)} trackColor={{ true: palette.lettuce }} />
         </Row>
         <T v="caption" color={palette.inkFaint} style={{ fontWeight: '400' }}>
           {perm === 'denied'
@@ -410,7 +436,7 @@ export default function Settings() {
   );
 }
 
-function LinkRow({ icon, title, onPress }: { icon: 'pills.fill' | 'doc.text.fill' | 'testtube.2'; title: string; onPress: () => void }) {
+function LinkRow({ icon, title, onPress }: { icon: 'pills.fill' | 'doc.text.fill' | 'testtube.2' | 'calendar.badge.clock' | 'calendar'; title: string; onPress: () => void }) {
   return (
     <Tap onPress={onPress}>
       <Row gap={12} style={{ paddingVertical: 10 }}>

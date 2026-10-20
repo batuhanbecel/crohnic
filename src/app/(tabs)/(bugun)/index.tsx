@@ -7,6 +7,7 @@ import { SLEEP, STRESS } from '../../../components/checkin';
 import { GroupThumb } from '../../../components/MealRow';
 import { Mascot, type Mood } from '../../../components/Mascot';
 import { QuickLog } from '../../../components/QuickLog';
+import { WaterCard } from '../../../components/WaterCard';
 import { REACTIONS, ReactionPicker } from '../../../components/ReactionPicker';
 import { Text } from '../../../components/text';
 import { Button, Card, Icon, IconBubble, Row, Screen, T, Tap, type SymbolName } from '../../../components/ui';
@@ -20,6 +21,12 @@ import { alarmSupport } from '../../../lib/alarm';
 import { askPermission, cancelMealReminder, permission, syncReminders, type PermissionState } from '../../../lib/reminders';
 import { palette, radius, shadow, soft, surface, type } from '../../../lib/theme';
 import { slotForHour } from '../../../lib/suggest';
+import { SLOT_LABEL, SLOT_SHORT, slotsFor } from '../../../lib/meal-slot';
+import { areasText } from '../../../lib/pain-map';
+import { dueText, isDueSoon, kindOf } from '../../../lib/checkups';
+import { hbiDue } from '../../../lib/hbi';
+import { waterTarget, wateryCount } from '../../../lib/water';
+import { hasStoma } from '../../../lib/tolerance';
 import { useDayPlan } from '../../../lib/use-day-plan';
 
 
@@ -63,6 +70,8 @@ export default function Home() {
   const [medsSilent, setMedsSilent] = useState(false);
   const [factorsSeen, setFactorsSeen] = useState(true);
   const [streak, setStreak] = useState({ days: 0, today: false });
+  const [checkups, setCheckups] = useState<db.Checkup[]>([]);
+  const [hbiRows, setHbiRows] = useState<db.HbiRow[]>([]);
   const dayPlan = useDayPlan();
   const [thanks, setThanks] = useState<{ text: string; mood: Mood } | null>(null);
   useEffect(() => {
@@ -94,6 +103,8 @@ export default function Home() {
     ]);
     // consecutive days with at least one log, counted back from today (yesterday if today is still empty)
     const logged = await db.loggedDays(sql, today - 120 * 86400000);
+    setCheckups(await db.listCheckups(sql));
+    setHbiRows(await db.listHbi(sql, 2));
     let run = 0;
     for (let i = logged.has(isoDay(t)) ? 0 : 1; logged.has(isoDay(today - i * 86400000 + 3600000)); i++) run++;
     setStreak({ days: run, today: logged.has(isoDay(t)) });
@@ -211,6 +222,18 @@ export default function Home() {
     if (open) router.push('/ayarlar');
   };
 
+  const addWater = async (delta: 1 | -1) => {
+    const day = isoDay(now());
+    setDaily((d) => ({ ...(d ?? { day, stress: null, sleep_q: null, sleep_h: null, note: null, at: now() }), water: Math.max(0, (d?.water ?? 0) + delta) }));
+    await db.addWater(sql, day, delta);
+  };
+
+  const checkupDone = async (c: db.Checkup) => {
+    await db.completeCheckup(sql, c.id);
+    await syncReminders(sql);
+    app.bump();
+  };
+
   const enableNotifs = async () => {
     await askPermission();
     await db.setSetting(sql, 'notif_prompt_seen', '1');
@@ -237,6 +260,11 @@ export default function Home() {
     : undefined;
   const askMeal = !redFlag && !askDose ? pending[0] : undefined;
   const next = pending.filter((m) => m !== askMeal).slice(0, 2);
+  const dueCheckups = checkups.filter((c) => isDueSoon(c, at)).slice(0, 2);
+  const askHbi = !!at && hbiDue(at, hbiRows);
+  const dow = new Date(at).getDay();
+  // the week's summary: Sunday evening and Monday morning
+  const weekReady = (dow === 0 && new Date(at).getHours() >= 18) || (dow === 1 && new Date(at).getHours() < 13);
 
   const nextItems = [
     ...next.map((m) => (
@@ -275,6 +303,67 @@ export default function Home() {
           </Row>
         );
       }),
+    ...dueCheckups.map((c) => {
+      const k = kindOf(c.kind);
+      const late = c.due_at < startOfDay(at);
+      const report = k.after === 'report' && !late;
+      return (
+        <Row key={`c${c.id}`} gap={12} style={{ paddingVertical: 12 }}>
+          <Tap onPress={() => router.push('/kontroller')} style={{ flex: 1 }} accessibilityRole="button">
+            <Row gap={12}>
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: surface.well, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 19 }}>{k.emoji}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <T v="h3" numberOfLines={1}>
+                  {c.title}
+                </T>
+                <T v="small" color={late ? palette.bad : palette.inkSoft} numberOfLines={1}>
+                  {report ? `${dueText(c, at)} · raporunu hazırla` : dueText(c, at)}
+                </T>
+              </View>
+            </Row>
+          </Tap>
+          {report ? (
+            <Button title="Rapor" kind="glass" icon="doc.text" compact onPress={() => router.push('/rapor')} />
+          ) : (
+            <Button title="Yapıldı" compact onPress={() => checkupDone(c)} />
+          )}
+        </Row>
+      );
+    }),
+    ...(askHbi
+      ? [
+          <Tap key="hbi" onPress={() => router.push('/skor')}>
+            <Row gap={12} style={{ paddingVertical: 12 }}>
+              <IconBubble name="checklist" color={palette.lettuceDeep} dim={40} fallback="📋" />
+              <View style={{ flex: 1 }}>
+                <T v="h3">Haftalık aktivite skoru</T>
+                <T v="small" color={palette.inkSoft}>
+                  3 soru, 1 dakika; çoğunu kayıtlarından doldurdum
+                </T>
+              </View>
+              <Icon name="chevron.right" size={14} color={palette.inkFaint} fallback="›" />
+            </Row>
+          </Tap>,
+        ]
+      : []),
+    ...(weekReady
+      ? [
+          <Tap key="week" onPress={() => router.push({ pathname: '/hafta', params: dow === 1 ? { offset: '-1' } : {} })}>
+            <Row gap={12} style={{ paddingVertical: 12 }}>
+              <IconBubble name="calendar" color={palette.sky} dim={40} fallback="🗓️" />
+              <View style={{ flex: 1 }}>
+                <T v="h3">{dow === 1 ? 'Geçen haftanın özeti' : 'Haftanın özeti hazır'}</T>
+                <T v="small" color={palette.inkSoft}>
+                  Geçen haftayla karşılaştırma ve tek öneri
+                </T>
+              </View>
+              <Icon name="chevron.right" size={14} color={palette.inkFaint} fallback="›" />
+            </Row>
+          </Tap>,
+        ]
+      : []),
     ...(medsSilent
       ? [
           <Row key="meds-silent" gap={12} style={{ paddingVertical: 12 }}>
@@ -339,6 +428,7 @@ export default function Home() {
   ];
 
   // ----- today's timeline -----
+  const mealSlots = slotsFor(meals.filter((g) => !g.items.every(db.isTobacco)).map((g) => ({ key: g.key, eaten_at: g.eaten_at, slot: g.slot })));
   const entries: Entry[] = [
     ...meals.map((g) => ({
       key: `m${g.key}`,
@@ -347,7 +437,11 @@ export default function Home() {
       fallback: '🍽️',
       color: palette.lettuce,
       title: g.name,
-      sub: g.reaction != null ? REACTIONS[g.reaction].phrase : 'Nasıl geçtiği bekleniyor',
+      sub: mealSlots.get(g.key)
+        ? `${SLOT_LABEL[mealSlots.get(g.key)!]} · ${g.reaction != null ? REACTIONS[g.reaction].phrase : 'nasıl geçtiği bekleniyor'}`
+        : g.reaction != null
+          ? REACTIONS[g.reaction].phrase
+          : 'Nasıl geçtiği bekleniyor',
       onPress: () => router.push(`/ogun/${g.ids[0]}`),
       group: g,
     })),
@@ -368,7 +462,7 @@ export default function Home() {
       color: s.pain >= 4 ? palette.bad : palette.apricot,
       title: s.pain + s.bloating + s.gas + s.fatigue === 0 ? 'Şikayet yok' : 'Semptom',
       sub:
-        [s.pain ? `ağrı ${s.pain}` : null, s.bloating ? `şişkinlik ${s.bloating}` : null, s.gas ? `gaz ${s.gas}` : null, s.fatigue ? `yorgunluk ${s.fatigue}` : null]
+        [s.pain ? `ağrı ${s.pain}${areasText(s.areas) ? ` (${areasText(s.areas)})` : ''}` : null, s.bloating ? `şişkinlik ${s.bloating}` : null, s.gas ? `gaz ${s.gas}` : null, s.fatigue ? `yorgunluk ${s.fatigue}` : null]
           .filter(Boolean)
           .join(', ') || 'Her şey yolunda',
     })),
@@ -424,7 +518,7 @@ export default function Home() {
     symptoms: symptoms.length,
     doses: { taken: takenToday, total: todayDoses.length },
     subs: {
-      meal: lastMeal ? `Son ${timeLabel(lastMeal.eaten_at)}` : undefined,
+      meal: lastMeal ? `${mealSlots.get(lastMeal.key) ? SLOT_SHORT[mealSlots.get(lastMeal.key)!] : 'Son'} ${timeLabel(lastMeal.eaten_at)}` : undefined,
       toilet: lastBowel ? `Tip ${lastBowel.bristol}, son ${timeLabel(lastBowel.at)}` : undefined,
       symptom: maxPain == null ? undefined : maxPain === 0 ? 'Şikayet yok' : `En yüksek ağrı ${maxPain}/5`,
       med: !todayDoses.length
@@ -632,6 +726,15 @@ export default function Home() {
           })}
         </Row>
       </Card>
+
+      <WaterCard
+        glasses={daily?.water ?? 0}
+        target={waterTarget({ phase: app.phase, watery: wateryCount(bowel), fever: (daily?.temp ?? 0) >= 38, stoma: hasStoma() })}
+        watery={wateryCount(bowel)}
+        hour={new Date(at).getHours()}
+        stoma={hasStoma()}
+        onAdd={addWater}
+      />
 
       <Row style={{ justifyContent: 'space-between', alignItems: 'baseline', marginTop: 6, paddingHorizontal: 2 }}>
         <T v="h2">Bugün</T>

@@ -17,6 +17,10 @@ export type Meal = {
   phase: Phase;
   /** Items eaten together share a group id (one sitting = one group). */
   group_id: string | null;
+  /** 0 small, 1 normal, 2 large; null = not given (counts as normal) */
+  portion?: number | null;
+  /** breakfast/lunch… chosen by hand; null = worked out from the time */
+  slot?: string | null;
 };
 
 export type SymptomLog = {
@@ -27,6 +31,8 @@ export type SymptomLog = {
   gas: number;
   fatigue: number;
   note: string | null;
+  /** where the pain was: comma separated region keys (see pain-map) */
+  areas?: string | null;
 };
 
 export type BowelLog = {
@@ -38,7 +44,7 @@ export type BowelLog = {
   note: string | null;
 };
 
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 export async function migrate(db: SQLiteDatabase) {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
@@ -173,6 +179,44 @@ export async function migrate(db: SQLiteDatabase) {
     v = 6;
   }
 
+  if (v === 6) {
+    // portion and meal name per sitting, where the pain was, the weekly activity score,
+    // check-ups (appointments, labs, vaccines) and recipes kept for a while
+    await db.execAsync(`
+      ALTER TABLE meals ADD COLUMN portion INTEGER;
+      ALTER TABLE meals ADD COLUMN slot TEXT;
+      ALTER TABLE symptoms ADD COLUMN areas TEXT;
+      CREATE TABLE IF NOT EXISTS hbi (
+        week TEXT PRIMARY KEY,
+        at INTEGER NOT NULL,
+        wellbeing INTEGER NOT NULL,
+        pain INTEGER NOT NULL,
+        liquid REAL NOT NULL,
+        complications TEXT,
+        score REAL NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS checkups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        kind TEXT NOT NULL,
+        title TEXT NOT NULL,
+        due_at INTEGER NOT NULL,
+        timed INTEGER NOT NULL DEFAULT 0,
+        every_days INTEGER NOT NULL DEFAULT 0,
+        remind_days INTEGER NOT NULL DEFAULT 1,
+        done_at INTEGER,
+        note TEXT,
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS checkups_due ON checkups(due_at);
+      CREATE TABLE IF NOT EXISTS recipes (
+        key TEXT PRIMARY KEY,
+        json TEXT NOT NULL,
+        at INTEGER NOT NULL
+      );
+    `);
+    v = 7;
+  }
+
   await db.execAsync(`PRAGMA user_version = ${DB_VERSION}`);
 }
 
@@ -255,8 +299,8 @@ export async function addMeal(
   m: Omit<Meal, 'id' | 'reaction' | 'reaction_note' | 'group_id'> & { reaction?: Reaction | null; reaction_note?: string | null; group_id?: string | null },
 ) {
   const r = await db.runAsync(
-    `INSERT INTO meals (name, food_id, tags, photo, eaten_at, ai_verdict, reaction, reaction_note, phase, group_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO meals (name, food_id, tags, photo, eaten_at, ai_verdict, reaction, reaction_note, phase, group_id, portion, slot)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     m.name,
     m.food_id,
     m.tags,
@@ -267,6 +311,8 @@ export async function addMeal(
     m.reaction_note ?? null,
     m.phase,
     m.group_id ?? null,
+    m.portion ?? null,
+    m.slot ?? null,
   );
   return r.lastInsertRowId;
 }
@@ -279,7 +325,7 @@ export function newGroupId() {
 export async function addMealGroup(
   db: SQLiteDatabase,
   items: Omit<Meal, 'id' | 'reaction' | 'reaction_note' | 'group_id' | 'eaten_at' | 'phase'>[],
-  shared: { eaten_at: number; phase: Phase; reaction?: Reaction | null },
+  shared: { eaten_at: number; phase: Phase; reaction?: Reaction | null; portion?: number | null; slot?: string | null },
 ) {
   const group_id = items.length > 1 ? newGroupId() : null;
   const ids: number[] = [];
@@ -330,6 +376,18 @@ export async function addToMeal(
     reaction: base.reaction,
     reaction_note: base.reaction_note,
     group_id: gid,
+    portion: base.portion ?? null,
+    slot: base.slot ?? null,
+  });
+}
+
+/** Portion and meal name apply to the whole sitting. */
+export async function setGroupDetails(db: SQLiteDatabase, ids: number[], d: { portion?: number | null; slot?: string | null }) {
+  await db.withTransactionAsync(async () => {
+    for (const id of ids) {
+      if (d.portion !== undefined) await db.runAsync('UPDATE meals SET portion = ? WHERE id = ?', d.portion, id);
+      if (d.slot !== undefined) await db.runAsync('UPDATE meals SET slot = ? WHERE id = ?', d.slot, id);
+    }
   });
 }
 
@@ -349,6 +407,8 @@ export type MealGroup = {
   phase: Phase;
   reaction: Reaction | null;
   ai_verdict: Verdict | null;
+  portion: number | null;
+  slot: string | null;
 };
 
 const VRANK: Record<Verdict, number> = { iyi: 0, dikkat: 1, riskli: 2 };
@@ -374,6 +434,8 @@ export function groupMeals(meals: Meal[]): MealGroup[] {
       phase: sorted[0].phase,
       reaction: reactions.every((r) => r === reactions[0]) ? reactions[0] : null,
       ai_verdict: verdicts.length ? verdicts.reduce((a, b) => (VRANK[b] > VRANK[a] ? b : a)) : null,
+      portion: sorted[0].portion ?? null,
+      slot: sorted[0].slot ?? null,
     };
   });
 }
@@ -418,13 +480,14 @@ export async function pendingReactions(db: SQLiteDatabase) {
 // ---------- symptoms ----------
 export async function addSymptom(db: SQLiteDatabase, s: Omit<SymptomLog, 'id'>) {
   await db.runAsync(
-    'INSERT INTO symptoms (at, pain, bloating, gas, fatigue, note) VALUES (?, ?, ?, ?, ?, ?)',
+    'INSERT INTO symptoms (at, pain, bloating, gas, fatigue, note, areas) VALUES (?, ?, ?, ?, ?, ?, ?)',
     s.at,
     s.pain,
     s.bloating,
     s.gas,
     s.fatigue,
     s.note,
+    s.areas ?? null,
   );
 }
 
@@ -434,8 +497,8 @@ export async function getSymptom(db: SQLiteDatabase, id: number) {
 
 export async function updateSymptom(db: SQLiteDatabase, s: SymptomLog) {
   await db.runAsync(
-    'UPDATE symptoms SET at = ?, pain = ?, bloating = ?, gas = ?, fatigue = ?, note = ? WHERE id = ?',
-    s.at, s.pain, s.bloating, s.gas, s.fatigue, s.note, s.id,
+    'UPDATE symptoms SET at = ?, pain = ?, bloating = ?, gas = ?, fatigue = ?, note = ?, areas = ? WHERE id = ?',
+    s.at, s.pain, s.bloating, s.gas, s.fatigue, s.note, s.areas ?? null, s.id,
   );
 }
 
@@ -640,16 +703,129 @@ export async function setFeel(db: SQLiteDatabase, day: string, feel: number | nu
   );
 }
 
+/** Add (or take back) glasses of water for a day; never below zero. Keeps the rest of the check-in. */
+export async function addWater(db: SQLiteDatabase, day: string, delta: number) {
+  await db.runAsync(
+    `INSERT INTO daily (day, water, at) VALUES (?, ?, ?)
+     ON CONFLICT(day) DO UPDATE SET water = MAX(0, COALESCE(water, 0) + ?)`,
+    day, Math.max(0, delta), Date.now(), delta,
+  );
+}
+
 export async function listDaily(db: SQLiteDatabase, limit = 400) {
   return db.getAllAsync<Daily>('SELECT * FROM daily ORDER BY day DESC LIMIT ?', limit);
 }
 
+// ---------- weekly activity score (Harvey-Bradshaw based) ----------
+export type HbiRow = { week: string; at: number; wellbeing: number; pain: number; liquid: number; complications: string | null; score: number };
+
+export async function getHbi(db: SQLiteDatabase, week: string) {
+  return db.getFirstAsync<HbiRow>('SELECT * FROM hbi WHERE week = ?', week);
+}
+
+export async function listHbi(db: SQLiteDatabase, limit = 26) {
+  return db.getAllAsync<HbiRow>('SELECT * FROM hbi ORDER BY week DESC LIMIT ?', limit);
+}
+
+export async function saveHbi(db: SQLiteDatabase, h: Omit<HbiRow, 'at'>) {
+  await db.runAsync(
+    `INSERT INTO hbi (week, at, wellbeing, pain, liquid, complications, score) VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(week) DO UPDATE SET at = excluded.at, wellbeing = excluded.wellbeing, pain = excluded.pain,
+       liquid = excluded.liquid, complications = excluded.complications, score = excluded.score`,
+    h.week, Date.now(), h.wellbeing, h.pain, h.liquid, h.complications, h.score,
+  );
+}
+
+export async function deleteHbi(db: SQLiteDatabase, week: string) {
+  await db.runAsync('DELETE FROM hbi WHERE week = ?', week);
+}
+
+// ---------- check-ups: appointments, labs, vaccines ----------
+export type Checkup = {
+  id: number;
+  kind: string;
+  title: string;
+  due_at: number;
+  /** 1 = has a time of day (an appointment), 0 = just a day */
+  timed: number;
+  /** repeat every n days once done; 0 = once */
+  every_days: number;
+  /** remind this many days before (0 = on the day) */
+  remind_days: number;
+  done_at: number | null;
+  note: string | null;
+  created_at: number;
+};
+
+export async function listCheckups(db: SQLiteDatabase) {
+  return db.getAllAsync<Checkup>('SELECT * FROM checkups ORDER BY done_at IS NOT NULL, due_at');
+}
+
+export async function getCheckup(db: SQLiteDatabase, id: number) {
+  return db.getFirstAsync<Checkup>('SELECT * FROM checkups WHERE id = ?', id);
+}
+
+export async function saveCheckup(db: SQLiteDatabase, c: Omit<Checkup, 'id' | 'created_at' | 'done_at'> & { id?: number }) {
+  if (c.id) {
+    await db.runAsync(
+      'UPDATE checkups SET kind = ?, title = ?, due_at = ?, timed = ?, every_days = ?, remind_days = ?, note = ? WHERE id = ?',
+      c.kind, c.title, c.due_at, c.timed, c.every_days, c.remind_days, c.note, c.id,
+    );
+    return c.id;
+  }
+  const r = await db.runAsync(
+    'INSERT INTO checkups (kind, title, due_at, timed, every_days, remind_days, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    c.kind, c.title, c.due_at, c.timed, c.every_days, c.remind_days, c.note, Date.now(),
+  );
+  return r.lastInsertRowId;
+}
+
+/** Mark done; a repeating one comes back after its interval (counted from today, not the old date). */
+export async function completeCheckup(db: SQLiteDatabase, id: number, at = Date.now()) {
+  const c = await getCheckup(db, id);
+  if (!c) return null;
+  let next: number | null = null;
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('UPDATE checkups SET done_at = ? WHERE id = ?', at, id);
+    if (c.every_days > 0) {
+      const d = new Date(at);
+      const due = new Date(d.getFullYear(), d.getMonth(), d.getDate() + c.every_days, c.timed ? new Date(c.due_at).getHours() : 10, c.timed ? new Date(c.due_at).getMinutes() : 0).getTime();
+      const r = await db.runAsync(
+        'INSERT INTO checkups (kind, title, due_at, timed, every_days, remind_days, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        c.kind, c.title, due, c.timed, c.every_days, c.remind_days, null, Date.now(),
+      );
+      next = r.lastInsertRowId;
+    }
+  });
+  return next;
+}
+
+export async function deleteCheckup(db: SQLiteDatabase, id: number) {
+  await db.runAsync('DELETE FROM checkups WHERE id = ?', id);
+}
+
+// ---------- recipes (AI answers kept for a while; not personal data, not backed up) ----------
+export async function getRecipe(db: SQLiteDatabase, key: string, maxAgeMs: number) {
+  const r = await db.getFirstAsync<{ json: string; at: number }>('SELECT json, at FROM recipes WHERE key = ?', key);
+  if (!r || Date.now() - r.at > maxAgeMs) return null;
+  try {
+    return JSON.parse(r.json) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveRecipe(db: SQLiteDatabase, key: string, value: unknown) {
+  await db.runAsync('INSERT OR REPLACE INTO recipes (key, json, at) VALUES (?, ?, ?)', key, JSON.stringify(value), Date.now());
+}
+
 // ---------- backup ----------
-const BACKUP_TABLES = ['meals', 'symptoms', 'bowel', 'phases', 'meds', 'med_logs', 'daily', 'labs', 'settings'] as const;
+const BACKUP_TABLES = ['meals', 'symptoms', 'bowel', 'phases', 'meds', 'med_logs', 'daily', 'labs', 'hbi', 'checkups', 'settings'] as const;
 /** "Tüm verilerimi sil": every personal record and setting. Only the anonymous install id stays (it rate-limits photo analysis). */
 export async function wipeAll(db: SQLiteDatabase) {
   await db.withTransactionAsync(async () => {
     for (const t of BACKUP_TABLES) await db.runAsync(t === 'settings' ? "DELETE FROM settings WHERE key <> 'install_id'" : `DELETE FROM ${t}`);
+    await db.runAsync('DELETE FROM recipes');
   });
 }
 
@@ -714,7 +890,7 @@ export async function countMeals(db: SQLiteDatabase) {
 
 /** Everything in a time window, oldest first (report, insights). */
 export async function rangeData(db: SQLiteDatabase, from: number, to: number) {
-  const [meals, symptoms, bowel, phases, logs, meds, daily, labs] = await Promise.all([
+  const [meals, symptoms, bowel, phases, logs, meds, daily, labs, hbi] = await Promise.all([
     db.getAllAsync<Meal>('SELECT * FROM meals WHERE eaten_at >= ? AND eaten_at < ? ORDER BY eaten_at', from, to),
     db.getAllAsync<SymptomLog>('SELECT * FROM symptoms WHERE at >= ? AND at < ? ORDER BY at', from, to),
     db.getAllAsync<BowelLog>('SELECT * FROM bowel WHERE at >= ? AND at < ? ORDER BY at', from, to),
@@ -723,8 +899,9 @@ export async function rangeData(db: SQLiteDatabase, from: number, to: number) {
     listMeds(db, true),
     db.getAllAsync<Daily>('SELECT * FROM daily ORDER BY day'),
     db.getAllAsync<Lab>('SELECT * FROM labs ORDER BY at'),
+    db.getAllAsync<HbiRow>('SELECT * FROM hbi ORDER BY week'),
   ]);
-  return { meals, symptoms, bowel, phases, logs, meds, daily, labs };
+  return { meals, symptoms, bowel, phases, logs, meds, daily, labs, hbi };
 }
 
 /** Meals eaten in the window before a symptom (default 2–24 h), grouped into sittings. */

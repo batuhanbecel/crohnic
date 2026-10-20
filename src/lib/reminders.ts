@@ -5,6 +5,9 @@ import { askAlarmPermission, alarmSupport, syncAlarms, type AlarmSpec } from './
 import * as db from './db';
 import { isoDay, startOfDay } from './dates';
 import { fmtTime, nextSlot, parseTimes, slotsBetween } from './meds';
+import { SLOT_IN, slotAt } from './meal-slot';
+import { daysUntil } from './checkups';
+import { waterTarget, wateryCount } from './water';
 
 /**
  * Local notifications only (no push server):
@@ -12,6 +15,9 @@ import { fmtTime, nextSlot, parseTimes, slotsBetween } from './meds';
  *  - medication reminders: a real alarm (AlarmKit) at dose time when the med is set to alarm,
  *    a notification with an "Aldım" button, and two follow-ups (+15, +45 min) until the dose is marked
  *  - evening check-in (stress, sleep) on days it isn't filled in yet
+ *  - check-ups (appointments, tests, vaccines): the reminder day and the day itself
+ *  - Sunday evening: the week's summary and the weekly activity score
+ *  - a nudge to drink on days with several watery stools
  * Rolling one-off reminders are re-synced every time the app opens.
  */
 
@@ -25,6 +31,8 @@ export const SETTINGS = {
   meals: 'remind_meals',
   daily: 'remind_daily',
   dailyTime: 'remind_daily_time',
+  weekly: 'remind_weekly',
+  water: 'remind_water',
 } as const;
 
 const supported = Platform.OS === 'ios' || Platform.OS === 'android';
@@ -147,7 +155,7 @@ export async function scheduleMealReminder(sql: SQLiteDatabase, meal: { firstId:
     if (at < Date.now() + 5 * 60000) return;
     const name = meal.name.length > 60 ? `${meal.name.slice(0, 57)}…` : meal.name;
     const title = moved ? 'Günaydın 🌱' : `${MEAL_AFTER_H} saat oldu 🌱`;
-    const body = moved ? `Dün akşam yediğin ${name} nasıl geçti?` : `Yediğin ${name} nasıl geçti?`;
+    const body = moved ? `Dün akşam yediğin ${name} nasıl geçti?` : `${SLOT_IN[slotAt(meal.eatenAt)]} yediğin ${name} nasıl geçti?`;
     await schedule(mealId(meal.firstId), title, body, at, `/ogun/${meal.firstId}`, {
       category: CATEGORY.meal,
       data: { kind: 'meal', mealId: meal.firstId },
@@ -233,7 +241,7 @@ export async function syncReminders(sql: SQLiteDatabase) {
     // alarms don't depend on notification permission
     if (Platform.OS === 'ios') await syncMedAlarms(sql, meds, done, now);
 
-    await cancelPrefix(['med-', 'daily-', 'stock-']);
+    await cancelPrefix(['med-', 'daily-', 'stock-', 'checkup-', 'week-', 'water-']);
     if ((await permission()) !== 'granted') return;
 
     // medications
@@ -301,6 +309,49 @@ export async function syncReminders(sql: SQLiteDatabase) {
       const at = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 10, 0).getTime();
       const body = m.stock === 0 ? `${m.name} evde bitti. Reçeteni yenilemeyi unutma.` : `${m.name} için evde ${m.stock} doz kaldı. Reçeteni yenilemeyi unutma.`;
       await schedule(`stock-${m.id}`, 'İlacın bitiyor', body, at, '/ilaclar');
+    }
+
+    // check-ups: a heads-up on the reminder day, and on the day itself (2 h before a timed one)
+    for (const c of (await db.listCheckups(sql)).filter((x) => !x.done_at)) {
+      const until = daysUntil(c.due_at, now);
+      if (until > 60) continue;
+      const day = new Date(c.due_at);
+      const when = c.timed ? ` saat ${fmtTime([day.getHours(), day.getMinutes()])}` : '';
+      const url = c.kind === 'randevu' ? '/rapor' : '/kontroller';
+      if (c.remind_days > 0) {
+        const pre = new Date(day.getFullYear(), day.getMonth(), day.getDate() - c.remind_days, 10, 0).getTime();
+        if (pre > now) {
+          const lead = c.remind_days === 1 ? 'Yarın' : `${c.remind_days} gün sonra`;
+          const body = c.kind === 'randevu' ? `${lead}${when}: ${c.title}. Raporunu hazırlamak için dokun.` : `${lead}: ${c.title}.`;
+          await schedule(`checkup-${c.id}-pre`, 'Yaklaşan kontrol', body, pre, url);
+        }
+      }
+      const onDay = c.timed ? Math.max(c.due_at - 2 * 3600000, new Date(day.getFullYear(), day.getMonth(), day.getDate(), 8, 0).getTime()) : new Date(day.getFullYear(), day.getMonth(), day.getDate(), 9, 0).getTime();
+      if (onDay > now) await schedule(`checkup-${c.id}-day`, 'Bugün', `${c.title}${when}.`, onDay, url);
+    }
+
+    // Sunday evening: the week in one screen, and the weekly score if it's still missing
+    if (await isOn(sql, SETTINGS.weekly)) {
+      const d = new Date(now);
+      const ahead = (7 - d.getDay()) % 7; // days to Sunday
+      let at = new Date(d.getFullYear(), d.getMonth(), d.getDate() + ahead, 20, 0).getTime();
+      if (at <= now) at = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7, 20, 0).getTime();
+      await schedule(`week-${isoDay(at)}`, 'Haftan hazır 🌱', 'Bu haftanın özetine bak, aktivite skorunu 1 dakikada doldur.', at, '/hafta');
+    }
+
+    // several watery stools today and not enough to drink: one nudge a couple of hours later
+    if (await isOn(sql, SETTINGS.water)) {
+      const today = startOfDay(now);
+      const watery = wateryCount((await db.listBowel(sql, 40)).filter((b) => b.at >= today));
+      const hour = new Date(now).getHours();
+      if (watery >= 2 && hour >= 8 && hour < 19) {
+        const glasses = (await db.getDaily(sql, isoDay(now)))?.water ?? 0;
+        const phase = (await db.getPhase(sql)).phase;
+        const target = waterTarget({ phase, watery, stoma: (await db.getSetting(sql, 'stoma')) === '1' });
+        if (glasses < target) {
+          await schedule(`water-${isoDay(now)}`, 'Su içmeyi unutma 💧', `Bugün ${watery} sulu dışkı kaydettin. ${glasses}/${target} bardaktasın; ayran ya da tuzlu çorba da sayılır.`, now + 2 * 3600000, '/');
+        }
+      }
     }
 
     // evening check-in on the next days that aren't filled in yet

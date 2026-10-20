@@ -116,6 +116,8 @@ export type PersonalStat = Counts & {
   last: number;
   /** the same counts split by the phase the meal was eaten in */
   phases: Record<Phase, Counts>;
+  /** and by portion: 0 small, 1 normal (or not given), 2 large */
+  portions: [Counts, Counts, Counts];
   /** the latest reactions, oldest first (at most 8) */
   recent: { r: Reaction; phase: Phase; at: number }[];
 };
@@ -123,7 +125,7 @@ export type PersonalStat = Counts & {
 const counts = (): Counts => ({ n: 0, good: 0, mild: 0, bad: 0 });
 
 function emptyStat(): PersonalStat {
-  return { ...counts(), avg: 0, last: 0, phases: { remisyon: counts(), atak: counts() }, recent: [] };
+  return { ...counts(), avg: 0, last: 0, phases: { remisyon: counts(), atak: counts() }, portions: [counts(), counts(), counts()], recent: [] };
 }
 
 function add(c: Counts, r: Reaction) {
@@ -138,6 +140,7 @@ function push(stat: PersonalStat, m: Meal) {
   const phase: Phase = m.phase === 'atak' ? 'atak' : 'remisyon';
   add(stat, m.reaction);
   add(stat.phases[phase], m.reaction);
+  add(stat.portions[m.portion === 0 ? 0 : m.portion === 2 ? 2 : 1], m.reaction);
   stat.avg = (stat.mild + stat.bad * 2) / stat.n;
   stat.last = Math.max(stat.last, m.eaten_at);
   stat.recent.push({ r: m.reaction, phase, at: m.eaten_at });
@@ -191,6 +194,16 @@ function outcome(c: Counts) {
   if (!hits) return c.n === 1 ? 'dokunmadı' : 'hiç dokunmadı';
   if (hits === c.n) return c.n === 1 ? (c.bad ? 'çok dokundu' : 'biraz dokundu') : c.bad === c.n ? 'her seferinde çok dokundu' : 'her seferinde dokundu';
   return `${hits} kez dokundu`;
+}
+
+/**
+ * When it only bothered after a big plate: small and normal portions went fine (at least once)
+ * and every time it bothered was a large portion. "Pilav dokunuyor" vs "çok pilav dokunuyor".
+ */
+export function onlyLargePortions(stat: PersonalStat) {
+  const [small, normal, large] = stat.portions;
+  const hits = (c: Counts) => c.mild + c.bad;
+  return hits(large) > 0 && small.n + normal.n > 0 && hits(small) + hits(normal) === 0;
 }
 
 /** "Remisyonda 3 kez yedin, hiç dokunmadı" */
@@ -294,6 +307,11 @@ export function assessFood(food: Food, phase: Phase, meals?: Meal[], stats?: Ret
   // tobacco harms over months, not hours: how one cigarette felt never makes it "iyi"
   if (food.tags.includes('sigara') || !stat?.n) return withMeds(base, food);
   const p = personalFor(stat, phase, g.verdict);
+  // the amount, not the food: keep it on the menu, in a smaller portion
+  if (onlyLargePortions(stat)) {
+    if (p.verdict === 'riskli') p.verdict = 'dikkat';
+    p.advice = 'Az ya da normal porsiyonda sorun çıkmamış, büyük porsiyonda dokunmuş. Porsiyonu küçük tut.';
+  }
   return withMeds(
     { ...base, verdict: p.verdict, personal: p.verdict, confidence: p.confidence, driver: p.verdict === g.verdict && p.confidence !== 'kişisel' ? 'genel' : 'kisisel', why: p.note, personalNote: p.note, personalAdvice: p.advice },
     food,
@@ -449,7 +467,12 @@ export function foodPatterns(meals: Meal[]) {
       group = 'bazen';
       note = 'sadece atakta dokundu';
     } else if (group === 'bazen' && flareOnly) note = 'sadece atakta dokundu';
-    if (s.n >= 3 && last2.length === 2) {
+    // only big plates bothered: it's the amount
+    if (group !== 'dokunmayan' && onlyLargePortions(s)) {
+      group = 'bazen';
+      note = 'sadece büyük porsiyonda dokundu';
+    }
+    if (s.n >= 3 && last2.length === 2 && note !== 'sadece büyük porsiyonda dokundu') {
       if (group === 'dokunan' && last2.every((r) => r === 0)) {
         group = 'bazen';
         note = 'son 2 kez sorun çıkmadı';

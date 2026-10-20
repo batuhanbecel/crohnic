@@ -61,6 +61,10 @@ export function FoodPicker({
           placeholderTextColor={palette.inkFaint}
           style={[st.input, { flex: 1, minWidth: 0 }]}
           autoFocus={autoFocus}
+          // food names aren't dictionary words: autocorrect and inline predictions only get in the way
+          autoCorrect={false}
+          spellCheck={false}
+          autoComplete="off"
           returnKeyType="done"
           blurOnSubmit={false}
           onSubmitEditing={() => add(text, null)}

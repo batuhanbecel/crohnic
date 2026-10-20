@@ -287,3 +287,68 @@ export function searchFoods(q: string, list: Food[] = FOODS) {
   };
   return [...hits.values()].sort((a, b) => rank(a) - rank(b) || a.name.length - b.name.length);
 }
+
+// ---------- chains ("Dışarıda ne yesem?") ----------
+export type Brand = { name: string; emoji: string; kind: 'restoran' | 'kafe' };
+
+/** Chains in the food list, roughly by how common they are in Turkey. */
+export const BRANDS: Brand[] = [
+  { name: "McDonald's", emoji: '🍔', kind: 'restoran' },
+  { name: 'Burger King', emoji: '👑', kind: 'restoran' },
+  { name: 'KFC', emoji: '🍗', kind: 'restoran' },
+  { name: 'Popeyes', emoji: '🍗', kind: 'restoran' },
+  { name: "Domino's", emoji: '🍕', kind: 'restoran' },
+  { name: 'Little Caesars', emoji: '🍕', kind: 'restoran' },
+  { name: 'Sbarro', emoji: '🍕', kind: 'restoran' },
+  { name: 'Pizza Hut', emoji: '🍕', kind: 'restoran' },
+  { name: "Papa John's", emoji: '🍕', kind: 'restoran' },
+  { name: 'Subway', emoji: '🥪', kind: 'restoran' },
+  { name: "Arby's", emoji: '🥪', kind: 'restoran' },
+  { name: 'Tavuk Dünyası', emoji: '🍗', kind: 'restoran' },
+  { name: 'Usta Dönerci', emoji: '🥙', kind: 'restoran' },
+  { name: 'Maydonoz Döner', emoji: '🥙', kind: 'restoran' },
+  { name: 'Bereket Döner', emoji: '🥙', kind: 'restoran' },
+  { name: 'Paşa Döner', emoji: '🥙', kind: 'restoran' },
+  { name: 'Baydöner', emoji: '🥙', kind: 'restoran' },
+  { name: 'HD İskender', emoji: '🥙', kind: 'restoran' },
+  { name: 'Kasap Döner', emoji: '🥙', kind: 'restoran' },
+  { name: 'Köfteci Yusuf', emoji: '🍖', kind: 'restoran' },
+  { name: 'Komagene', emoji: '🌯', kind: 'restoran' },
+  { name: 'Çiğköftem', emoji: '🌯', kind: 'restoran' },
+  { name: 'Burger Yiyelim', emoji: '🍔', kind: 'restoran' },
+  { name: 'Big Chefs', emoji: '🍽️', kind: 'restoran' },
+  { name: 'Midyeci Ahmet', emoji: '🦪', kind: 'restoran' },
+  { name: "Carl's Jr.", emoji: '🍔', kind: 'restoran' },
+  { name: 'Shake Shack', emoji: '🍔', kind: 'restoran' },
+  { name: 'Five Guys', emoji: '🍔', kind: 'restoran' },
+  { name: "Wendy's", emoji: '🍔', kind: 'restoran' },
+  { name: 'Taco Bell', emoji: '🌮', kind: 'restoran' },
+  { name: 'Chipotle', emoji: '🌯', kind: 'restoran' },
+  { name: 'Panda Express', emoji: '🥡', kind: 'restoran' },
+  { name: 'Starbucks', emoji: '☕', kind: 'kafe' },
+  { name: 'Kahve Dünyası', emoji: '☕', kind: 'kafe' },
+  { name: 'Espressolab', emoji: '☕', kind: 'kafe' },
+  { name: 'Simit Sarayı', emoji: '🥯', kind: 'kafe' },
+  { name: 'Mado', emoji: '🍨', kind: 'kafe' },
+  { name: 'Caribou', emoji: '☕', kind: 'kafe' },
+  { name: "Gloria Jean's", emoji: '☕', kind: 'kafe' },
+  { name: 'Costa', emoji: '☕', kind: 'kafe' },
+  { name: 'Tim Hortons', emoji: '🍩', kind: 'kafe' },
+  { name: "Dunkin'", emoji: '🍩', kind: 'kafe' },
+  { name: 'Hafız Mustafa', emoji: '🍬', kind: 'kafe' },
+  { name: 'Saray Muhallebicisi', emoji: '🍮', kind: 'kafe' },
+  { name: 'Pelit', emoji: '🍰', kind: 'kafe' },
+  { name: 'Koska', emoji: '🍯', kind: 'kafe' },
+];
+
+const BRAND_FOODS = new Map(BRANDS.map((b) => [b.name, FOODS.filter((f) => f.name.startsWith(`${b.name} `))]));
+
+/** The chain's items in the food list. */
+export function brandFoods(brand: string) {
+  return BRAND_FOODS.get(brand) ?? [];
+}
+
+/** "Big Mac" for "McDonald's Big Mac" on the chain's own page. */
+export function withoutBrand(name: string, brand: string) {
+  return name.startsWith(`${brand} `) ? name.slice(brand.length + 1) : name;
+}
