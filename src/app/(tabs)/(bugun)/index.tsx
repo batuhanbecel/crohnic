@@ -1,6 +1,6 @@
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ActionSheetIOS, Alert, AppState, Linking, Platform, View } from 'react-native';
 import { BRISTOL } from '../../../components/bristol';
 import { SLEEP, STRESS } from '../../../components/checkin';
@@ -8,7 +8,7 @@ import { GroupThumb } from '../../../components/MealRow';
 import { Mascot, type Mood } from '../../../components/Mascot';
 import { QuickLog } from '../../../components/QuickLog';
 import { WaterCard } from '../../../components/WaterCard';
-import { REACTIONS, ReactionPicker } from '../../../components/ReactionPicker';
+import { REACTIONS } from '../../../components/ReactionPicker';
 import { Text } from '../../../components/text';
 import { Button, Card, Icon, IconBubble, Row, Screen, T, Tap, type SymbolName } from '../../../components/ui';
 import { useApp } from '../../../lib/app-state';
@@ -21,7 +21,7 @@ import { alarmSupport } from '../../../lib/alarm';
 import { askPermission, cancelMealReminder, permission, syncReminders, type PermissionState } from '../../../lib/reminders';
 import { palette, radius, shadow, soft, surface, type } from '../../../lib/theme';
 import { slotForHour } from '../../../lib/suggest';
-import { SLOT_LABEL, SLOT_SHORT, slotsFor } from '../../../lib/meal-slot';
+import { SLOT_LABEL, SLOT_SHORT, isSlot, slotAt, slotsFor } from '../../../lib/meal-slot';
 import { areasText } from '../../../lib/pain-map';
 import { dueText, isDueSoon, kindOf } from '../../../lib/checkups';
 import { hbiDue } from '../../../lib/hbi';
@@ -266,41 +266,50 @@ export default function Home() {
   // the week's summary: Sunday evening and Monday morning
   const weekReady = (dow === 0 && new Date(at).getHours() >= 18) || (dow === 1 && new Date(at).getHours() < 13);
 
+  const realMeals = meals.filter((g) => g.items.some((m) => !db.isTobacco(m)));
+  // suggest the current meal, or the next one when this one is already logged (no "akşam için
+  // ne yesem?" right after dinner); a snack after midnight doesn't count as breakfast
+  const slotOf = (t: number) => (new Date(t).getHours() < 5 ? null : slotForHour(new Date(t).getHours()));
+  const slotKeys = dayPlan.plan?.map((x) => x.key) ?? [];
+  const mealSlot = slotKeys.slice(Math.max(0, slotKeys.indexOf(dayPlan.current))).find((k) => !realMeals.some((g) => slotOf(g.eaten_at) === k));
+  const nextMeal = mealSlot ? dayPlan.plan?.find((x) => x.key === mealSlot) : undefined;
+  const morePending = pending.length - (askMeal ? 1 : 0) - next.length;
   const nextItems = [
     ...next.map((m) => (
-      <View key={`p${m.key}`} style={{ gap: 12, paddingVertical: 12 }}>
-        <Row gap={12}>
-          <GroupThumb group={m} size={40} />
-          <View style={{ flex: 1 }}>
-            <T v="h3" numberOfLines={2}>
-              {m.name} nasıl geçti?
-            </T>
-            <T v="small" color={palette.inkSoft}>
-              {relative(m.eaten_at)}
-            </T>
-          </View>
-        </Row>
-        <ReactionPicker compact onChange={(r) => react(m, r)} />
-      </View>
+      <TodoRow
+        key={`p${m.key}`}
+        lead={<GroupThumb group={m} size={38} />}
+        title={`${SLOT_LABEL[isSlot(m.slot) ? m.slot : slotAt(m.eaten_at)]}${dayKey(m.eaten_at) === dayKey(at) ? '' : `, ${relative(m.eaten_at)}`}`}
+        sub={m.name}
+        onPress={() => router.push(`/ogun/${m.ids[0]}`)}
+        right={<QuickReact name={m.name} onPick={(r) => answerMeal(m, r)} />}
+      />
     )),
+    ...(morePending > 0
+      ? [
+          <TodoRow
+            key="more-meals"
+            lead={<IconBubble name="ellipsis" color={palette.good} dim={38} fallback="…" />}
+            title={`${morePending} öğün daha nasıl geçti diye bekliyor`}
+            sub="Günlük’te hepsini gör"
+            onPress={() => router.navigate('/gunluk')}
+          />,
+        ]
+      : []),
     ...dueDoses
       .filter((d) => d !== askDose)
       .map((d) => {
         const w = doseWhen(d.due, at);
         const overdue = w.when === 'missed' || w.when === 'late';
         return (
-          <Row key={`d${d.med.id}:${d.due}`} gap={12} style={{ paddingVertical: 12 }}>
-            <IconBubble name="pills.fill" color={palette.peri} dim={40} fallback="💊" />
-            <View style={{ flex: 1 }}>
-              <T v="h3" numberOfLines={1}>
-                {d.med.name}
-              </T>
-              <T v="small" color={overdue ? palette.bad : palette.inkSoft} numberOfLines={1}>
-                {w.when === 'missed' ? w.text : [timeLabel(d.due), w.text, d.med.dose].filter(Boolean).join(' · ')}
-              </T>
-            </View>
-            <Button title="Aldım" kind={w.when === 'soon' ? 'glass' : 'primary'} compact onPress={() => take(d)} />
-          </Row>
+          <TodoRow
+            key={`d${d.med.id}:${d.due}`}
+            lead={<IconBubble name="pills.fill" color={palette.peri} dim={38} fallback="💊" />}
+            title={d.med.name}
+            sub={w.when === 'missed' ? w.text : [timeLabel(d.due), w.text, d.med.dose].filter(Boolean).join(' · ')}
+            subColor={overdue ? palette.bad : undefined}
+            right={<Button title="Aldım" kind={w.when === 'soon' ? 'glass' : 'primary'} compact onPress={() => take(d)} />}
+          />
         );
       }),
     ...dueCheckups.map((c) => {
@@ -308,121 +317,97 @@ export default function Home() {
       const late = c.due_at < startOfDay(at);
       const report = k.after === 'report' && !late;
       return (
-        <Row key={`c${c.id}`} gap={12} style={{ paddingVertical: 12 }}>
-          <Tap onPress={() => router.push('/kontroller')} style={{ flex: 1 }} accessibilityRole="button">
-            <Row gap={12}>
-              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: surface.well, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 19 }}>{k.emoji}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <T v="h3" numberOfLines={1}>
-                  {c.title}
-                </T>
-                <T v="small" color={late ? palette.bad : palette.inkSoft} numberOfLines={1}>
-                  {report ? `${dueText(c, at)} · raporunu hazırla` : dueText(c, at)}
-                </T>
-              </View>
-            </Row>
-          </Tap>
-          {report ? (
-            <Button title="Rapor" kind="glass" icon="doc.text" compact onPress={() => router.push('/rapor')} />
-          ) : (
-            <Button title="Yapıldı" compact onPress={() => checkupDone(c)} />
-          )}
-        </Row>
+        <TodoRow
+          key={`c${c.id}`}
+          lead={
+            <View style={{ width: 38, height: 38, borderRadius: 11, backgroundColor: surface.well, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 18 }}>{k.emoji}</Text>
+            </View>
+          }
+          title={c.title}
+          sub={report ? `${dueText(c, at)} · raporunu hazırla` : dueText(c, at)}
+          subColor={late ? palette.bad : undefined}
+          onPress={() => router.push('/kontroller')}
+          right={report ? <Button title="Rapor" kind="glass" icon="doc.text" compact onPress={() => router.push('/rapor')} /> : <Button title="Yapıldı" compact onPress={() => checkupDone(c)} />}
+        />
       );
     }),
     ...(askHbi
       ? [
-          <Tap key="hbi" onPress={() => router.push('/skor')}>
-            <Row gap={12} style={{ paddingVertical: 12 }}>
-              <IconBubble name="checklist" color={palette.lettuceDeep} dim={40} fallback="📋" />
-              <View style={{ flex: 1 }}>
-                <T v="h3">Haftalık aktivite skoru</T>
-                <T v="small" color={palette.inkSoft}>
-                  3 soru, 1 dakika; çoğunu kayıtlarından doldurdum
-                </T>
-              </View>
-              <Icon name="chevron.right" size={14} color={palette.inkFaint} fallback="›" />
-            </Row>
-          </Tap>,
+          <TodoRow
+            key="hbi"
+            lead={<IconBubble name="checklist" color={palette.lettuceDeep} dim={38} fallback="📋" />}
+            title="Haftalık aktivite skoru"
+            sub="3 soru, 1 dakika; çoğunu ben doldurdum"
+            onPress={() => router.push('/skor')}
+          />,
         ]
       : []),
     ...(weekReady
       ? [
-          <Tap key="week" onPress={() => router.push({ pathname: '/hafta', params: dow === 1 ? { offset: '-1' } : {} })}>
-            <Row gap={12} style={{ paddingVertical: 12 }}>
-              <IconBubble name="calendar" color={palette.sky} dim={40} fallback="🗓️" />
-              <View style={{ flex: 1 }}>
-                <T v="h3">{dow === 1 ? 'Geçen haftanın özeti' : 'Haftanın özeti hazır'}</T>
-                <T v="small" color={palette.inkSoft}>
-                  Geçen haftayla karşılaştırma ve tek öneri
-                </T>
-              </View>
-              <Icon name="chevron.right" size={14} color={palette.inkFaint} fallback="›" />
-            </Row>
-          </Tap>,
+          <TodoRow
+            key="week"
+            lead={<IconBubble name="calendar" color={palette.plum} dim={38} fallback="🗓️" />}
+            title={dow === 1 ? 'Geçen haftanın özeti' : 'Haftanın özeti hazır'}
+            sub="Geçen haftayla karşılaştırma ve tek öneri"
+            onPress={() => router.push({ pathname: '/hafta', params: dow === 1 ? { offset: '-1' } : {} })}
+          />,
         ]
       : []),
     ...(medsSilent
       ? [
-          <Row key="meds-silent" gap={12} style={{ paddingVertical: 12 }}>
-            <IconBubble name="bell.slash.fill" color={palette.bad} dim={40} fallback="🔕" />
-            <View style={{ flex: 1 }}>
-              <T v="h3">İlaç hatırlatmaları kapalı</T>
-              <T v="small" color={palette.inkSoft}>
-                Bildirim izni yok, ilaç saatinde sana ulaşamıyorum
-              </T>
-            </View>
-            <Button title="Aç" compact onPress={() => Linking.openSettings()} />
-          </Row>,
+          <TodoRow
+            key="meds-silent"
+            lead={<IconBubble name="bell.slash.fill" color={palette.bad} dim={38} fallback="🔕" />}
+            title="İlaç hatırlatmaları kapalı"
+            sub="Bildirim izni yok, ilaç saatinde ulaşamıyorum"
+            right={<Button title="Aç" compact onPress={() => Linking.openSettings()} />}
+          />,
         ]
       : []),
     ...(askCheckIn
       ? [
-          <Tap key="checkin" onPress={() => router.push('/gun')}>
-            <Row gap={12} style={{ paddingVertical: 12 }}>
-              <IconBubble name="moon.stars.fill" color={palette.plum} dim={40} fallback="🌙" />
-              <View style={{ flex: 1 }}>
-                <T v="h3">Bugün nasıldı?</T>
-                <T v="small" color={palette.inkSoft}>
-                  Stres ve uyku, 10 saniye
-                </T>
-              </View>
-              <Icon name="chevron.right" size={14} color={palette.inkFaint} fallback="›" />
-            </Row>
-          </Tap>,
+          <TodoRow
+            key="checkin"
+            lead={<IconBubble name="moon.stars.fill" color={palette.plum} dim={38} fallback="🌙" />}
+            title="Stres ve uyku"
+            sub="Akşam kontrolü, 10 saniye"
+            onPress={() => router.push('/gun')}
+          />,
         ]
       : []),
     ...(!factorsSeen
       ? [
-          <Row key="factors" gap={12} style={{ paddingVertical: 12 }}>
-            <IconBubble name="person.fill" color={palette.plum} dim={40} fallback="🩺" />
-            <View style={{ flex: 1 }}>
-              <T v="h3">Darlık, laktoz ya da kortizon?</T>
-              <T v="small" color={palette.inkSoft}>
-                Varsa söyle, yemekleri sana ve ilaçlarına göre değerlendireyim
-              </T>
-            </View>
-            <View style={{ gap: 4, alignItems: 'flex-end' }}>
-              <Button title="Ayarla" compact onPress={() => dismissFactors(true)} />
-              <Button title="Yok" kind="plain" compact onPress={() => dismissFactors(false)} />
-            </View>
-          </Row>,
+          <TodoRow
+            key="factors"
+            lead={<IconBubble name="slider.horizontal.3" color={palette.plum} dim={38} fallback="🩺" />}
+            title="Darlık, laktoz ya da kortizon?"
+            sub="Varsa yemekleri ona göre değerlendiririm"
+            onPress={() => dismissFactors(true)}
+            right={<Button title="Yok" kind="plain" compact onPress={() => dismissFactors(false)} />}
+          />,
         ]
       : []),
     ...(askNotifs
       ? [
-          <Row key="notif" gap={12} style={{ paddingVertical: 12 }}>
-            <IconBubble name="bell.fill" color={palette.sky} dim={40} fallback="🔔" />
-            <View style={{ flex: 1 }}>
-              <T v="h3">Hatırlatmaları aç</T>
-              <T v="small" color={palette.inkSoft}>
-                Öğün sonrası, ilaç ve akşam soruları
-              </T>
-            </View>
-            <Button title="Aç" compact onPress={enableNotifs} />
-          </Row>,
+          <TodoRow
+            key="notif"
+            lead={<IconBubble name="bell.fill" color={palette.water} dim={38} fallback="🔔" />}
+            title="Hatırlatmaları aç"
+            sub="Öğün sonrası, ilaç ve akşam soruları"
+            right={<Button title="Aç" compact onPress={enableNotifs} />}
+          />,
+        ]
+      : []),
+    ...(nextMeal && nextMeal.items.length
+      ? [
+          <TodoRow
+            key="suggest"
+            lead={<IconBubble name="fork.knife" color={palette.good} dim={38} fallback="🍽️" />}
+            title={`${nextMeal.title} için ne yesem?`}
+            sub={nextMeal.items.map((x) => x.food.name).join(', ')}
+            onPress={() => router.push('/oneriler')}
+          />,
         ]
       : []),
   ];
@@ -438,10 +423,10 @@ export default function Home() {
       color: palette.lettuce,
       title: g.name,
       sub: mealSlots.get(g.key)
-        ? `${SLOT_LABEL[mealSlots.get(g.key)!]} · ${g.reaction != null ? REACTIONS[g.reaction].phrase : 'nasıl geçtiği bekleniyor'}`
+        ? `${SLOT_LABEL[mealSlots.get(g.key)!]} · ${g.reaction != null ? REACTIONS[g.reaction].phrase : 'nasıl geçti?'}`
         : g.reaction != null
           ? REACTIONS[g.reaction].phrase
-          : 'Nasıl geçtiği bekleniyor',
+          : 'Nasıl geçti?',
       onPress: () => router.push(`/ogun/${g.ids[0]}`),
       group: g,
     })),
@@ -500,13 +485,6 @@ export default function Home() {
   ].sort((a, b) => a.at - b.at);
 
   const todayDoses = doses.filter((d) => d.due >= dayStart);
-  const realMeals = meals.filter((g) => g.items.some((m) => !db.isTobacco(m)));
-  // suggest the current meal, or the next one when this one is already logged (no "akşam için
-  // ne yesem?" right after dinner); a snack after midnight doesn't count as breakfast
-  const slotOf = (t: number) => (new Date(t).getHours() < 5 ? null : slotForHour(new Date(t).getHours()));
-  const slotKeys = dayPlan.plan?.map((x) => x.key) ?? [];
-  const mealSlot = slotKeys.slice(Math.max(0, slotKeys.indexOf(dayPlan.current))).find((k) => !realMeals.some((g) => slotOf(g.eaten_at) === k));
-  const nextMeal = mealSlot ? dayPlan.plan?.find((x) => x.key === mealSlot) : undefined;
   const maxPain = symptoms.length ? Math.max(...symptoms.map((s) => s.pain)) : null;
   const lastMeal = realMeals.reduce<db.MealGroup | null>((a, g) => (!a || g.eaten_at > a.eaten_at ? g : a), null);
   const lastBowel = bowel.reduce<db.BowelLog | null>((a, b) => (!a || b.at > a.at ? b : a), null);
@@ -675,36 +653,25 @@ export default function Home() {
 
       <QuickLog counts={counts} />
 
-      {/* everything that wants an answer or a decision now, in one list */}
-      {nextItems.length || (nextMeal && nextMeal.items.length) ? (
-        <Card style={{ paddingVertical: 4 }}>
-          {nextItems.map((el, i) => (
-            <Fragment key={i}>
-              {i > 0 ? <View style={{ height: 1, backgroundColor: palette.hairline }} /> : null}
-              {el}
-            </Fragment>
-          ))}
-          {nextMeal && nextMeal.items.length ? (
-            <>
-              {nextItems.length ? <View style={{ height: 1, backgroundColor: palette.hairline }} /> : null}
-              <Tap onPress={() => router.push('/oneriler')} accessibilityRole="button" accessibilityLabel={`${nextMeal.title} için önerim: ${nextMeal.items.map((x) => x.food.name).join(', ')}`}>
-                <Row gap={12} style={{ paddingVertical: 12 }}>
-                  <IconBubble name="fork.knife" color={palette.good} dim={40} fallback="🍽️" />
-                  <View style={{ flex: 1 }}>
-                    <T v="h3">{`${nextMeal.title} için ne yesem?`}</T>
-                    <T v="small" color={palette.inkSoft} numberOfLines={1}>
-                      {nextMeal.items.map((x) => x.food.name).join(', ')}
-                    </T>
-                  </View>
-                  <Icon name="chevron.right" size={13} color={palette.inkFaint} fallback="›" />
-                </Row>
-              </Tap>
-            </>
-          ) : null}
-        </Card>
+      {/* everything that wants an answer or a decision now, in one short list */}
+      {nextItems.length ? (
+        <View style={{ gap: 8 }}>
+          <T v="h2" style={{ paddingHorizontal: 2, marginTop: 4 }}>
+            Sırada
+          </T>
+          <Card style={{ paddingVertical: 2, paddingHorizontal: 14 }}>
+            {nextItems.map((el, i) => (
+              <Fragment key={i}>
+                {i > 0 ? <View style={{ height: 1, backgroundColor: palette.hairline, marginLeft: 50 }} /> : null}
+                {el}
+              </Fragment>
+            ))}
+          </Card>
+        </View>
       ) : null}
 
-      <Card style={{ gap: 10 }}>
+      {/* how the day feels and what's been drunk, in one card */}
+      <Card style={{ gap: 12 }}>
         <Row style={{ justifyContent: 'space-between' }}>
           <T v="h3">Bugün nasılsın?</T>
           {daily?.feel != null ? (
@@ -718,26 +685,27 @@ export default function Home() {
             const on = daily?.feel === i;
             return (
               <Tap key={f.label} onPress={() => feel(i)} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={f.label} accessibilityState={{ selected: on }}>
-                <View style={{ height: 46, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? palette.lettuceSoft : surface.well, borderWidth: 2, borderColor: on ? palette.lettuce : 'transparent' }}>
-                  <Text style={{ fontSize: 24 }}>{f.emoji}</Text>
+                <View style={{ height: 42, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? palette.lettuceSoft : surface.well, borderWidth: 2, borderColor: on ? palette.lettuce : 'transparent' }}>
+                  <Text style={{ fontSize: 22 }}>{f.emoji}</Text>
                 </View>
               </Tap>
             );
           })}
         </Row>
+        <View style={{ height: 1, backgroundColor: palette.hairline }} />
+        <WaterCard
+          bare
+          glasses={daily?.water ?? 0}
+          target={waterTarget({ phase: app.phase, watery: wateryCount(bowel), fever: (daily?.temp ?? 0) >= 38, stoma: hasStoma() })}
+          watery={wateryCount(bowel)}
+          hour={new Date(at).getHours()}
+          stoma={hasStoma()}
+          onAdd={addWater}
+        />
       </Card>
 
-      <WaterCard
-        glasses={daily?.water ?? 0}
-        target={waterTarget({ phase: app.phase, watery: wateryCount(bowel), fever: (daily?.temp ?? 0) >= 38, stoma: hasStoma() })}
-        watery={wateryCount(bowel)}
-        hour={new Date(at).getHours()}
-        stoma={hasStoma()}
-        onAdd={addWater}
-      />
-
       <Row style={{ justifyContent: 'space-between', alignItems: 'baseline', marginTop: 6, paddingHorizontal: 2 }}>
-        <T v="h2">Bugün</T>
+        <T v="h2">Bugünkü kayıtlar</T>
         {entries.length > shown.length ? (
           <Tap onPress={() => router.navigate('/gunluk')} hitSlop={10} accessibilityRole="button">
             <T v="callout" color={palette.lettuceDeep} style={type.semibold}>
@@ -781,20 +749,71 @@ export default function Home() {
         </Card>
       ) : (
         <T v="small" color={palette.inkSoft} style={{ textAlign: 'center', paddingVertical: 8 }}>
-          Henüz kayıt yok. Yukarıdaki kutulardan tek dokunuşla ekle.
+          Henüz kayıt yok. Yukarıdaki kutulara dokunup ekle.
         </T>
       )}
 
       {backupDue ? (
-        <Tap onPress={() => router.push('/ayarlar')}>
+        <Tap onPress={() => router.push('/yedek')}>
           <Row gap={10} style={{ paddingHorizontal: 6, paddingVertical: 4 }}>
             <Icon name="icloud.and.arrow.up" size={16} color={palette.warn} fallback="☁️" />
             <T v="small" color={palette.inkSoft} style={{ flex: 1 }}>
-              Kayıtların iPhone’un iCloud Yedeklemesi açıksa güvende. Emin değilsen Ayarlar’dan ayrı bir kopya al.
+              Kayıtların iPhone’un iCloud Yedeklemesi açıksa güvende. Emin değilsen buradan ayrı bir kopya al ›
             </T>
           </Row>
         </Tap>
       ) : null}
     </Screen>
+  );
+}
+
+/** One line of "Sırada": what it is, one line of detail, and the action right there. */
+function TodoRow({ lead, title, sub, subColor, onPress, right }: { lead: ReactNode; title: string; sub?: string; subColor?: string; onPress?: () => void; right?: ReactNode }) {
+  const main = (
+    <Row gap={12} style={{ flex: 1 }}>
+      {lead}
+      <View style={{ flex: 1, gap: 1 }}>
+        <T v="callout" numberOfLines={1} style={{ fontWeight: '700' }}>
+          {title}
+        </T>
+        {sub ? (
+          <T v="small" color={subColor ?? palette.inkSoft} numberOfLines={1}>
+            {sub}
+          </T>
+        ) : null}
+      </View>
+    </Row>
+  );
+  return (
+    <Row gap={10} style={{ minHeight: 60, paddingVertical: 10 }}>
+      {onPress ? (
+        <Tap onPress={onPress} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={[title, sub].filter(Boolean).join(', ')}>
+          {main}
+        </Tap>
+      ) : (
+        main
+      )}
+      {right ?? (onPress ? <Icon name="chevron.right" size={13} color={palette.inkFaint} fallback="›" /> : null)}
+    </Row>
+  );
+}
+
+/** Normal / Dokundu / Kötü as three small faces, for a meal waiting in the list. */
+function QuickReact({ name, onPick }: { name: string; onPick: (r: db.Reaction) => void }) {
+  return (
+    <Row gap={6}>
+      {REACTIONS.map((r) => (
+        <Tap
+          key={r.value}
+          press="scale"
+          onPress={() => onPick(r.value)}
+          accessibilityRole="button"
+          accessibilityLabel={`${name}: ${r.phrase}`}
+          style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: r.bg, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Text style={{ fontSize: 19 }}>{r.emoji}</Text>
+        </Tap>
+      ))}
+    </Row>
   );
 }

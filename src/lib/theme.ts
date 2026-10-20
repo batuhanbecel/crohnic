@@ -18,7 +18,7 @@ import { Appearance } from 'react-native';
  * Keys are kept from earlier versions so screens don't change:
  *   paper=background · ink=label · inkSoft=secondary · inkFaint=tertiary
  *   lettuce=accent fill · lettuceDeep=accent text · *Soft=tinted fills
- *   apricot=symptoms · peri=medication · sky=toilet · plum=check-in · flare=atak
+ *   apricot=symptoms · peri=medication · sky=toilet · water=fluids · plum=check-in · flare=atak
  */
 const LIGHT = {
   paper: '#FFF8E1', // Krem
@@ -37,6 +37,8 @@ const LIGHT = {
   periSoft: '#E2F0FD',
   sky: '#8A5228', // toilet, brown on peach; 6.0:1
   skySoft: '#FFE8D6',
+  water: '#0E7490', // water and fluids; 5.4:1
+  waterSoft: '#DDF4F8',
   plum: '#6A4FD0', // check-in, from Lila; 5.9:1
   plumSoft: '#EEEAFE',
 
@@ -70,6 +72,8 @@ const DARK: typeof LIGHT = {
   periSoft: '#16293B',
   sky: '#E9AE7C',
   skySoft: '#38261A',
+  water: '#67D3EC',
+  waterSoft: '#10303A',
   plum: '#B8A7F9', // Lila
   plumSoft: '#272241',
 

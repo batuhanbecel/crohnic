@@ -12,8 +12,8 @@ type Key = 'meals' | 'daily' | 'weekly' | 'water';
 const ROWS: { key: Key; icon: 'fork.knife' | 'moon.fill' | 'calendar' | 'drop.fill'; color: string; title: string; sub: string }[] = [
   { key: 'meals', icon: 'fork.knife', color: palette.lettuceDeep, title: 'Öğünden sonra sor', sub: 'Yedikten 3 saat sonra nasıl geçti diye sorar' },
   { key: 'daily', icon: 'moon.fill', color: palette.plum, title: 'Akşam kontrolü', sub: '21:30’da stres ve uykunu sorar' },
-  { key: 'weekly', icon: 'calendar', color: palette.sky, title: 'Pazar özeti', sub: 'Pazar 20:00’de haftanın özeti ve aktivite skoru' },
-  { key: 'water', icon: 'drop.fill', color: palette.peri, title: 'Su hatırlatması', sub: 'Sulu dışkı sık olduğu günlerde' },
+  { key: 'weekly', icon: 'calendar', color: palette.plum, title: 'Pazar özeti', sub: 'Pazar 20:00’de haftanın özeti ve aktivite skoru' },
+  { key: 'water', icon: 'drop.fill', color: palette.water, title: 'Su hatırlatması', sub: 'Sulu dışkı sık olduğu günlerde' },
 ];
 
 /** Every reminder switch in one place; medicine alarms stay with each medicine. */

@@ -79,10 +79,10 @@ export default function Ask() {
       </Card>
 
       {!hasAi ? (
-        <Tap onPress={() => router.push('/ayarlar')}>
+        <Tap onPress={() => router.push('/baglanti')}>
           <Card tint={palette.apricotSoft} style={{ gap: 4 }}>
             <T v="h3">Fotoğraf analizi henüz kapalı</T>
-            <T v="small">Ayarlar’a sunucu adresini girince açılır. O zamana kadar listeden seçip sorabilirsin.</T>
+            <T v="small">Ayarlar › Fotoğraf analizi’nde sunucu adresini girince açılır. O zamana kadar listeden seçip sorabilirsin.</T>
           </Card>
         </Tap>
       ) : null}

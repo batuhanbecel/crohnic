@@ -61,7 +61,7 @@ export default function RecipeScreen() {
       {!app.ai ? (
         <Card tint={palette.apricotSoft} style={{ gap: 4 }}>
           <T v="h3">Tarif için Kıvırcık’ın sunucusu gerekli</T>
-          <T v="small">Ayarlar’daki fotoğraf analizi bağlıyken çalışır.</T>
+          <T v="small">Ayarlar › Fotoğraf analizi bağlıyken çalışır.</T>
         </Card>
       ) : null}
       {error ? (

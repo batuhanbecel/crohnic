@@ -19,9 +19,9 @@ export function useAnalyze() {
 
   const needsSetup = useCallback(() => {
     if (app.ai) return false;
-    Alert.alert('Fotoğraf analizi kapalı', 'Açmak için Ayarlar\'a sunucu adresini gir.', [
+    Alert.alert('Fotoğraf analizi kapalı', 'Açmak için sunucu adresini gir.', [
       { text: 'Vazgeç', style: 'cancel' },
-      { text: 'Ayarlar', onPress: () => router.push('/ayarlar') },
+      { text: 'Aç', onPress: () => router.push('/baglanti') },
     ]);
     return true;
   }, [app.ai]);

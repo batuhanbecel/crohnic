@@ -29,9 +29,10 @@ type Tile = {
 };
 
 /**
- * The four everyday logs as candy tiles. Each wears its colour (the same one the entry has
- * everywhere else) as a soft gradient with a big tilted watermark of its icon, shows today's
- * count with one line of context, and opens its log in one tap.
+ * The four everyday logs as one row of small candy tiles. Each wears its colour (the same one
+ * the entry has everywhere else) as a soft gradient with a tilted watermark of its icon, shows
+ * today's count, and opens its log in one tap. The detail line is read out by VoiceOver; the
+ * timeline below shows it on screen.
  */
 export function QuickLog({ counts }: { counts: QuickCounts }) {
   const d = counts.doses;
@@ -56,7 +57,7 @@ export function QuickLog({ counts }: { counts: QuickCounts }) {
   ];
 
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+    <View style={{ flexDirection: 'row', gap: 8 }}>
       {tiles.map((t) => (
         <Tap
           key={t.key}
@@ -64,67 +65,31 @@ export function QuickLog({ counts }: { counts: QuickCounts }) {
           onPress={() => router.push(t.to as never)}
           accessibilityRole="button"
           accessibilityLabel={[t.a11y, t.sub].filter(Boolean).join(', ')}
-          style={[{ width: '47.9%', borderRadius: radius.lg }, glow(t.color, 0.16)]}
+          style={[{ flex: 1, borderRadius: radius.lg }, glow(t.color, 0.14)]}
         >
-          <View style={{ borderRadius: radius.lg, overflow: 'hidden', minHeight: 148, padding: 14, justifyContent: 'space-between', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.7)' }}>
+          <View style={{ borderRadius: radius.lg, overflow: 'hidden', paddingVertical: 12, paddingHorizontal: 10, gap: 8, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.7)' }}>
             {/* soft wash: lighter top-left, the tile's colour deepening toward the corner */}
-            <LinearGradient
-              colors={[t.bg, soft(t.color, isDark ? 0.34 : 0.26)]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-            {/* big tilted watermark of the icon, peeking out of the corner */}
-            <View pointerEvents="none" style={{ position: 'absolute', right: -14, bottom: -16, transform: [{ rotate: '-14deg' }], opacity: isDark ? 0.22 : 0.16 }}>
-              <Icon name={t.icon} size={86} color={t.color} fallback={t.fallback} />
+            <LinearGradient colors={[t.bg, soft(t.color, isDark ? 0.34 : 0.26)]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+            {/* tilted watermark of the icon, peeking out of the corner */}
+            <View pointerEvents="none" style={{ position: 'absolute', right: -12, bottom: -12, transform: [{ rotate: '-14deg' }], opacity: isDark ? 0.2 : 0.14 }}>
+              <Icon name={t.icon} size={54} color={t.color} fallback={t.fallback} />
             </View>
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: t.color, alignItems: 'center', justifyContent: 'center' }}>
-                <Icon name={t.icon} size={17} color={onTint(t.color)} fallback={t.fallback} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: t.color, alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name={t.icon} size={14} color={onTint(t.color)} fallback={t.fallback} />
               </View>
-              <View
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 15,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.85)',
-                }}
-              >
-                <Icon name="plus" size={13} color={t.color} fallback="+" />
-              </View>
+              <Icon name="plus" size={12} color={t.color} fallback="+" />
             </View>
-
-            <View style={{ marginTop: 14 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
-                <Text numberOfLines={1} style={{ fontSize: 34, lineHeight: 38, fontWeight: '900', color: palette.ink, fontVariant: ['tabular-nums'], letterSpacing: -0.5 }}>
-                  {t.value}
-                </Text>
-                {t.dots ? <Dots {...t.dots} color={t.color} /> : null}
-              </View>
-              <T v="callout" numberOfLines={1} style={{ fontWeight: '800', color: palette.ink }}>
+            <View>
+              <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontSize: 26, lineHeight: 30, fontWeight: '900', color: palette.ink, fontVariant: ['tabular-nums'], letterSpacing: -0.5 }}>
+                {t.value}
+              </Text>
+              <T v="caption" numberOfLines={1} adjustsFontSizeToFit style={{ fontWeight: '800', color: palette.ink }}>
                 {t.label}
-              </T>
-              <T v="caption" numberOfLines={1} color={palette.inkSoft} style={{ fontWeight: '600', marginTop: 1 }}>
-                {t.sub ?? 'Bugün henüz yok'}
               </T>
             </View>
           </View>
         </Tap>
-      ))}
-    </View>
-  );
-}
-
-/** One dot per dose today: filled once taken. */
-function Dots({ taken, total, color }: { taken: number; total: number; color: string }) {
-  const n = Math.min(total, 6);
-  return (
-    <View style={{ flexDirection: 'row', gap: 4, paddingBottom: 11 }} accessibilityElementsHidden>
-      {Array.from({ length: n }, (_, i) => (
-        <View key={i} style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: i < taken ? color : 'transparent', borderWidth: 1.5, borderColor: color }} />
       ))}
     </View>
   );
